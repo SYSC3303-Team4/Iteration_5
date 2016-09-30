@@ -32,15 +32,13 @@ import java.net.SocketException;
 
 import javax.swing.JTextArea;
 
-class TFTPWriteThread implements Runnable
+class TFTPWriteThread  extends ServerThread implements Runnable
 {
     /**
      * The text area where this thread's output will be displayed.
-     */
+     */ 
     JTextArea transcript;
     private DatagramPacket sendPacket;
-    private DatagramSocket sendSocket;
-    private DatagramSocket receiveSocket;
     private DatagramPacket receivePacket;
     private int blockNumber = 0;
     private String threadNumber;
@@ -64,6 +62,9 @@ class TFTPWriteThread implements Runnable
 		   ByteArrayOutputStream mode = new ByteArrayOutputStream();
 		   boolean change = false; 
 		   for(int i = 2; i<receivePacket.getData().length;i++){
+			   /* Exit Gracefully if the stop is requested. */
+			   if(stopRequested){return;}
+			   
 			   if(receivePacket.getData()[i]>=32){
 				   if(change == false){
 					   filename.write(receivePacket.getData()[i]);
@@ -79,6 +80,9 @@ class TFTPWriteThread implements Runnable
 				   }
 				}
 		   }
+		   /* Exit Gracefully if the stop is requested. */
+		   if(stopRequested){return;}
+		   
 		   System.out.println("Request parsed for:");
 		   System.out.println("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
 		   System.out.println("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
@@ -93,7 +97,9 @@ class TFTPWriteThread implements Runnable
 		   if(blockNumber == 0){
 			   sendPacket = new DatagramPacket(response, response.length,
 			       receivePacket.getAddress(), receivePacket.getPort());
-
+			   
+			   /* Exit Gracefully if the stop is requested. */
+				if(stopRequested){return;}
 		       System.out.println("Server: Sending packet:");
 		       System.out.println("To host: " + sendPacket.getAddress());
 		       System.out.println("Destination host port: " + sendPacket.getPort());
@@ -121,6 +127,8 @@ class TFTPWriteThread implements Runnable
 			   e.printStackTrace();
 			   System.exit(1);
 		       }
+		       /* Exit Gracefully if the stop is requested. */
+				if(stopRequested){return;}
 		       System.out.println("Server: packet sent using port " + sendSocket.getLocalPort());
 		       System.out.println();
 		   }
@@ -177,6 +185,8 @@ class TFTPWriteThread implements Runnable
 	       sendPacket = new DatagramPacket(response, response.length,
 				     receivePacket.getAddress(), receivePacket.getPort());
 
+	       /* Exit Gracefully if the stop is requested. */
+			if(stopRequested){return;}
 	       System.out.println("Server: Sending packet:");
 	       System.out.println("To host: " + sendPacket.getAddress());
 	       System.out.println("Destination host port: " + sendPacket.getPort());
@@ -216,4 +226,5 @@ class TFTPWriteThread implements Runnable
 	
        //transcript.append(Thread.currentThread() + " finished\n");
     }
+    
 }
