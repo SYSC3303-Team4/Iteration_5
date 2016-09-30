@@ -17,6 +17,7 @@
 * 
 *Update Log:		v1.1.5
 *						- recieve method started
+*						- generateDATA() method patched to send OPcode
 *					v1.1.4 
 *						- numerous dangerous accessors/mutators removed
 *						  (they were [and should] never called)
@@ -123,7 +124,7 @@ public class TFTPClient
 		//make an empty reader
 		reader = new TFTPReader();
 		//make an empty writer
-		writer = new TFTPWriter();
+		//writer = new TFTPWriter();
 	}
 	
 	
@@ -272,7 +273,7 @@ public class TFTPClient
 	
 	
 	//send datagram, recieve ACKs
-	public void send(String file, String mode, byte[] RWval)
+	public void sendWRQ(String file, String mode)
 	{
 		//read and split file
 		try
@@ -287,7 +288,7 @@ public class TFTPClient
 		}
 		
 		//prep RRQ/RRW to send
-		generateRWRQ(file, mode, RWval);
+		generateRWRQ(file, mode, OPCODE_WRQ);
 		//send RRQ/RRW
 		sendPacket();
 		//wait for ACK
@@ -449,7 +450,7 @@ public class TFTPClient
 		client.verboseMode(true);
 		
 		//send full fille (includes wait for ACK)
-		client.send("1ByteDataTest.txt", "octet", OPCODE_WRQ);
+		client.sendWRQ("1ByteDataTest.txt", "octet");
 		
 		//receive server response
 		
