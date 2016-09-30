@@ -200,7 +200,7 @@ public class TFTPClient
 		//generate and save datagram packet
 		try
 		{
-			sentPacket = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), outPort);
+			sentPacket = new DatagramPacket(toSend, toSend.length, InetAddress.getLocalHost(), outPort);
 			if(verbose)
 			{
 				System.out.println("Client: Packet successfully created");
@@ -449,7 +449,7 @@ public class TFTPClient
 		client.verboseMode(true);
 		
 		//send full fille (includes wait for ACK)
-		client.send("1ByteDataTest.txt", "octet", OPCODE_RRQ);
+		client.send("1ByteDataTest.txt", "octet", OPCODE_WRQ);
 		
 		//receive server response
 		

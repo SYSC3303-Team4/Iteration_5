@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.util.Arrays;
 
 import javax.swing.JTextArea;
 
@@ -57,7 +58,7 @@ class TFTPWriteThread implements Runnable
     public void run() {
        while(true){
 	       int len, j=0;
-		   len = sendPacket.getLength();
+		   
 
 		   //Parsing Data for filename and mode
 		   ByteArrayOutputStream filename = new ByteArrayOutputStream();
@@ -93,16 +94,14 @@ class TFTPWriteThread implements Runnable
 		   if(blockNumber == 0){
 			   sendPacket = new DatagramPacket(response, response.length,
 			       receivePacket.getAddress(), receivePacket.getPort());
-
+			   len = sendPacket.getLength();
 		       System.out.println("Server: Sending packet:");
 		       System.out.println("To host: " + sendPacket.getAddress());
 		       System.out.println("Destination host port: " + sendPacket.getPort());
 		       len = sendPacket.getLength();
 		       System.out.println("Length: " + len);
 		       System.out.println("Containing: ");
-		       for (j=0;j<len;j++) {
-			   System.out.println("byte " + j + " " + response[j]);
-		       }
+		       System.out.println(Arrays.toString(sendPacket.getData()));
 
 		       // Send the datagram packet to the client via a new socket.
 		       try {
