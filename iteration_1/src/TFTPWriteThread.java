@@ -63,7 +63,7 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 		   boolean change = false; 
 		   for(int i = 2; i<receivePacket.getData().length;i++){
 			   /* Exit Gracefully if the stop is requested. */
-			   if(stopRequested){return;}
+			   if(stopRequested){exitGraceFully();}
 			   
 			   if(receivePacket.getData()[i]>=32){
 				   if(change == false){
@@ -81,7 +81,7 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 				}
 		   }
 		   /* Exit Gracefully if the stop is requested. */
-		   if(stopRequested){return;}
+		   if(stopRequested){exitGraceFully();}
 		   
 		   System.out.println("Request parsed for:");
 		   System.out.println("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
@@ -99,7 +99,7 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 			       receivePacket.getAddress(), receivePacket.getPort());
 			   
 			   /* Exit Gracefully if the stop is requested. */
-				if(stopRequested){return;}
+				if(stopRequested){exitGraceFully();}
 		       System.out.println("Server: Sending packet:");
 		       System.out.println("To host: " + sendPacket.getAddress());
 		       System.out.println("Destination host port: " + sendPacket.getPort());
@@ -128,7 +128,7 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 			   System.exit(1);
 		       }
 		       /* Exit Gracefully if the stop is requested. */
-				if(stopRequested){return;}
+				if(stopRequested){exitGraceFully();}
 		       System.out.println("Server: packet sent using port " + sendSocket.getLocalPort());
 		       System.out.println();
 		   }
@@ -186,7 +186,7 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 				     receivePacket.getAddress(), receivePacket.getPort());
 
 	       /* Exit Gracefully if the stop is requested. */
-			if(stopRequested){return;}
+			if(stopRequested){exitGraceFully();}
 	       System.out.println("Server: Sending packet:");
 	       System.out.println("To host: " + sendPacket.getAddress());
 	       System.out.println("Destination host port: " + sendPacket.getPort());
