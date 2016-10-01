@@ -41,5 +41,18 @@ public class TFTPWriter
 		//close file
 		output.close();
 	}
+	
+	/*
+	//test pls ignore
+	public static void main( String args[] ) throws Exception
+	{
+		byte[] a,b,c;
+		a = new byte[50];
+		b = new byte[255];
+		c = new byte[21];
+		
+		
+	}
+	*/
 
 }

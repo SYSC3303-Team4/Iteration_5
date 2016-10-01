@@ -99,8 +99,20 @@ class TFTPReadThread  extends ServerThread implements Runnable
 		System.out.println("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
 		System.out.println("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
 
+		TFTPReader reader = new TFTPReader();
+		try {
+			reader.readAndSplit(filename.toString());
+
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
 		while(true){
-			int len, j=0;
+			int len;
 
 
 
@@ -110,21 +122,13 @@ class TFTPReadThread  extends ServerThread implements Runnable
 			response[2]=(byte)((blockNumber >> 8)& 0xFF);
 			blockNumber++;
 
-			TFTPReader reader = new TFTPReader();
 			//Building datagram		
 
-			try {
-				reader.readAndSplit(filename.toString());
 
-			} catch (FileNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
 			byte[] data = reader.pop();
-			System.out.println(data.length);
+			/* If there's no more data to be read exit. */
+			if(data == null){exitGraceFully();}
+
 
 
 			//Builds the datagram in format

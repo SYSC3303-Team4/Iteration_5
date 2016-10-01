@@ -13,7 +13,7 @@ public abstract class ServerThread extends Thread{
     
     /* Closes sockets and exits. */
 	public void exitGraceFully() {
-		if(sendReceiveSocket.isClosed())
+		if(sendReceiveSocket != null && sendReceiveSocket.isClosed())
 		{
 			sendReceiveSocket.close();
 		}

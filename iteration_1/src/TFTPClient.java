@@ -251,7 +251,7 @@ public class TFTPClient extends JFrame
 			sentPacket = new DatagramPacket(ack, ack.length, InetAddress.getLocalHost(), outPort);
 			if(verbose)
 			{
-				System.out.println("Client: Packet successfully created");
+				System.out.println("Client: ACK successfully created");
 			}
 		}
 		catch(UnknownHostException e)
@@ -438,6 +438,7 @@ public class TFTPClient extends JFrame
 		byte[] rawData;
 		byte[] procData;
 		boolean loop = true;
+		
 		while(loop)
 		{
 			//receive data
@@ -445,8 +446,9 @@ public class TFTPClient extends JFrame
 			outPort = recievedPacket.getPort();
 			
 			//Process data
-			rawData = recievedPacket.getData();
-			procData = new byte[rawData.length - 4];
+			rawData = new byte[recievedPacket.getLength()] ;
+			rawData = recievedPacket.getData();					//check later, buggy
+			procData = new byte[rawData.length - 4];			//ditto
 			byte[] blockNum = new byte[2];
 			for(int i=0; i<procData.length; i++)
 			{
@@ -456,7 +458,7 @@ public class TFTPClient extends JFrame
 			//save data
 			try
 			{
-				writer.write(procData, file);
+				writer.write(procData,"Received"+file);
 			}
 			catch(FileNotFoundException e)
 			{
@@ -470,7 +472,9 @@ public class TFTPClient extends JFrame
 			}
 			
 			//check to see if this is final packet
-			if (procData.length < MAX_SIZE+4)
+			System.out.println(rawData.length);
+			System.out.println(recievedPacket.getLength());
+			if (recievedPacket.getLength() < MAX_SIZE+4)
 			{
 				loop = false;
 			}
@@ -481,6 +485,7 @@ public class TFTPClient extends JFrame
 			
 			//send out ACK and prep for more data
 			generateACK(blockNum);
+			sendPacket();
 		}
 		outPort = oldPort;
 	}
