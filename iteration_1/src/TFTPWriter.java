@@ -10,7 +10,11 @@
 *					(ie set offset to 0).
 * 
 * 
-*Update Log:    	v1.0.0
+*Update Log:    	
+*					v1.0.1
+*						-changed Buffer to file output stream to make it work
+*						-always set fileoutputstream bool to true, otherwise writes over file
+*					v1.0.0
 *                       - null
 */
 
