@@ -119,7 +119,7 @@ class TFTPReadThread implements Runnable
 	
 				//Builds the datagram in format
 				/*
-			2 bytes    2 bytes       n bytes
+			2 bytes    2 bytes       n bytes 
 			---------------------------------
 		 DATA  | 03    |   Block #  |    Data    |
 			---------------------------------

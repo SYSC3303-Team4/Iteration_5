@@ -232,8 +232,8 @@ public class TFTPClient
 		ack[0] = OPCODE_ACK[0];
 		ack[1] = OPCODE_ACK[1];
 		//add block num
-		ack[2] = ACKNum[2];
-		ack[3] = ACKNum[3];
+		ack[2] = ACKNum[0];
+		ack[3] = ACKNum[1];
 		
 		//generate and save datagram packet
 		try
@@ -510,7 +510,7 @@ public class TFTPClient
 		client.verboseMode(true);
 		
 		//send full fille (includes wait for ACK)
-		client.sendWRQ("1ByteDataTest.txt", "octet");
+		client.receiveData("1ByteDataTest.txt","octet");
 		
 		//receive server response
 		

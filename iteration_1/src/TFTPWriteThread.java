@@ -52,7 +52,7 @@ class TFTPWriteThread implements Runnable
 
     public TFTPWriteThread(JTextArea transcript, DatagramPacket receivePacketInfo,String thread) {
         this.transcript = transcript;
-        receivePacket = receivePacketInfo; 
+        receivePacket = receivePacketInfo;  
         threadNumber = thread;
         try {
 			receiveSocket = new DatagramSocket();
