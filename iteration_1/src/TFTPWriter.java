@@ -24,14 +24,6 @@ public class TFTPWriter
 {
 	
 	
-	public static void main (String[] args) throws FileNotFoundException, IOException 
-	{
-		TFTPWriter writer=new TFTPWriter();
-		String plz="tater";
-		byte[] test =plz.getBytes();
-		writer.write( test, "1ByteDataTest.txt");
-	}
-	
 	public void write(byte[] data, String file) throws FileNotFoundException, IOException 
 	{
 		//prep to write to file
