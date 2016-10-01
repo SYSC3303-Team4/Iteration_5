@@ -195,7 +195,7 @@ public class TFTPClient extends JFrame
 	    
 		if(verbose)
 		{
-			System.out.println("Client: Prepping DATA packet #" + "NULL");
+			System.out.println("Client: Prepping DATA packet #" + blockNum);
 		}
 		
 		//construct array to hold data
@@ -219,6 +219,7 @@ public class TFTPClient extends JFrame
 		//generate and save datagram packet
 		try
 		{
+			System.out.println(outPort);
 			sentPacket = new DatagramPacket(toSend, toSend.length, InetAddress.getLocalHost(), outPort);
 			if(verbose)
 			{
@@ -241,8 +242,8 @@ public class TFTPClient extends JFrame
 		ack[0] = OPCODE_ACK[0];
 		ack[1] = OPCODE_ACK[1];
 		//add block num
-		ack[2] = ACKNum[2];
-		ack[3] = ACKNum[3];
+		ack[2] = ACKNum[0];
+		ack[3] = ACKNum[1];
 		
 		//generate and save datagram packet
 		try
@@ -250,7 +251,7 @@ public class TFTPClient extends JFrame
 			sentPacket = new DatagramPacket(ack, ack.length, InetAddress.getLocalHost(), outPort);
 			if(verbose)
 			{
-				System.out.println("Client: Packet successfully created");
+				System.out.println("Client: ACK successfully created");
 			}
 		}
 		catch(UnknownHostException e)
@@ -437,6 +438,7 @@ public class TFTPClient extends JFrame
 		byte[] rawData;
 		byte[] procData;
 		boolean loop = true;
+		
 		while(loop)
 		{
 			//receive data
@@ -444,8 +446,9 @@ public class TFTPClient extends JFrame
 			outPort = recievedPacket.getPort();
 			
 			//Process data
-			rawData = recievedPacket.getData();
-			procData = new byte[rawData.length - 4];
+			rawData = new byte[recievedPacket.getLength()] ;
+			rawData = recievedPacket.getData();					//check later, buggy
+			procData = new byte[rawData.length - 4];			//ditto
 			byte[] blockNum = new byte[2];
 			for(int i=0; i<procData.length; i++)
 			{
@@ -455,7 +458,7 @@ public class TFTPClient extends JFrame
 			//save data
 			try
 			{
-				writer.write(procData, file);
+				writer.write(procData,"Received"+file);
 			}
 			catch(FileNotFoundException e)
 			{
@@ -469,7 +472,9 @@ public class TFTPClient extends JFrame
 			}
 			
 			//check to see if this is final packet
-			if (procData.length < MAX_SIZE+4)
+			System.out.println(rawData.length);
+			System.out.println(recievedPacket.getLength());
+			if (recievedPacket.getLength() < MAX_SIZE+4)
 			{
 				loop = false;
 			}
@@ -480,6 +485,7 @@ public class TFTPClient extends JFrame
 			
 			//send out ACK and prep for more data
 			generateACK(blockNum);
+			sendPacket();
 		}
 		outPort = oldPort;
 	}
@@ -548,23 +554,32 @@ public class TFTPClient extends JFrame
 		//Find whether you want to run in test mode or not
 		System.out.println("Test mode: (T)rue or (F)alse?");
 		String testBool = scan.nextLine();
-		if (testBool.equals("T")) client.testMode(true);
-		else {client.testMode(false);}
+		client.testMode(testBool.equalsIgnoreCase("T"));
 		
 		//Find whether you want to run in verbose mode or not
 		System.out.println("Verbose mode: (T)rue or (F)alse?");
 		String verboseBool = scan.nextLine();
-		if (verboseBool.equals("T")) client.verboseMode(true);
+		if (verboseBool.equalsIgnoreCase("T")) client.verboseMode(true);
 		else {client.verboseMode(false);}
 		
-		//create a window to search for file
-		fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-		int result = fileChooser.showOpenDialog(fileChooser);
-		if (result == JFileChooser.APPROVE_OPTION) {//file is found
-		    file = fileChooser.getSelectedFile();//get file name
+		//Find whether you want to run in test mode or not
+		System.out.println("Send a: (R)ead or (W)rite?");
+		String requestBool = scan.nextLine();
+		if(requestBool.equalsIgnoreCase("W")){
+			//create a window to search for file
+			fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+			int result = fileChooser.showOpenDialog(fileChooser);
+			if (result == JFileChooser.APPROVE_OPTION) {//file is found
+			    file = fileChooser.getSelectedFile();//get file name
+			}
+			//send full fille (includes wait for ACK)
+			client.sendWRQ(file.getName(), "octet");
 		}
-		//send full fille (includes wait for ACK)
-		client.sendWRQ(file.getName(), "octet");
+		else{
+			System.out.print("Enter file name: ");
+			String requestRBool = scan.nextLine();
+			client.sendRRQ(requestRBool,"octet");
+		}
 
 		//receive server response
 		
