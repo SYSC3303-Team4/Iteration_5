@@ -195,7 +195,7 @@ public class TFTPClient extends JFrame
 	    
 		if(verbose)
 		{
-			System.out.println("Client: Prepping DATA packet #" + "NULL");
+			System.out.println("Client: Prepping DATA packet #" + blockNum);
 		}
 		
 		//construct array to hold data
@@ -219,6 +219,7 @@ public class TFTPClient extends JFrame
 		//generate and save datagram packet
 		try
 		{
+			System.out.println(outPort);
 			sentPacket = new DatagramPacket(toSend, toSend.length, InetAddress.getLocalHost(), outPort);
 			if(verbose)
 			{
@@ -241,8 +242,8 @@ public class TFTPClient extends JFrame
 		ack[0] = OPCODE_ACK[0];
 		ack[1] = OPCODE_ACK[1];
 		//add block num
-		ack[2] = ACKNum[2];
-		ack[3] = ACKNum[3];
+		ack[2] = ACKNum[0];
+		ack[3] = ACKNum[1];
 		
 		//generate and save datagram packet
 		try
@@ -548,23 +549,32 @@ public class TFTPClient extends JFrame
 		//Find whether you want to run in test mode or not
 		System.out.println("Test mode: (T)rue or (F)alse?");
 		String testBool = scan.nextLine();
-		if (testBool.equals("T")) client.testMode(true);
-		else {client.testMode(false);}
+		client.testMode(testBool.equalsIgnoreCase("T"));
 		
 		//Find whether you want to run in verbose mode or not
 		System.out.println("Verbose mode: (T)rue or (F)alse?");
 		String verboseBool = scan.nextLine();
-		if (verboseBool.equals("T")) client.verboseMode(true);
+		if (verboseBool.equalsIgnoreCase("T")) client.verboseMode(true);
 		else {client.verboseMode(false);}
 		
-		//create a window to search for file
-		fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-		int result = fileChooser.showOpenDialog(fileChooser);
-		if (result == JFileChooser.APPROVE_OPTION) {//file is found
-		    file = fileChooser.getSelectedFile();//get file name
+		//Find whether you want to run in test mode or not
+		System.out.println("Send a: (R)ead or (W)rite?");
+		String requestBool = scan.nextLine();
+		if(requestBool.equalsIgnoreCase("W")){
+			//create a window to search for file
+			fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+			int result = fileChooser.showOpenDialog(fileChooser);
+			if (result == JFileChooser.APPROVE_OPTION) {//file is found
+			    file = fileChooser.getSelectedFile();//get file name
+			}
+			//send full fille (includes wait for ACK)
+			client.sendWRQ(file.getName(), "octet");
 		}
-		//send full fille (includes wait for ACK)
-		client.sendWRQ(file.getName(), "octet");
+		else{
+			System.out.print("Enter file name: ");
+			String requestRBool = scan.nextLine();
+			client.sendRRQ(requestRBool,"octet");
+		}
 
 		//receive server response
 		

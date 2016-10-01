@@ -40,8 +40,6 @@ class TFTPWriteThread  extends ServerThread implements Runnable
      */
     JTextArea transcript;
     private DatagramPacket sendPacket;
-    private DatagramSocket sendSocket;
-    private DatagramSocket receiveSocket;
     private DatagramPacket receivePacket;
     private DatagramPacket receivePacket1;
     private int blockNumber = 0;
@@ -55,17 +53,15 @@ class TFTPWriteThread  extends ServerThread implements Runnable
         receivePacket = receivePacketInfo;  
         threadNumber = thread;
         try {
-			receiveSocket = new DatagramSocket();
+			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block    
 			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
     }
 
     public void run() {
-       while(true){
-	       int len, j=0;
-	       
 		   
 
 		   //Parsing Data for filename and mode 
@@ -88,6 +84,13 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 				   }
 				}
 		   }
+		   
+	       System.out.println("Server: Received packet:");
+	       System.out.println("From host: " + receivePacket.getAddress());
+	       System.out.println("From host port: " + receivePacket.getPort());
+	       System.out.println("Length: " + receivePacket.getLength());
+	       System.out.println("Containing: ");
+	       System.out.println(new String(receivePacket.getData(),0,receivePacket.getLength()));
 		    /* Exit Gracefully if the stop is requested. */
 			if(stopRequested){exitGraceFully();}
 		   System.out.println("Request parsed for:");
@@ -95,6 +98,11 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 				   0,filename.toByteArray().length));
 		   System.out.println("	Mode: " + new String(mode.toByteArray(),
 				   0,mode.toByteArray().length) + "\n");
+    	
+    	while(true){
+	       int len, j=0;
+
+
 
 		   //Build and send the first ACK reply in format:
 		   /*
@@ -115,7 +123,7 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 		       System.out.println("Length: " + len);
 		       System.out.println("Containing: ");
 		       System.out.println(Arrays.toString(sendPacket.getData()));
-
+		       /*
 		       // Send the datagram packet to the client via a new socket.
 		       try {
 			   // Construct a new datagram socket and bind it to any port
@@ -126,16 +134,17 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 			   se.printStackTrace();
 			   System.exit(1);
 		       }
+		       */
 
 		       try {
-			   sendSocket.send(sendPacket);
+			   sendReceiveSocket.send(sendPacket);
 		       } catch (IOException e) {
 			   e.printStackTrace();
 			   System.exit(1);
 		       }
 		        /* Exit Gracefully if the stop is requested. */
 				if(stopRequested){exitGraceFully();}
-		       System.out.println("Server: packet sent using port " + sendSocket.getLocalPort());
+		       System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
 		       System.out.println();
 		   }
 
@@ -148,16 +157,20 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 		*/
 		   byte[] rawData = new byte[516];
 		   receivePacket1 = new DatagramPacket(rawData, rawData.length);
+		   
 		    /* Exit Gracefully if the stop is requested. */
 			if(stopRequested){exitGraceFully();}
 	       System.out.println("Server: Waiting for packet.");
 	       // Block until a datagram packet is received from receiveSocket.
 	       try {
-	    	   receiveSocket.receive(receivePacket1);
+	    	   sendReceiveSocket.receive(receivePacket1);
 	       } catch (IOException e) {
 	    	   e.printStackTrace();
 	    	   System.exit(1);
 	       }
+	      
+	       
+	       
 
 	       byte[] data = new byte[receivePacket1.getLength()-4];
 	       //Parse data from DATA packet
@@ -165,11 +178,11 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 	    	   data[i-4] = receivePacket1.getData()[i];
 	       }
 
-
+	       
 	       //Write file to directory
 	       TFTPWriter writer = new TFTPWriter();
 	       try {
-				writer.write(data,filename.toString("UTF_8"));
+				writer.write(data,"Tester" + filename.toString());
 			} catch (FileNotFoundException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -177,6 +190,11 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+
+	       if(data.length<512){
+	    	   System.out.println("Server: Final Data Block Received.");
+	    	   exitGraceFully();
+	       }
 
 	       //Sending the ACK for previous DATA packet in format:
 	       /*
@@ -186,8 +204,8 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 		  --------------------
 		*/
 
-		   response[3]=receivePacket1.getData()[2];
-		   response[2]=receivePacket1.getData()[3];
+		   response[2]=receivePacket1.getData()[2];
+		   response[3]=receivePacket1.getData()[3];
 		   blockNumber++;
 
 
@@ -201,10 +219,9 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 	       len = sendPacket.getLength();
 	       System.out.println("Length: " + len);
 	       System.out.println("Block Number: " + blockNumber);
-	       System.out.println("Containing: ");
-	       for (j=0;j<len;j++) {
-		  System.out.println("byte " + j + " " + response[j]);
-	       }
+	       System.out.println("Containing: " );
+	       System.out.println(Arrays.toString(sendPacket.getData()));
+
 
 	       // Send the datagram packet to the client via a new socket.
 
@@ -212,26 +229,26 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 		  // Construct a new datagram socket and bind it to any port
 		  // on the local host machine. This socket will be used to
 		  // send UDP Datagram packets.
-		  sendSocket = new DatagramSocket();
+		  sendReceiveSocket = new DatagramSocket();
 	       } catch (SocketException se) {
 		  se.printStackTrace();
 		  System.exit(1);
 	       }
 
 	       try {
-		  sendSocket.send(sendPacket);
+		  sendReceiveSocket.send(sendPacket);
 	       } catch (IOException e) {
 		  e.printStackTrace();
 		  System.exit(1);
 	       }
 			/* Exit Gracefully if the stop is requested. */
 		 if(stopRequested){exitGraceFully();}
-	       System.out.println("Server: packet sent using port " + sendSocket.getLocalPort());
+	       System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
 	       System.out.println();
        }
 
        // We're finished with this socket, so close it.
-       //sendSocket.close();
+       //sendReceiveSocket.close();
 	
        //transcript.append(Thread.currentThread() + " finished\n");
     }

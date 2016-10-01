@@ -4,8 +4,7 @@ import java.net.DatagramSocket;
 public abstract class ServerThread extends Thread{
 	
 	protected boolean stopRequested = false;
-	protected DatagramSocket receiveSocket;
-	protected DatagramSocket sendSocket;
+	protected DatagramSocket sendReceiveSocket;
 	
     public void RequestStop()
     {
@@ -14,16 +13,12 @@ public abstract class ServerThread extends Thread{
     
     /* Closes sockets and exits. */
 	public void exitGraceFully() {
-		if(sendSocket.isClosed())
+		if(sendReceiveSocket.isClosed())
 		{
-			sendSocket.close();
+			sendReceiveSocket.close();
 		}
-		
-		if(receiveSocket.isClosed())
-		{
-			receiveSocket.close();
-		}
-		return;
+		System.out.println("Server: Exiting Gracefully");
+		System.exit(0);
 	}
 
 }
