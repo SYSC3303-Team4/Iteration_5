@@ -52,7 +52,7 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 
     public TFTPWriteThread(JTextArea transcript, DatagramPacket receivePacketInfo,String thread) {
         this.transcript = transcript;
-        receivePacket = receivePacketInfo; 
+        receivePacket = receivePacketInfo;  
         threadNumber = thread;
         try {
 			receiveSocket = new DatagramSocket();
@@ -68,7 +68,7 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 	       
 		   
 
-		   //Parsing Data for filename and mode
+		   //Parsing Data for filename and mode 
 		   ByteArrayOutputStream filename = new ByteArrayOutputStream();
 		   ByteArrayOutputStream mode = new ByteArrayOutputStream();
 		   boolean change = false; 

@@ -10,7 +10,7 @@
 *						-Receiving ACK
 *
 *To do:
-*	-Clean up code
+*	-Clean up code 
 *	-Test functionality with other components
 *	-Use the UI
 *
@@ -19,6 +19,10 @@
 * 
 *Update Log:    	v1.1.1
 *                       - null
+*                       
+*                   v1.1.2
+*                   	- Cleaned up code
+*                   	- Fixed Block numbers
 */
 import java.io.ByteArrayOutputStream;
 
@@ -50,6 +54,12 @@ class TFTPReadThread  extends ServerThread implements Runnable
         this.transcript = transcript;
         receivePacket = receivePacketInfo;
         threadNumber  = thread;
+        try {
+			receiveSocket = new DatagramSocket();
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block    
+			e.printStackTrace();
+		}
     }
 
     public void run() {
@@ -88,8 +98,8 @@ class TFTPReadThread  extends ServerThread implements Runnable
 	
 	
 			//Encode the block number into the response block 
-			    response[2]=(byte)(blockNumber & 0xFF);
-			    response[3]=(byte)((blockNumber >> 8)& 0xFF);
+			    response[3]=(byte)(blockNumber & 0xFF);
+			    response[2]=(byte)((blockNumber >> 8)& 0xFF);
 			    blockNumber++;
 	
 			    TFTPReader reader = new TFTPReader();
@@ -111,7 +121,7 @@ class TFTPReadThread  extends ServerThread implements Runnable
 	
 				//Builds the datagram in format
 				/*
-			2 bytes    2 bytes       n bytes
+			2 bytes    2 bytes       n bytes 
 			---------------------------------
 		 DATA  | 03    |   Block #  |    Data    |
 			---------------------------------
