@@ -31,7 +31,7 @@ import java.util.*;
 
 import javax.swing.JTextArea;
 
-class TFTPReadThread implements Runnable
+class TFTPReadThread  extends ServerThread implements Runnable
 {
     /**
      * The text area where this thread's output will be displayed.
@@ -62,6 +62,7 @@ class TFTPReadThread implements Runnable
 				ByteArrayOutputStream mode = new ByteArrayOutputStream();
 				boolean change = false; 
 				for(int i = 2; i<receivePacket.getData().length;i++){
+					if(stopRequested){exitGraceFully();}
 					if(receivePacket.getData()[i]>=32){
 						if(change == false){
 						filename.write(receivePacket.getData()[i]);
@@ -78,7 +79,8 @@ class TFTPReadThread implements Runnable
 					}
 				}
 	
-	
+				/* Exit Gracefully if the stop is requested. */
+				if(stopRequested){exitGraceFully();}
 				System.out.println("Request parsed for:");
 				System.out.println("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
 				System.out.println("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
@@ -118,7 +120,8 @@ class TFTPReadThread implements Runnable
 				byte dataPrime[] = Arrays.copyOf(response, response.length + data.length); 
 				System.arraycopy(data, 0, dataPrime, response.length, data.length);
 	
-	
+			 /* Exit Gracefully if the stop is requested. */
+			if(stopRequested){exitGraceFully();}
 			sendPacket = new DatagramPacket(dataPrime, dataPrime.length,
 					      receivePacket.getAddress(), receivePacket.getPort());
 			len = sendPacket.getLength();
@@ -149,6 +152,8 @@ class TFTPReadThread implements Runnable
 			   System.exit(1); 
 			}
 	
+			 /* Exit Gracefully if the stop is requested. */
+			if(stopRequested){exitGraceFully();}
 			System.out.println("Server: packet sent using port " + sendSocket.getLocalPort());
 			System.out.println();
 	

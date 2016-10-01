@@ -33,7 +33,7 @@ import java.util.Arrays;
 
 import javax.swing.JTextArea;
 
-class TFTPWriteThread implements Runnable
+class TFTPWriteThread  extends ServerThread implements Runnable
 {
     /**
      * The text area where this thread's output will be displayed.
@@ -88,6 +88,8 @@ class TFTPWriteThread implements Runnable
 				   }
 				}
 		   }
+		    /* Exit Gracefully if the stop is requested. */
+			if(stopRequested){exitGraceFully();}
 		   System.out.println("Request parsed for:");
 		   System.out.println("	Filename: " + new String(filename.toByteArray(),
 				   0,filename.toByteArray().length));
@@ -105,6 +107,8 @@ class TFTPWriteThread implements Runnable
 			   sendPacket = new DatagramPacket(response, response.length,
 			       receivePacket.getAddress(), receivePacket.getPort());
 			   len = sendPacket.getLength();
+			    /* Exit Gracefully if the stop is requested. */
+		       if(stopRequested){exitGraceFully();}
 		       System.out.println("Server: Sending packet:");
 		       System.out.println("To host: " + sendPacket.getAddress());
 		       System.out.println("Destination host port: " + sendPacket.getPort());
@@ -129,6 +133,8 @@ class TFTPWriteThread implements Runnable
 			   e.printStackTrace();
 			   System.exit(1);
 		       }
+		        /* Exit Gracefully if the stop is requested. */
+				if(stopRequested){exitGraceFully();}
 		       System.out.println("Server: packet sent using port " + sendSocket.getLocalPort());
 		       System.out.println();
 		   }
@@ -142,6 +148,8 @@ class TFTPWriteThread implements Runnable
 		*/
 		   byte[] rawData = new byte[516];
 		   receivePacket1 = new DatagramPacket(rawData, rawData.length);
+		    /* Exit Gracefully if the stop is requested. */
+			if(stopRequested){exitGraceFully();}
 	       System.out.println("Server: Waiting for packet.");
 	       // Block until a datagram packet is received from receiveSocket.
 	       try {
@@ -178,14 +186,15 @@ class TFTPWriteThread implements Runnable
 		  --------------------
 		*/
 
-		   response[2]=receivePacket1.getData()[2];
-		   response[3]=receivePacket1.getData()[3];
+		   response[3]=receivePacket1.getData()[2];
+		   response[2]=receivePacket1.getData()[3];
 		   blockNumber++;
 
 
 	       sendPacket = new DatagramPacket(response, response.length,
 				     receivePacket.getAddress(), receivePacket.getPort());
-
+			/* Exit Gracefully if the stop is requested. */
+		   if(stopRequested){exitGraceFully();}
 	       System.out.println("Server: Sending packet:");
 	       System.out.println("To host: " + sendPacket.getAddress());
 	       System.out.println("Destination host port: " + sendPacket.getPort());
@@ -215,7 +224,8 @@ class TFTPWriteThread implements Runnable
 		  e.printStackTrace();
 		  System.exit(1);
 	       }
-
+			/* Exit Gracefully if the stop is requested. */
+		 if(stopRequested){exitGraceFully();}
 	       System.out.println("Server: packet sent using port " + sendSocket.getLocalPort());
 	       System.out.println();
        }
