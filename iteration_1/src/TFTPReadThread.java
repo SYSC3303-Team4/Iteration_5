@@ -159,7 +159,7 @@ class TFTPReadThread implements Runnable
 			    e.printStackTrace();
 			    System.exit(1);
 			 }
-			//Check for ACK in format
+			//Check for ACK in format 
 			/*
 			2 bytes    2 bytes
 			-------------------
