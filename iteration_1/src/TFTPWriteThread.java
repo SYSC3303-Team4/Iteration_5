@@ -68,7 +68,7 @@ class TFTPWriteThread implements Runnable
 	       
 		   
 
-		   //Parsing Data for filename and mode
+		   //Parsing Data for filename and mode 
 		   ByteArrayOutputStream filename = new ByteArrayOutputStream();
 		   ByteArrayOutputStream mode = new ByteArrayOutputStream();
 		   boolean change = false; 
