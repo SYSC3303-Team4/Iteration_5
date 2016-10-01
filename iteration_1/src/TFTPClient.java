@@ -21,6 +21,7 @@
 *						- client now sends ACKs
 *						- port error patched
 *						- block numbers working now (shoutout to Nate for the code to do that)
+*						- ACKs fixed FOR REAL THIS TIME
 *					v1.1.4 
 *						- numerous dangerous accessors/mutators removed
 *						  (they were [and should] never called)
@@ -232,8 +233,8 @@ public class TFTPClient
 		ack[0] = OPCODE_ACK[0];
 		ack[1] = OPCODE_ACK[1];
 		//add block num
-		ack[2] = ACKNum[2];
-		ack[3] = ACKNum[3];
+		ack[2] = ACKNum[0];
+		ack[3] = ACKNum[1];
 		
 		//generate and save datagram packet
 		try
@@ -415,8 +416,10 @@ public class TFTPClient
 	
 	
 	//receive data and save
-	public void receiveData(String file, String mode)
+	public void sendRRQ(String file, String mode)
 	{
+		int oldPort = outPort;
+		
 		//send read request
 		generateRWRQ(file, mode, OPCODE_RRQ);
 		sendPacket();
@@ -427,6 +430,7 @@ public class TFTPClient
 		while(loop)
 		{
 			receivePacket("DATA");
+			outPort = recievedPacket.getPort();
 			data = recievedPacket.getData();
 			byte[] blockNum = new byte[2];
 			
@@ -443,7 +447,8 @@ public class TFTPClient
 			//send out ACK and prep for more data
 			generateACK(blockNum);
 			sendPacket();
-		}	
+		}
+		outPort = oldPort;
 	}
 	
 	
