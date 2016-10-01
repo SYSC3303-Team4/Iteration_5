@@ -84,6 +84,9 @@ SET UP INSTRUCTIONS:
 
 	*Note that both programs must be running concurently for 
 	correct results*
+	
+	*Note that all external files to be read or written to MUST be
+	 in the directory above src*
 
 
 ------------------------------------------------------------
