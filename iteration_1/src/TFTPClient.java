@@ -22,6 +22,8 @@
 *						- port error patched
 *						- block numbers working now (shoutout to Nate for the code to do that)
 *						- ACKs fixed FOR REAL THIS TIME
+*						- Nate's block numbering fixed
+*						- WRITER CLASS IMPLIMENTED FINALLY
 *					v1.1.4 
 *						- numerous dangerous accessors/mutators removed
 *						  (they were [and should] never called)
@@ -70,11 +72,11 @@
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TO DO ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~(as of v1.1.3)
  *		[x] !!!!!!!!FIX CLIENT RECEIVE ERROR!!!!!!!!
  *		[x] Add receiving and checking of ACKs
- *		[ ] Further check reader to make sure it is sending the correct packets
- *		[ ] Patch receive method with a master method that can handle multiple packets
+ *		[x] Further check reader to make sure it is sending the correct packets
+ *		[x] Patch receive method with a master method that can handle multiple packets
  *		[x] Figure out what to do with all incoming packets
- *		[ ] Add packet numbering (is it a 16bit int or a 0byte followed by a 8bit number????)
- *		[ ] Test functionality w/ modified server
+ *		[x] Add packet numbering (is it a 16bit int or a 0byte followed by a 8bit number????)
+ *		[x] Test functionality w/ modified server
  *		[ ] Integrate with UI
  *		[ ] Write a test class if time permits (????)
  *		[ ] Update ReadMe.txt
@@ -182,8 +184,8 @@ public class TFTPClient
 	{
 		//prep for block num
 		byte[] blockNumArr = new byte[2];
-		blockNumArr[0]=(byte)(blockNum & 0xFF);
-		blockNumArr[1]=(byte)((blockNum >> 8)& 0xFF);
+		blockNumArr[1]=(byte)(blockNum & 0xFF);
+		blockNumArr[0]=(byte)((blockNum >> 8)& 0xFF);
 	    
 		if(verbose)
 		{
@@ -344,6 +346,7 @@ public class TFTPClient
 			//send DATA
 			generateDATA(blockNum);
 			sendPacket();
+			blockNum++;
 			
 			//wait for ACK
 			receiveACK();
@@ -425,28 +428,52 @@ public class TFTPClient
 		sendPacket();
 		
 		//receive loop for data
-		byte[] data;
+		byte[] rawData;
+		byte[] procData;
 		boolean loop = true;
 		while(loop)
 		{
+			//receive data
 			receivePacket("DATA");
 			outPort = recievedPacket.getPort();
-			data = recievedPacket.getData();
+			
+			//Process data
+			rawData = recievedPacket.getData();
+			procData = new byte[rawData.length - 4];
 			byte[] blockNum = new byte[2];
+			for(int i=0; i<procData.length; i++)
+			{
+				procData[i] = rawData[i+4];
+			}
+			
+			//save data
+			try
+			{
+				writer.write(procData, file);
+			}
+			catch(FileNotFoundException e)
+			{
+				e.printStackTrace();
+				System.exit(1);
+			}
+			catch(IOException e)
+			{
+				e.printStackTrace();
+				System.exit(1);
+			}
 			
 			//check to see if this is final packet
-			if (data.length < MAX_SIZE+4)
+			if (procData.length < MAX_SIZE+4)
 			{
 				loop = false;
 			}
 			
 			//get block num
-			blockNum[0] = data[2];
-			blockNum[1] = data[3];
+			blockNum[0] = rawData[2];
+			blockNum[1] = rawData[3];
 			
 			//send out ACK and prep for more data
 			generateACK(blockNum);
-			sendPacket();
 		}
 		outPort = oldPort;
 	}
