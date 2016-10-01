@@ -1,4 +1,4 @@
-/**
+/*
 *Class:             TFTPWriter.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
@@ -19,35 +19,28 @@
 import java.io.*;
 
 
+
 public class TFTPWriter 
 {
-	//declaring local instance variables
-	private int offset;
 	
 	
-	//generic constructor
-	public TFTPWriter()
+	public static void main (String[] args) throws FileNotFoundException, IOException 
 	{
-		offset = 0;
+		TFTPWriter writer=new TFTPWriter();
+		String plz="tater";
+		byte[] test =plz.getBytes();
+		writer.write( test, "1ByteDataTest.txt");
 	}
 	
-	
-	//reset offset to 0 to allow overwriting
-	public void resetOffset()
-	{
-		offset = 0;
-	}
-	
-	
-	//simple write byte array of size n to file
 	public void write(byte[] data, String file) throws FileNotFoundException, IOException 
 	{
 		//prep to write to file
-		BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file));
-
+		FileOutputStream output = new FileOutputStream(file,true);//set to false if dont always want to write to end of file
 		//write data to file starting at offset
-		output.write(data, offset, data.length);
-		offset = offset + data.length;
+		
+		output.write(data);
+		//output.write(data);
+		//offset = offset + data.length;
 		
 		//close file
 		output.close();
