@@ -114,6 +114,7 @@ class TFTPReadThread implements Runnable
 		 DATA  | 03    |   Block #  |    Data    |
 			---------------------------------
 			*/
+			
 				byte dataPrime[] = Arrays.copyOf(response, response.length + data.length); 
 				System.arraycopy(data, 0, dataPrime, response.length, data.length);
 	
@@ -145,7 +146,7 @@ class TFTPReadThread implements Runnable
 			   sendSocket.send(sendPacket);
 			} catch (IOException e) {
 			   e.printStackTrace();
-			   System.exit(1);
+			   System.exit(1); 
 			}
 	
 			System.out.println("Server: packet sent using port " + sendSocket.getLocalPort());
@@ -158,7 +159,7 @@ class TFTPReadThread implements Runnable
 			    e.printStackTrace();
 			    System.exit(1);
 			 }
-			//Check for ACK in format
+			//Check for ACK in format  
 			/*
 			2 bytes    2 bytes
 			-------------------
