@@ -91,7 +91,8 @@ FILE INFORMATION:
 
 ServerThread.java
 
-	null
+	Abstract class designed to lay base criteria and behaviors for other
+	threads in project.
 
 
 TFTPCLient.java
