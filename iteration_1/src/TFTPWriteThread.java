@@ -43,6 +43,7 @@ class TFTPWriteThread implements Runnable
     private DatagramSocket sendSocket;
     private DatagramSocket receiveSocket;
     private DatagramPacket receivePacket;
+    private DatagramPacket receivePacket1;
     private int blockNumber = 0;
     private String threadNumber;
     public static final byte[] response = {0, 4, 0, 0};
@@ -53,11 +54,18 @@ class TFTPWriteThread implements Runnable
         this.transcript = transcript;
         receivePacket = receivePacketInfo;
         threadNumber = thread;
+        try {
+			receiveSocket = new DatagramSocket();
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     public void run() {
        while(true){
 	       int len, j=0;
+	       
 		   
 
 		   //Parsing Data for filename and mode
@@ -81,8 +89,10 @@ class TFTPWriteThread implements Runnable
 				}
 		   }
 		   System.out.println("Request parsed for:");
-		   System.out.println("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
-		   System.out.println("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
+		   System.out.println("	Filename: " + new String(filename.toByteArray(),
+				   0,filename.toByteArray().length));
+		   System.out.println("	Mode: " + new String(mode.toByteArray(),
+				   0,mode.toByteArray().length) + "\n");
 
 		   //Build and send the first ACK reply in format:
 		   /*
@@ -98,7 +108,6 @@ class TFTPWriteThread implements Runnable
 		       System.out.println("Server: Sending packet:");
 		       System.out.println("To host: " + sendPacket.getAddress());
 		       System.out.println("Destination host port: " + sendPacket.getPort());
-		       len = sendPacket.getLength();
 		       System.out.println("Length: " + len);
 		       System.out.println("Containing: ");
 		       System.out.println(Arrays.toString(sendPacket.getData()));
@@ -131,20 +140,21 @@ class TFTPWriteThread implements Runnable
 	   DATA  | 03    |   Block #  |    Data    |
 		  ---------------------------------
 		*/
-
+		   byte[] rawData = new byte[516];
+		   receivePacket1 = new DatagramPacket(rawData, rawData.length);
 	       System.out.println("Server: Waiting for packet.");
 	       // Block until a datagram packet is received from receiveSocket.
 	       try {
-		  receiveSocket.receive(receivePacket);
+	    	   receiveSocket.receive(receivePacket1);
 	       } catch (IOException e) {
-		  e.printStackTrace();
-		  System.exit(1);
+	    	   e.printStackTrace();
+	    	   System.exit(1);
 	       }
 
-	       byte[] data = new byte[receivePacket.getLength()-4];
+	       byte[] data = new byte[receivePacket1.getLength()-4];
 	       //Parse data from DATA packet
-	       for(int i = 4; i < receivePacket.getLength();i++){
-		   data[i-4] = receivePacket.getData()[i];
+	       for(int i = 4; i < receivePacket1.getLength();i++){
+	    	   data[i-4] = receivePacket1.getData()[i];
 	       }
 
 
@@ -168,8 +178,8 @@ class TFTPWriteThread implements Runnable
 		  --------------------
 		*/
 
-		   response[2]=receivePacket.getData()[2];
-		   response[3]=receivePacket.getData()[3];
+		   response[2]=receivePacket1.getData()[2];
+		   response[3]=receivePacket1.getData()[3];
 		   blockNumber++;
 
 

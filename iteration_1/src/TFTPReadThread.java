@@ -114,6 +114,7 @@ class TFTPReadThread implements Runnable
 		 DATA  | 03    |   Block #  |    Data    |
 			---------------------------------
 			*/
+			
 				byte dataPrime[] = Arrays.copyOf(response, response.length + data.length); 
 				System.arraycopy(data, 0, dataPrime, response.length, data.length);
 	
