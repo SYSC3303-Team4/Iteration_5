@@ -10,6 +10,7 @@ import java.util.*;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
+
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
@@ -24,6 +25,8 @@ public class TFTPServer extends JFrame{
    // UDP datagram packets and sockets used to send / receive
    private DatagramPacket sendPacket, receivePacket;
    private DatagramSocket receiveSocket, sendSocket;
+   private boolean verbose;
+   private static Scanner scan= new Scanner(System.in);
    
    /**
     * JTextArea for the factorial thread.
@@ -46,19 +49,24 @@ public class TFTPServer extends JFrame{
 	   super(title);
 
        out = new JTextArea(5,40);
+       
        out.setEditable(false);
        JScrollPane pane1 = new JScrollPane(out, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
        pane1.setBorder(BorderFactory.createTitledBorder("Output Log"));
 
        status = new JTextArea(5, 40);
+       status.setVisible(true);
        status.setEditable(false);
        JScrollPane pane2 = new JScrollPane(status, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
        pane2.setBorder(BorderFactory.createTitledBorder("Status"));
        
        commandLine = new JTextArea(5, 40);
-       status.setEditable(true);
+       commandLine.setVisible(true);
+       commandLine.setEditable(true);
        JScrollPane pane3 = new JScrollPane(status, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
        pane3.setBorder(BorderFactory.createTitledBorder("Command Line"));
+       
+       out.setVisible(true);
        
 	   
       try {
@@ -74,7 +82,13 @@ public class TFTPServer extends JFrame{
 
    public void receiveAndSendTFTP() throws Exception
    {
-	   out.append("Initializing Server...\n");
+	  // out.append("Initializing Server...\n");
+	 //Find whether you want to run in verbose mode or not
+	   Boolean verboseMode = false;
+	 		System.out.println("Verbose mode: (T)rue or (F)alse?");
+	 		String verboseBool = scan.nextLine();
+	 		if (verboseBool.equalsIgnoreCase("T")) verboseMode = true;
+	 		else {}
 
       byte[] data,
              response = new byte[4];
@@ -110,7 +124,7 @@ public class TFTPServer extends JFrame{
          out.append("Containing: " );
          
          // print the bytes
-         for (j=0;j<len;j++) {
+        for (j=0;j<len;j++) {
         	 out.append("byte " + j + " " + data[j]);
          }
 
@@ -152,12 +166,12 @@ public class TFTPServer extends JFrame{
          // Create a response.
          if (req==Request.READ) { // for Read it's 0301
         	 threadNum++;
-        	Thread readRequest =  new Thread(initializedThreads, new TFTPReadThread(out, receivePacket, "Thread "+threadNum));
+        	Thread readRequest =  new Thread(initializedThreads, new TFTPReadThread(out, receivePacket, "Thread "+threadNum, verboseMode));
         	readRequest.start();
             response = readResp;
          } else if (req==Request.WRITE) { // for Write it's 0400
         	threadNum++;
-        	Thread writeRequest =  new Thread(initializedThreads, new TFTPWriteThread(out, receivePacket,"Thread "+threadNum));
+        	Thread writeRequest =  new Thread(initializedThreads, new TFTPWriteThread(out, receivePacket,"Thread "+threadNum, verboseMode));
          	writeRequest.start();
             response = writeResp;
          } else { // it was invalid, just quit

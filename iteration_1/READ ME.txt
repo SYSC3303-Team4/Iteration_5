@@ -15,7 +15,7 @@ TFTP Project - Iteration 1
 SYSC 3303
 Group 4
 
-Adam Staples			[100######]
+Adam Staples			[100978589]
 Dan Hogan			[100######]
 Jason Van Kerkhoven		[100974276]
 Nathanial Charlebois		[100964496]
@@ -28,8 +28,8 @@ Sarah Garlough			[100965386]
 TEAM LOGISTICS
 
 	Adam Staples
-		- Test case implimentation
-		- UI work on Client classs
+		- Test case implementation and testing
+		- UI work on Client and Server class
 		- UI debugging
 	
 	Dan Hogan
@@ -79,14 +79,22 @@ SET UP INSTRUCTIONS:
 	1.	Load all files into Eclipse workspace/project
 	2.	Build project
 	3.	Run Server.java
-	4.	Run Client.java
+	4.  Enter verbose or quiet into console
+	4.	Run Client.java*
+	6.  Enter test or normal** into console
+	7.  Enter verbose or quiet into console
+	8.	Enter Read or Write into console
+	9.  Enter name of text file** into console
 
 
 	*Note that both programs must be running concurently for 
 	correct results*
 	
-	*Note that all external files to be read or written to MUST be
-	 in the directory above src*
+	**Note test must be set to false as Host is currently not synced
+	 to the server and client**
+	
+	***Note that all external files to be read or written to MUST be
+	 in the directory above src***
 
 
 ------------------------------------------------------------

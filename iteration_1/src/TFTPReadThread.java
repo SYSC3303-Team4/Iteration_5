@@ -44,15 +44,17 @@ class TFTPReadThread  extends ServerThread implements Runnable
 	private DatagramPacket receivePacket;
 	private DatagramPacket sendPacket;
 	private DatagramSocket sendReceiveSocket;
+	private boolean verbose;
 	private int blockNumber = 1;
 	private String threadNumber;
 	public static final byte[] response = {0, 3, 0, 0};
 
 
-	public TFTPReadThread(JTextArea transcript, DatagramPacket receivePacketInfo, String thread) {
+	public TFTPReadThread(JTextArea transcript, DatagramPacket receivePacketInfo, String thread, Boolean verboseMode) {
 		this.transcript = transcript;
 		receivePacket = receivePacketInfo;
 		threadNumber  = thread;
+		verbose = verboseMode;
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) {
@@ -64,11 +66,13 @@ class TFTPReadThread  extends ServerThread implements Runnable
 	public void run() {
 
 		System.out.println("Server: Received packet:");
+		if(verbose){
 		System.out.println("From host: " + receivePacket.getAddress());
 		System.out.println("From host port: " + receivePacket.getPort());
 		System.out.println("Length: " + receivePacket.getLength());
 		System.out.println("Containing: ");
 		System.out.println(new String(receivePacket.getData(),0,receivePacket.getLength()));
+		}
 		/* Exit Gracefully if the stop is requested. */
 		if(stopRequested){exitGraceFully();}
 		//Parsing Data for filename
@@ -92,6 +96,7 @@ class TFTPReadThread  extends ServerThread implements Runnable
 				}
 			}
 		}
+		
 
 		/* Exit Gracefully if the stop is requested. */
 		if(stopRequested){exitGraceFully();}
@@ -148,12 +153,14 @@ class TFTPReadThread  extends ServerThread implements Runnable
 					receivePacket.getAddress(), receivePacket.getPort());
 			len = sendPacket.getLength();
 			System.out.println("Server: Sending packet:");
+			if(verbose){
 			System.out.println("To host: " + sendPacket.getAddress());
 			System.out.println("Destination host port: " + sendPacket.getPort());
 
 			System.out.println("Length: " + len);
 			System.out.println("Containing: ");
 			System.out.println(Arrays.toString(sendPacket.getData()));
+			}
 
 			// Send the datagram packet to the client via a new socket.
 
@@ -178,6 +185,7 @@ class TFTPReadThread  extends ServerThread implements Runnable
 				System.exit(1);
 			} 
 			System.out.println("Server: Received packet:");
+			if(verbose){
 			System.out.println("From host: " + receivePacket.getAddress());
 			System.out.println("From host port: " + receivePacket.getPort());
 			System.out.println("Length: " + receivePacket.getLength());
@@ -190,6 +198,7 @@ class TFTPReadThread  extends ServerThread implements Runnable
 					0,filename.toByteArray().length));
 			System.out.println("	Mode: " + new String(mode.toByteArray(),
 					0,mode.toByteArray().length) + "\n");
+			}
 			//Check for ACK in format  
 			/*
 			2 bytes    2 bytes

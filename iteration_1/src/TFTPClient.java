@@ -109,7 +109,7 @@ public class TFTPClient extends JFrame
 	//declaring local class constants
 	private static final int IN_PORT_HOST = 23;
 	private static final int IN_PORT_SERVER = 69;
-	private static final int MAX_SIZE = 512;
+	private static final int MAX_SIZE = 516;
 	private static final byte[] OPCODE_RRQ =  {0,1}; 
 	private static final byte[] OPCODE_WRQ =  {0,2};
 	private static final byte[] OPCODE_DATA = {0,3};
@@ -474,7 +474,7 @@ public class TFTPClient extends JFrame
 			//check to see if this is final packet
 			System.out.println(rawData.length);
 			System.out.println(recievedPacket.getLength());
-			if (recievedPacket.getLength() < MAX_SIZE+4)
+			if (recievedPacket.getLength() < MAX_SIZE)
 			{
 				loop = false;
 			}
@@ -495,7 +495,7 @@ public class TFTPClient extends JFrame
 	public void receivePacket(String type)
 	{	
 		//prep for response
-		byte[] response = new byte[MAX_SIZE+4];
+		byte[] response = new byte[MAX_SIZE];
 		recievedPacket = new DatagramPacket(response, response.length);
 		
 		//wait for response
@@ -551,6 +551,7 @@ public class TFTPClient extends JFrame
 		fileChooserFrame = new JTextArea(5,40);
 		fileChooser = new JFileChooser();
 		
+		
 		//Find whether you want to run in test mode or not
 		System.out.println("Test mode: (T)rue or (F)alse?");
 		String testBool = scan.nextLine();
@@ -580,7 +581,7 @@ public class TFTPClient extends JFrame
 			String requestRBool = scan.nextLine();
 			client.sendRRQ(requestRBool,"octet");
 		}
-
+		
 		//receive server response
 		
 		
