@@ -97,11 +97,13 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 	       }
 		    /* Exit Gracefully if the stop is requested. */
 			if(stopRequested){exitGraceFully();}
+			if(verbose){
 		   System.out.println("Request parsed for:");
 		   System.out.println("	Filename: " + new String(filename.toByteArray(),
 				   0,filename.toByteArray().length));
 		   System.out.println("	Mode: " + new String(mode.toByteArray(),
 				   0,mode.toByteArray().length) + "\n");
+			}
     	
     	while(true){
 	       int len, j=0;
@@ -150,8 +152,10 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 		       }
 		        /* Exit Gracefully if the stop is requested. */
 				if(stopRequested){exitGraceFully();}
+				if(verbose){
 		       System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
 		       System.out.println();
+				}
 		   }
 
 	       //Wait for next DATA datagram in format:
@@ -198,7 +202,9 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 			}
 
 	       if(data.length<512){
+	    	   if(verbose){
 	    	   System.out.println("Server: Final Data Block Received.");
+	    	   }
 	    	   exitGraceFully();
 	       }
 
@@ -251,8 +257,10 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 	       }
 			/* Exit Gracefully if the stop is requested. */
 		 if(stopRequested){exitGraceFully();}
+		 if(verbose){
 	       System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
 	       System.out.println();
+		 }
        }
 
        // We're finished with this socket, so close it.

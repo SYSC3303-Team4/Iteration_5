@@ -68,6 +68,12 @@ public class TFTPServer extends JFrame{
        
        out.setVisible(true);
        
+        Boolean verbose = false;
+		System.out.println("Verbose mode: (T)rue or (F)alse?");
+		String verboseBool = scan.nextLine();
+		if (verboseBool.equalsIgnoreCase("T")) verbose = true;
+		else {}
+       
 	   
       try {
          // Construct a datagram socket and bind it to port 69
@@ -84,11 +90,7 @@ public class TFTPServer extends JFrame{
    {
 	  // out.append("Initializing Server...\n");
 	 //Find whether you want to run in verbose mode or not
-	   Boolean verboseMode = false;
-	 		System.out.println("Verbose mode: (T)rue or (F)alse?");
-	 		String verboseBool = scan.nextLine();
-	 		if (verboseBool.equalsIgnoreCase("T")) verboseMode = true;
-	 		else {}
+	   
 
       byte[] data,
              response = new byte[4];
@@ -166,12 +168,12 @@ public class TFTPServer extends JFrame{
          // Create a response.
          if (req==Request.READ) { // for Read it's 0301
         	 threadNum++;
-        	Thread readRequest =  new Thread(initializedThreads, new TFTPReadThread(out, receivePacket, "Thread "+threadNum, verboseMode));
+        	Thread readRequest =  new Thread(initializedThreads, new TFTPReadThread(out, receivePacket, "Thread "+threadNum, verbose));
         	readRequest.start();
             response = readResp;
          } else if (req==Request.WRITE) { // for Write it's 0400
         	threadNum++;
-        	Thread writeRequest =  new Thread(initializedThreads, new TFTPWriteThread(out, receivePacket,"Thread "+threadNum, verboseMode));
+        	Thread writeRequest =  new Thread(initializedThreads, new TFTPWriteThread(out, receivePacket,"Thread "+threadNum, verbose));
          	writeRequest.start();
             response = writeResp;
          } else { // it was invalid, just quit

@@ -100,9 +100,11 @@ class TFTPReadThread  extends ServerThread implements Runnable
 
 		/* Exit Gracefully if the stop is requested. */
 		if(stopRequested){exitGraceFully();}
+		if(verbose){
 		System.out.println("Request parsed for:");
 		System.out.println("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
 		System.out.println("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
+		}
 
 		TFTPReader reader = new TFTPReader();
 		try {
@@ -174,8 +176,10 @@ class TFTPReadThread  extends ServerThread implements Runnable
 
 			/* Exit Gracefully if the stop is requested. */
 			if(stopRequested){exitGraceFully();}
+			if(verbose){
 			System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
 			System.out.println();
+			}
 
 			//Waiting to receive ACK
 			try {
