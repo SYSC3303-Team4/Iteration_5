@@ -57,7 +57,7 @@ class TFTPWriteThread implements Runnable
         try {
 			receiveSocket = new DatagramSocket();
 		} catch (SocketException e) {
-			// TODO Auto-generated catch block
+			// TODO Auto-generated catch block  
 			e.printStackTrace();
 		}
     }

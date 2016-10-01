@@ -146,7 +146,7 @@ class TFTPReadThread implements Runnable
 			   sendSocket.send(sendPacket);
 			} catch (IOException e) {
 			   e.printStackTrace();
-			   System.exit(1);
+			   System.exit(1); 
 			}
 	
 			System.out.println("Server: packet sent using port " + sendSocket.getLocalPort());
