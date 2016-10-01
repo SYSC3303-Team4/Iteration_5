@@ -448,7 +448,7 @@ public class TFTPClient extends JFrame
 			//Process data
 			rawData = new byte[recievedPacket.getLength()] ;
 			rawData = recievedPacket.getData();					//check later, buggy
-			procData = new byte[rawData.length - 4];			//ditto
+			procData = new byte[rawData.length - 4];			//ditto 
 			byte[] blockNum = new byte[2];
 			for(int i=0; i<procData.length; i++)
 			{

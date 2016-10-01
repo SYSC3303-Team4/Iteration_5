@@ -176,7 +176,7 @@ class TFTPReadThread  extends ServerThread implements Runnable
 			} catch (IOException e) {
 				e.printStackTrace();
 				System.exit(1);
-			}
+			} 
 			System.out.println("Server: Received packet:");
 			System.out.println("From host: " + receivePacket.getAddress());
 			System.out.println("From host port: " + receivePacket.getPort());
