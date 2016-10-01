@@ -3,7 +3,7 @@
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
 *Date of Update:    29/09/2016                                              
-*Version:           1.1.4                                                      
+*Version:           1.1.5                                                      
 *                                                                                   
 *Purpose:           Generates a datagram following the format of [0,R/W,STR1,0,STR2,0],
 					in which R/W signifies read (1) or write (2), STR1 is a filename,
@@ -16,8 +16,11 @@
 * 
 * 
 *Update Log:		v1.1.5
-*						- recieve method started
+*						- recieve method implimented
 *						- generateDATA() method patched to send OPcode
+*						- client now sends ACKs
+*						- port error patched
+*						- block numbers working now (shoutout to Nate for the code to do that)
 *					v1.1.4 
 *						- numerous dangerous accessors/mutators removed
 *						  (they were [and should] never called)
@@ -101,6 +104,7 @@ public class TFTPClient
 	private static final byte[] OPCODE_RRQ =  {0,1}; 
 	private static final byte[] OPCODE_WRQ =  {0,2};
 	private static final byte[] OPCODE_DATA = {0,3};
+	private static final byte[] OPCODE_ACK = {0,4};
 	
 	
 	//generic constructor
@@ -173,8 +177,13 @@ public class TFTPClient
 	
 	//generate DatagramPacket, save as sentPacket
 	//type: DATA
-	private void generateDATA()
+	private void generateDATA(int blockNum)
 	{
+		//prep for block num
+		byte[] blockNumArr = new byte[2];
+		blockNumArr[0]=(byte)(blockNum & 0xFF);
+		blockNumArr[1]=(byte)((blockNum >> 8)& 0xFF);
+	    
 		if(verbose)
 		{
 			System.out.println("Client: Prepping DATA packet #" + "NULL");
@@ -191,7 +200,7 @@ public class TFTPClient
 		}
 		for(int i = 2; i < 4; i++)
 		{
-			toSend[i] = 0x09 ;
+			toSend[i] = blockNumArr[i-2] ;
 		}
 		for(int i = 0; i < data.length; i++)
 		{
@@ -202,6 +211,34 @@ public class TFTPClient
 		try
 		{
 			sentPacket = new DatagramPacket(toSend, toSend.length, InetAddress.getLocalHost(), outPort);
+			if(verbose)
+			{
+				System.out.println("Client: Packet successfully created");
+			}
+		}
+		catch(UnknownHostException e)
+		{
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
+	}
+	
+	
+	//generate ACK
+	private void generateACK(byte[] ACKNum)
+	{
+		byte[] ack = new byte[4];
+		ack[0] = OPCODE_ACK[0];
+		ack[1] = OPCODE_ACK[1];
+		//add block num
+		ack[2] = ACKNum[2];
+		ack[3] = ACKNum[3];
+		
+		//generate and save datagram packet
+		try
+		{
+			sentPacket = new DatagramPacket(ack, ack.length, InetAddress.getLocalHost(), outPort);
 			if(verbose)
 			{
 				System.out.println("Client: Packet successfully created");
@@ -275,6 +312,10 @@ public class TFTPClient
 	//send datagram, recieve ACKs
 	public void sendWRQ(String file, String mode)
 	{
+		//initial
+		int blockNum = 1;
+		int oldPort = outPort;
+		
 		//read and split file
 		try
 		{
@@ -293,18 +334,23 @@ public class TFTPClient
 		sendPacket();
 		//wait for ACK
 		receivePacket("ACK");
+		//change port to wherever ACK came from
+		outPort = recievedPacket.getPort();
 		
 		//send DATA
 		while ( !(reader.isEmpty()) )
 		{
 			//send DATA
-			generateDATA();
+			generateDATA(blockNum);
 			sendPacket();
 			
-			//receiveACK();
-			receivePacket("ACK");
+			//wait for ACK
+			receiveACK();
 			
 		}
+		
+		//reset port
+		outPort = oldPort;
 	}
 	
 	
@@ -369,21 +415,35 @@ public class TFTPClient
 	
 	
 	//receive data and save
-	public void receiveData(String file)
+	public void receiveData(String file, String mode)
 	{
-		//receive packet
-		receivePacket("HEADER");
-		
-		//deconstruct packet to remove data (ie get filename)
-		byte[] data = recievedPacket.getData();
-		//save filename for later use for writing data
-		
-		//send ACK back to server
+		//send read request
+		generateRWRQ(file, mode, OPCODE_RRQ);
+		sendPacket();
 		
 		//receive loop for data
-		
-		
-		
+		byte[] data;
+		boolean loop = true;
+		while(loop)
+		{
+			receivePacket("DATA");
+			data = recievedPacket.getData();
+			byte[] blockNum = new byte[2];
+			
+			//check to see if this is final packet
+			if (data.length < MAX_SIZE+4)
+			{
+				loop = false;
+			}
+			
+			//get block num
+			blockNum[0] = data[2];
+			blockNum[1] = data[3];
+			
+			//send out ACK and prep for more data
+			generateACK(blockNum);
+			sendPacket();
+		}	
 	}
 	
 	
