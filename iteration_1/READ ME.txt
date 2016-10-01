@@ -1,0 +1,199 @@
+*********************************************************
+*	______ _____  ___ ______  ___  ___ _____ 	*
+*	| ___ \  ___|/ _ \|  _  \ |  \/  ||  ___|	*
+*	| |_/ / |__ / /_\ \ | | | | .  . || |__  	*
+*	|    /|  __||  _  | | | | | |\/| ||  __| 	*
+*	| |\ \| |___| | | | |/ /  | |  | || |___ 	*
+*	\_| \_\____/\_| |_/___/   \_|  |_/\____/ 	*
+*							*
+*********************************************************
+
+                       
+
+
+TFTP Project - Iteration 1
+SYSC 3303
+Group 4
+
+Adam Staples			[100######]
+Dan Hogan			[100######]
+Jason Van Kerkhoven		[100974276]
+Nathanial Charlebois		[100964496]
+Sarah Garlough			[100965386]
+
+30/09/2016
+
+
+-----------------------------------------------------------
+TEAM LOGISTICS
+
+	Adam Staples
+		- Test case implimentation
+		- UI work on Client classs
+		- UI debugging
+	
+	Dan Hogan
+		- Wrote ServerThread.java
+		- In charge of merging code
+		- General debugging for all files
+		- Lots of debug for thread logic
+		- Github managment
+	
+	Jason Van Kerkhoven
+		- Wrote TFTPClient.java
+		- Wrote TFTPHost.java
+		- Wrote TFTPReader.java
+		- Debug Client-Server communication
+		- Read Me
+
+	Nathanial Charlenpos
+		- Wrote TFTPServer.java
+		- Wrote TFTPReadThread.java
+		- Wrote TFTPWriteThread.java
+		- Debugged thread logic
+		- Debug Client-Server communication
+	
+	Sarah Garlough
+		- Wrote TFTPWriter.java
+		- UML artisan
+		- Group communication forum admin
+		- UI for Client and Server classes
+		- UCM MC
+
+
+-----------------------------------------------------------
+CONTENTS:
+	ServerThread.java	
+	TFTPCLient.java		
+	TFTPHost.java		
+	TFTPReadThread.java	
+	TFTPReader.java		
+	TFTPServer.java		
+	TFTPWriteThread.java	
+	TFTPWriter.java		
+
+
+------------------------------------------------------------
+SET UP INSTRUCTIONS:
+	
+	1.	Load all files into Eclipse workspace/project
+	2.	Build project
+	3.	Run Server.java
+	4.	Run Client.java
+
+
+	*Note that both programs must be running concurently for 
+	correct results*
+
+
+------------------------------------------------------------
+FILE INFORMATION:
+
+ServerThread.java
+
+	null
+
+
+TFTPCLient.java
+
+	Makes a read or write request to either a TFTPServer or a
+	TFTPHost. When read, sends a datagram:RRQ/WRQ, then procedes
+	to recieve datagrams:DATA from the server/host. Sends an
+	ACK to server after each datagram is received. Writes all
+	incoming data to a file.
+	Client can also make a write request to the server. It sends
+	a packet to the server, and waits for an ACK to be sent in response.
+	Loops until all data is sent. Packet specification and type can be
+	found in TFTP REFERENCE section of READ ME.
+	
+
+TFTPHost.java
+
+	Acts as a server, but allows errors to be simulated and propigated.
+
+
+TFTPReadThread.java
+
+	Is initialized by the TFTPServer to complete a read request TFTP file transfer with the client. 
+	Initially sends data to the request packet port and then waits to receive acknowledgements. Completes 
+	the read process by reading data less than the maximum size (512).  
+	
+
+TFTPReader.java
+
+	Takes a file and divides it into 512 Byte sections. Links these sections
+	together as a linked list. Used to read files and split into 512 Byte long
+	byte arrays (as according to the DATA packet type specification for TFTP). 
+
+
+TFTPServer.java
+
+	Receives requests from client(s). Can perform both read or write requests.
+	Write requests entail receiving the request from the client in the form
+	of a HEADER packet, acknowlegding said packet (sending an ACK), and then
+	alternating between receiving packets/writing said data to a file and
+	sending ACKs to the client.
+	Can also handle read requestions. Receives HEADER packet from client, procedes
+	to read a file and send client DATA packets (512B max data size), waiting
+	in between each packet for client to acknowledge (ACK).
+	
+
+TFTPWriteThread.java
+
+	Is initialized by the TFTPServer to complete a Write request TFTP file transfer 
+	with the client. Initially sends a block zero acknowledgement and waits to receive data. 
+	Completes the write process by writing data less than the maximum size (512).  
+
+
+TFTPWriter.java
+
+	Passed byte array and file name by caller. Creates file name based off of passed 
+	info, then writes byte array to file. If the file already exits, defaults to not 
+	overwriting.
+
+
+------------------------------------------------------------
+TFTP REFERENCE
+	
+	READ REQUEST (RRQ):
+
+		2 bytes     string    1 byte     string   1 byte
+    		------------------------------------------------
+       	       |  0  1	|  Filename  |   0  |    Mode    |   0  |
+     		------------------------------------------------
+
+
+	WRITE REQUEST (WRW):
+
+		2 bytes     string    1 byte     string   1 byte
+    		------------------------------------------------
+       	       |  0  2	|  Filename  |   0  |    Mode    |   0  |
+     		------------------------------------------------
+
+
+	DATA PACKET:
+		    	 2 bytes     2 bytes   n bytes (max 512)
+                  	----------------------------------
+                       |  0  3  |   Block #  |   Data     |
+                   	----------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
