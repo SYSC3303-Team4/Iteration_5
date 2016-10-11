@@ -46,7 +46,7 @@ TEAM LOGISTICS
 		- Debug Client-Server communication
 		- Read Me
 
-	Nathanial Charlenpos
+	Nathanial Charlebois
 		- Wrote TFTPServer.java
 		- Wrote TFTPReadThread.java
 		- Wrote TFTPWriteThread.java
