@@ -18,7 +18,7 @@ Group 4
 Adam Staples			[100978589]
 Dan Hogan			[100929795]
 Jason Van Kerkhoven		[100974276]
-Nathanial Charlebois		[100964496]
+Nathaniel Charlebois		[100964496]
 Sarah Garlough			[100965386]
 
 30/09/2016
@@ -46,7 +46,7 @@ TEAM LOGISTICS
 		- Debug Client-Server communication
 		- Read Me
 
-	Nathanial Charlebois
+	Nathaniel Charlebois
 		- Wrote TFTPServer.java
 		- Wrote TFTPReadThread.java
 		- Wrote TFTPWriteThread.java
