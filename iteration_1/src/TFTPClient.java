@@ -219,7 +219,6 @@ public class TFTPClient extends JFrame
 		//generate and save datagram packet
 		try
 		{
-			System.out.println(outPort);
 			sentPacket = new DatagramPacket(toSend, toSend.length, InetAddress.getLocalHost(), outPort);
 			if(verbose)
 			{

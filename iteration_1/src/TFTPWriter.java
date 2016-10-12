@@ -28,7 +28,7 @@ public class TFTPWriter
 {
 	
 	
-	public void write(byte[] data, String file) throws FileNotFoundException, IOException 
+	public void write(byte[] data, String file) throws FileNotFoundException, IOException
 	{
 		//prep to write to file
 		FileOutputStream output = new FileOutputStream(file,true);//set to false if dont always want to write to end of file

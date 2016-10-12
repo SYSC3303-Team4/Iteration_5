@@ -68,11 +68,11 @@ public class TFTPServer extends JFrame{
        
        out.setVisible(true);
        
-        Boolean verbose = false;
+        Boolean verbose = true;
 		System.out.println("Verbose mode: (T)rue or (F)alse?");
 		String verboseBool = scan.nextLine();
 		if (verboseBool.equalsIgnoreCase("T")) verbose = true;
-		else {}
+
        
 	   
       try {

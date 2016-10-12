@@ -59,6 +59,8 @@ class TFTPReadThread  extends ServerThread implements Runnable
 		receivePacket = receivePacketInfo;
 		threadNumber  = thread;
 		verbose = verboseMode;
+		
+		System.out.println(verboseMode);
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) {
@@ -71,11 +73,11 @@ class TFTPReadThread  extends ServerThread implements Runnable
 
 		System.out.println("Server: Received packet:");
 		if(verbose){
-		System.out.println("From host: " + receivePacket.getAddress());
-		System.out.println("From host port: " + receivePacket.getPort());
-		System.out.println("Length: " + receivePacket.getLength());
-		System.out.println("Containing: ");
-		System.out.println(new String(receivePacket.getData(),0,receivePacket.getLength()));
+			System.out.println("From host: " + receivePacket.getAddress());
+			System.out.println("From host port: " + receivePacket.getPort());
+			System.out.println("Length: " + receivePacket.getLength());
+			System.out.println("Containing: ");
+			System.out.println(new String(receivePacket.getData(),0,receivePacket.getLength()));
 		}
 		
 	    if(receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 5){
@@ -111,9 +113,9 @@ class TFTPReadThread  extends ServerThread implements Runnable
 			/* Exit Gracefully if the stop is requested. */
 			if(stopRequested){exitGraceFully();}
 			if(verbose){
-			System.out.println("Request parsed for:");
-			System.out.println("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
-			System.out.println("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
+				System.out.println("Request parsed for:");
+				System.out.println("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
+				System.out.println("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
 			}
 	
 			TFTPReader reader = new TFTPReader();
