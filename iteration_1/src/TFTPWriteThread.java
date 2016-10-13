@@ -28,12 +28,15 @@
 */
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.Arrays;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileAlreadyExistsException;
 
 import javax.swing.JTextArea;
 
@@ -196,19 +199,21 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 		       }
 		       
 
-		       
+
 		       //Write file to directory
-		       TFTPWriter writer = new TFTPWriter();
+		       TFTPWriter writer = new TFTPWriter();    	 
+				
 		       try {
 					writer.write(data,"Tester" + filename.toString());
-				} catch (FileNotFoundException e1) {
-					buildError(1,receivePacket,verbose);
-					// TODO Auto-generated catch block
+				} catch (AccessDeniedException e1) {
+					buildError(2,receivePacket,verbose);
 					e1.printStackTrace();
-				} catch (IOException e1) {
+				} catch (FileAlreadyExistsException e) {
 					buildError(3,receivePacket,verbose);
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					e.printStackTrace();
+				} catch(IOException e2){
+					buildError(6,receivePacket,verbose);
+					e2.printStackTrace();
 				}
 
 		       if(data.length<512){
@@ -230,7 +235,8 @@ class TFTPWriteThread  extends ServerThread implements Runnable
 			   response[3]=receivePacket1.getData()[3];
 			   blockNumber++;
 
-
+			   
+			   
 		       sendPacket = new DatagramPacket(response, response.length,
 					     receivePacket.getAddress(), receivePacket.getPort());
 				/* Exit Gracefully if the stop is requested. */

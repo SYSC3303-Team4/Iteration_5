@@ -29,12 +29,13 @@
 *                 		-Added Error creating and sending
  */
 import java.io.ByteArrayOutputStream;
-
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.nio.file.AccessDeniedException;
 import java.util.*;
 
 import javax.swing.JTextArea;
@@ -117,6 +118,11 @@ class TFTPReadThread  extends ServerThread implements Runnable
 				System.out.println("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
 				System.out.println("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
 			}
+			
+			File file = new File(filename.toString());
+			if(file.canRead() == false){
+				buildError(2,receivePacket,verbose);
+			}
 	
 			TFTPReader reader = new TFTPReader();
 			try {
@@ -124,13 +130,12 @@ class TFTPReadThread  extends ServerThread implements Runnable
 	
 			} catch (FileNotFoundException e1) {
 				buildError(1,receivePacket,verbose);
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
-			} catch (IOException e1) {
-				buildError(3,receivePacket,verbose);
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			} catch (IOException e) {
+				buildError(2,receivePacket,verbose);
+				e.printStackTrace();
 			}
+			
 	
 			while(true){
 				int len;
