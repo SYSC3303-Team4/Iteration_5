@@ -21,6 +21,8 @@
 
 //import stuff
 import java.io.*;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileAlreadyExistsException;
 
 
 
@@ -28,7 +30,7 @@ public class TFTPWriter
 {
 	
 	
-	public void write(byte[] data, String file) throws FileNotFoundException, IOException
+	public void write(byte[] data, String file) throws  IOException, AccessDeniedException, FileAlreadyExistsException 
 	{
 		//prep to write to file
 		FileOutputStream output = new FileOutputStream(file,true);//set to false if dont always want to write to end of file

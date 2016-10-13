@@ -49,14 +49,22 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     	
     	String errorMsg = new String("Unknown Error.");
     	switch(errorCode){
-	    	case 1: errorCode = 1;
+	    	case 1:
+	    		errorCode = 1;
 	    		errorMsg = "File not found.";
-	    	case 2: errorCode = 2;
+	    		break;
+	    	case 2: 
+	    		errorCode = 2;
 	    		errorMsg = "Access violation.";
-	    	case 3: errorCode = 3;
+	    		break;
+	    	case 3: 
+	    		errorCode = 3;
 	    		errorMsg = "Disk full or allocation exceeded.";
-	    	case 4: errorCode = 6;
+	    		break;
+	    	case 6: 
+	    		errorCode = 6;
 	    		errorMsg = "File already exists.";
+	    		break;
     	}
     	
     	byte[] data = new byte[errorMsg.length() + errorSizeFactor];
