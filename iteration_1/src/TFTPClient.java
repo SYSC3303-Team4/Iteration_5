@@ -91,6 +91,7 @@ import java.util.*;
 import javax.swing.*;
 
 
+@SuppressWarnings("serial")
 public class TFTPClient extends JFrame
 {
 	//declaring local instance variables
@@ -497,6 +498,24 @@ public class TFTPClient extends JFrame
 		byte[] response = new byte[MAX_SIZE+4];
 		recievedPacket = new DatagramPacket(response, response.length);
 		
+		byte errorType=response[3]; 
+		
+		
+		//error handeleing
+		switch(errorType)
+		{
+    	case 1: errorType = 1;
+    		System.out.println("File not found, please select again");
+    	case 2: errorType = 2;
+    		System.out.println("You do not have the rights for this, please select again");
+    	case 3: errorType = 3;
+    		System.out.println("Location full, please select a new location to write to");
+    	case 4: errorType = 6;
+    		System.out.println("The file already exists, please select a new file");
+    	case 5: errorType=0;
+    	}
+		start(this);
+		
 		//wait for response
 		if (verbose)
 		{
@@ -563,6 +582,13 @@ public class TFTPClient extends JFrame
 		else {client.verboseMode(false);}
 		
 		//Find whether you want to run in test mode or not
+		
+		start(client);
+	}		
+		
+		
+public static void start(TFTPClient cl)
+{
 		System.out.println("Send a: (R)ead or (W)rite?");
 		String requestBool = scan.nextLine();
 		if(requestBool.equalsIgnoreCase("W")){
@@ -572,14 +598,15 @@ public class TFTPClient extends JFrame
 			if (result == JFileChooser.APPROVE_OPTION) {//file is found
 			    file = fileChooser.getSelectedFile();//get file name
 			}
-			//send full fille (includes wait for ACK)
-			client.sendWRQ(file.getName(), "octet");
+			//send full fill (includes wait for ACK)
+			cl.sendWRQ(file.getName(), "octet");//changed from client.yayayay
 		}
 		else{
 			System.out.print("Enter file name: ");
 			String requestRBool = scan.nextLine();
-			client.sendRRQ(requestRBool,"octet");
+			cl.sendRRQ(requestRBool,"octet");//change from client.yayayayay
 		}
+}
 		
 		//receive server response
 		
@@ -621,4 +648,3 @@ public class TFTPClient extends JFrame
 		client.receiveAndEcho();
 		*/
 	}
-}
