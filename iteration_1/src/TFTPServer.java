@@ -25,7 +25,7 @@ public class TFTPServer extends JFrame{
    // UDP datagram packets and sockets used to send / receive
    private DatagramPacket sendPacket, receivePacket;
    private DatagramSocket receiveSocket, sendSocket;
-   private boolean verbose;
+   private static boolean verbose = false;
    private static Scanner scan= new Scanner(System.in);
    
    /**
@@ -67,8 +67,6 @@ public class TFTPServer extends JFrame{
        pane3.setBorder(BorderFactory.createTitledBorder("Command Line"));
        
        out.setVisible(true);
-       
-        Boolean verbose = true;
 		System.out.println("Verbose mode: (T)rue or (F)alse?");
 		String verboseBool = scan.nextLine();
 		if (verboseBool.equalsIgnoreCase("T")) verbose = true;
