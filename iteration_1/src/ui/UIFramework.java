@@ -3,7 +3,7 @@
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
 *Date of Update:    12/010/2016                                              
-*Version:           1.0.0                                                      
+*Version:           1.0.1                                                   
 *                                                                                   
 *Purpose:           Basic framework outlining how any UI implemented will function.
 *					Allows for easy modification later if a replacement or subsisted
@@ -11,7 +11,7 @@
 * 
 * 
 *Update Log:		v1.0.0
-*						- null
+*						- framework methods altered slightly
 */
 package ui;
 
@@ -23,8 +23,14 @@ interface UIFramework
 	public abstract void print(String printable);
 
 	//generic method to take in user input
-	public abstract void input(String in);
+	public abstract String getInput();
 	
 	//generic method to take in user input and display it as well
-	public abstract void inputAndPrint(String in);
+	public abstract String inputAndPrint();
+	
+	//generic method to print indented to screen
+	public abstract void printIndent(String printable);
+	
+	//generic method to clear screen
+	public abstract void clear();
 }

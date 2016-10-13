@@ -8,8 +8,17 @@
 *Purpose:           Generic console for basic output/inputs
 * 
 * 
-*Update Log:		v1.0.0
-*						- null
+*Update Log:		v1.0.1
+*						- runs on new thread
+*						- external synchronization added
+*						- new methods added
+*						- test method added in main()
+*						- now can return inputs
+*						- output area is now above input field (as it should be)
+*						- many variations on print method added
+*						- notifyAll() no longer causes total thread meltdown
+*					v1.0.0
+*						- very basic implimentation of framework v1.0.0
 */
 package ui;
 
@@ -20,96 +29,186 @@ import javax.swing.*;
 
 
 
-public class Console extends JPanel implements UIFramework, ActionListener
+public class Console extends JPanel implements UIFramework, ActionListener, Runnable
 {
 	//declaring local instance variables
-	private boolean verbose;
 	private String ID;
-	private JTextField outputField;
-	private JTextArea inputLine;
+	private JTextField inputLine;
+	private JTextArea outputArea;
+	private String input;
+	private boolean inputReady;
 	
 	
 	//generic constructor
 	public Console(String name)
 	{
-		//set up layout, save ID
+		//set up layout, save ID, initialize
 		super(new GridBagLayout());
 		ID = name;
+		inputReady = false;
+		input = null;
 		
 		//create text fields for output and input
-		outputField = new JTextField(45);
-		outputField.addActionListener(this);
-		inputLine = new JTextArea(35,45);
-		inputLine.setEditable(false);
-		JScrollPane scrollPane = new JScrollPane(inputLine);
+		inputLine = new JTextField(45);
+		inputLine.addActionListener(this);
+		outputArea = new JTextArea(35,45);
+		outputArea.setEditable(false);
+		JScrollPane scrollPane = new JScrollPane(outputArea);
 
-        //Add Components to this panel.
+        //Add text areas in gridlayout
         GridBagConstraints c = new GridBagConstraints();
         c.gridwidth = GridBagConstraints.REMAINDER;
-
         c.fill = GridBagConstraints.HORIZONTAL;
-        add(outputField, c);
-
+        add(scrollPane, c);
         c.fill = GridBagConstraints.BOTH;
         c.weightx = 5.0;
         c.weighty = 5.0;
-        add(scrollPane, c);
+        add(inputLine, c);
 	}
 	
-    private static void createAndShowGUI() {
-        //Create and set up the window.
-        JFrame frame = new JFrame("TextDemo");
+	@Override
+	//final setup for console, set up window for visibility
+	public void run() 
+	{
+        //set up window
+        JFrame frame = new JFrame(ID);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
+        
         //Add contents to the window.
-        frame.add(new Console("ID"));
+        frame.add(this);
 
         //Display the window.
         frame.pack();
         frame.setVisible(true);
-    }
+	}
+	
+	
+	//return input, set flag
+	public synchronized String getInput()
+	{
+		//wait until input is detected
+		while(!inputReady)
+		{
+			try
+			{
+				wait();
+			}
+			catch(Exception e)
+			{
+				System.out.println("Error in putting thread to sleep");
+				//error handling
+			}
+		}
+		
+		//return and set flags
+		String ret = input;
+		input = null;
+		inputReady = false;
+		return ret;
+	}
 	
 	
 	@Override
-	public void print(String printable) 
-	{		
+	public synchronized void print(String printable) 
+	{
+        outputArea.append(" ".concat(printable + "\n"));
+        
+        //magic code to make sure stuff appears
+        outputArea.setCaretPosition(outputArea.getDocument().getLength());
 	} 
-
+	
 	
 	@Override
-	public void input(String in) 
+	public void printIndent(String printable)
 	{
+		print("        ".concat(printable));
+	}
+	
+	
+	@Override
+	public synchronized void clear()
+	{
+		outputArea.setText(null);
+	}
+	
+	public synchronized void println()
+	{
+		outputArea.append(" ".concat("\n"));
+        
+        //magic code to make sure stuff appears
+        outputArea.setCaretPosition(outputArea.getDocument().getLength());
+	}
+
+	
+	private synchronized String input() 
+	{
+		//prep inputLine to be cleared
+		inputLine.selectAll();
+		
+		//return contents of inputLine
+		return inputLine.getText();
 	}
 
 	
 	@Override
-	public void inputAndPrint(String in) 
+	public String inputAndPrint() 
 	{
-	}
-
-
-	@Override
-	public void actionPerformed(ActionEvent e) 
-	{	
-        String text = outputField.getText();
-        inputLine.append(text + "\n");
-        outputField.selectAll();
-
-        //Make sure the new text is visible, even if there
-        //was a selection in the text area.
-        inputLine.setCaretPosition(inputLine.getDocument().getLength());
-	}
-	
-
-	//for testing
-	public static void main (String[] args) 
-	{
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+		//get input
+		String inputStr = input();
+		
+		//print input in proper format
+		print(" >".concat(inputStr));
+		
+		//return input
+		return inputStr;
 		
 	}
 
+
+	@Override
+	//enter key pressed
+	public synchronized void actionPerformed(ActionEvent e) 
+	{	
+		//get input, set inputReady to 1, notify anybody waiting on input
+		input = inputAndPrint();
+		inputReady = true;
+		notifyAll();
+	}
+	
+	
+	
+	//for testing
+	public static void main (String[] args) 
+	{	
+		Console console = new Console("Test Console UI");
+		console.run();
+		String input;
+		
+		console.print("Running Output Test...");
+		console.printIndent("Raviolo");
+		console.printIndent("Raviolo");
+		console.printIndent("Give me the formioli");
+		console.print("Test Complete");
+		console.println();
+		
+		console.print("Running Input Test...");
+		input = console.getInput();
+		console.print("Input 1:    " + input);
+		input = console.getInput();
+		console.print("Input 2:    " + input);
+		console.print("Test Complete");
+		console.println();
+		
+		console.print("Running clear test...");
+		console.print("Enter 'clear'");
+		input = console.getInput();
+		System.out.println(input);
+		if (input.equals("clear"))
+		{
+			console.clear();
+		}
+		console.print("Test Complete");
+		
+	}
+	
 }
