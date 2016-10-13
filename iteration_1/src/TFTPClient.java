@@ -443,7 +443,9 @@ public class TFTPClient extends JFrame
 		{
 			//receive data
 			receivePacket("DATA");
+			System.out.println("RP = " +recievedPacket.getPort());
 			outPort = recievedPacket.getPort();
+			System.out.println("OP = " +outPort);
 			
 			//Process data
 			rawData = new byte[recievedPacket.getLength()] ;
@@ -498,24 +500,6 @@ public class TFTPClient extends JFrame
 		byte[] response = new byte[MAX_SIZE+4];
 		recievedPacket = new DatagramPacket(response, response.length);
 		
-		byte errorType=response[3]; 
-		
-		
-		//error handeleing
-		switch(errorType)
-		{
-    	case 1: errorType = 1;
-    		System.out.println("File not found, please select again");
-    	case 2: errorType = 2;
-    		System.out.println("You do not have the rights for this, please select again");
-    	case 3: errorType = 3;
-    		System.out.println("Location full, please select a new location to write to");
-    	case 4: errorType = 6;
-    		System.out.println("The file already exists, please select a new file");
-    	case 5: errorType=0;
-    	}
-		start(this);
-		
 		//wait for response
 		if (verbose)
 		{
@@ -523,7 +507,7 @@ public class TFTPClient extends JFrame
 		}
 		try
 		{
-			generalSocket.receive(recievedPacket);
+			generalSocket.receive(recievedPacket);			
 		}
 		catch(IOException e)
 		{
@@ -532,13 +516,49 @@ public class TFTPClient extends JFrame
 		}
 		if (verbose)
 		{
-		System.out.println("Client: " + type + " packet received");
+			System.out.println("Client: " + type + " packet received");
+			printDatagram(recievedPacket);
 		}
 		
-		//Process and print the response
-		if(verbose)
+		//check for errors
+		byte errorType=response[3];
+		response = recievedPacket.getData();
+		if(response[0] == 0 && response[1] == 5)
 		{
-			printDatagram(recievedPacket);
+			switch(errorType)
+			{
+				//file not found
+		    	case 1:
+		    			System.out.println("File not found, please select again");
+		    			start(this);
+		    			break;
+		    	//improper rights for R/W
+		    	case 2:
+		    			System.out.println("You do not have the rights for this, please select again");
+		    			start(this);
+		    			break;
+		    	//drive full
+		    	case 3:
+		    			System.out.println("Location full, please select a new location to write to");
+		    			start(this);
+		    			break;
+		    	//file already exists
+		    	case 6:
+		    			System.out.println("The file already exists, please select a new file");
+		    			start(this);
+		    			break;
+		    	//unknown error
+		    	default:
+		    			/* TO DO
+		    			 * something
+		    			 */
+		    			break;
+			}
+		}
+		//no error present
+		else
+		{
+
 		}
 	}
 	
@@ -608,7 +628,7 @@ public static void start(TFTPClient cl)
 		}
 }
 		
-		//receive server response
+		//receive server response 
 		
 		
 		

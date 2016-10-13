@@ -69,7 +69,9 @@ public class TFTPServer extends JFrame{
        out.setVisible(true);
 		System.out.println("Verbose mode: (T)rue or (F)alse?");
 		String verboseBool = scan.nextLine();
-		if (verboseBool.equalsIgnoreCase("T")) verbose = true;
+		if (verboseBool.equalsIgnoreCase("T")){
+			verbose = true;
+		}
 
        
 	   
@@ -79,6 +81,7 @@ public class TFTPServer extends JFrame{
          // receive UDP Datagram packets.
          receiveSocket = new DatagramSocket(69);
       } catch (SocketException se) {
+    	  System.out.println("SOCKET BIND ERROR");
          se.printStackTrace();
          System.exit(1);
       }
