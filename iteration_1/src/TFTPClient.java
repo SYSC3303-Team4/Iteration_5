@@ -390,7 +390,7 @@ public class TFTPClient extends JFrame
 		//send packet
 		try
 		{
-			generalSocket.send(sentPacket);
+			generalSocket.send(sentPacket);   
 		}
 		catch (IOException e)
 		{
