@@ -49,7 +49,7 @@ class TFTPReadThread  extends ServerThread implements Runnable
 	private DatagramPacket sendPacket;
 	private DatagramSocket sendReceiveSocket;
 	private boolean verbose;
-	private int blockNumber = 1;
+	private static int blockNumber = 1;
 	private String threadNumber;
 	public static final byte[] response = {0, 3, 0, 0};
 
@@ -141,7 +141,8 @@ class TFTPReadThread  extends ServerThread implements Runnable
 				//Encode the block number into the response block 
 				response[3]=(byte)(blockNumber & 0xFF);
 				response[2]=(byte)((blockNumber >> 8)& 0xFF);
-				blockNumber++;
+				
+				System.out.println("BLOCK NUMBER INCREMENTED");
 	
 				//Building datagram		
 	
