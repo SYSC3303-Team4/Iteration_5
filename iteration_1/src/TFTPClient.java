@@ -504,42 +504,42 @@ public class TFTPClient extends JFrame
 		//error handeleing
 		switch(errorType)
 		{
-    	case 1: errorType = 1;
-    		System.out.println("File not found, please select again");
-    	case 2: errorType = 2;
-    		System.out.println("You do not have the rights for this, please select again");
-    	case 3: errorType = 3;
-    		System.out.println("Location full, please select a new location to write to");
-    	case 4: errorType = 6;
-    		System.out.println("The file already exists, please select a new file");
-    	case 5: errorType=0;
-    	}
+	    	case 1: errorType = 1;
+	    		System.out.println("File not found, please select again");
+	    	case 2: errorType = 2;
+	    		System.out.println("You do not have the rights for this, please select again");
+	    	case 3: errorType = 3;
+	    		System.out.println("Location full, please select a new location to write to");
+	    	case 4: errorType = 6;
+	    		System.out.println("The file already exists, please select a new file");
+	    	case 5: errorType=0;
+			
+			//wait for response
+			if (verbose)
+			{
+				System.out.println("Client: Waiting for " + type + " packet...");
+			}
+			try
+			{
+				generalSocket.receive(recievedPacket);
+			}
+			catch(IOException e)
+			{
+				e.printStackTrace();
+				System.exit(1);
+			}
+			if (verbose)
+			{
+			System.out.println("Client: " + type + " packet received");
+			}
+			
+			//Process and print the response
+			if(verbose)
+			{
+				printDatagram(recievedPacket);
+			}
+		}
 		start(this);
-		
-		//wait for response
-		if (verbose)
-		{
-			System.out.println("Client: Waiting for " + type + " packet...");
-		}
-		try
-		{
-			generalSocket.receive(recievedPacket);
-		}
-		catch(IOException e)
-		{
-			e.printStackTrace();
-			System.exit(1);
-		}
-		if (verbose)
-		{
-		System.out.println("Client: " + type + " packet received");
-		}
-		
-		//Process and print the response
-		if(verbose)
-		{
-			printDatagram(recievedPacket);
-		}
 	}
 	
 
