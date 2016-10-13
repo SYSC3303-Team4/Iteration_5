@@ -2,7 +2,7 @@
 *Class:             Console.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    12/010/2016                                              
+*Date of Update:    13/010/2016                                              
 *Version:           1.0.0                                                      
 *                                                                                   
 *Purpose:           Generic console for basic output/inputs
@@ -18,8 +18,34 @@
 *						- many variations on print method added
 *						- notifyAll() no longer causes total thread meltdown
 *					v1.0.0
-*						- very basic implimentation of framework v1.0.0
+*						- very basic implementation of framework v1.0.0
 */
+
+/*
+ * 	~~~~~~~~~~~~~~~~~~ HOW TO USE ~~~~~~~~~~~~~~~~~~
+ * 		1. 	create new console 	      --> Console myConsole = new Console("CONSOLE_NAME");
+ * 		2.	run console on new thread --> myConsole.run();
+ * 
+ * 		PRINT regular lines of text
+ * 		myConsole.print(someText)
+ * 
+ * 		PRINT indented text (useful for displaying packet contents)
+ * 		myConsole.printIndented(someText)
+ * 
+ * 		PRINT a new line
+ * 		myConsole.println()
+ * 
+ * 		CLEAR the console
+ * 		myConsole.clear()
+ * 
+ * 		get INPUT from console (note that the thread calling this will wait until input is
+ * 		ready in console - ie user presses enter)
+ * 		String input = myConsole.getInput() 
+ * 
+ * 		Lastly, please note all variations of the print method have formating included in them
+ * 		Additionally, note that all variations of print are to print a single line of text
+ * 		Sample code is included in main (also acts to test this class)
+ */
 package ui;
 
 //important libraries
@@ -177,6 +203,7 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 	
 	
 	
+	/*
 	//for testing
 	public static void main (String[] args) 
 	{	
@@ -208,7 +235,7 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 			console.clear();
 		}
 		console.print("Test Complete");
-		
 	}
+	*/
 	
 }
