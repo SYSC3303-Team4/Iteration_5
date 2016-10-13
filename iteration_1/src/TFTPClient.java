@@ -443,7 +443,9 @@ public class TFTPClient extends JFrame
 		{
 			//receive data
 			receivePacket("DATA");
+			System.out.println("RP = " +recievedPacket.getPort());
 			outPort = recievedPacket.getPort();
+			System.out.println("OP = " +outPort);
 			
 			//Process data
 			rawData = new byte[recievedPacket.getLength()] ;
@@ -498,48 +500,66 @@ public class TFTPClient extends JFrame
 		byte[] response = new byte[MAX_SIZE+4];
 		recievedPacket = new DatagramPacket(response, response.length);
 		
-		byte errorType=response[3]; 
-		
-		
-		//error handeleing
-		switch(errorType)
+		//wait for response
+		if (verbose)
 		{
-	    	case 1: errorType = 1;
-	    		System.out.println("File not found, please select again");
-	    	case 2: errorType = 2;
-	    		System.out.println("You do not have the rights for this, please select again");
-	    	case 3: errorType = 3;
-	    		System.out.println("Location full, please select a new location to write to");
-	    	case 4: errorType = 6;
-	    		System.out.println("The file already exists, please select a new file");
-	    	case 5: errorType=0;
-			
-			//wait for response
-			if (verbose)
-			{
-				System.out.println("Client: Waiting for " + type + " packet...");
-			}
-			try
-			{
-				generalSocket.receive(recievedPacket);
-			}
-			catch(IOException e)
-			{
-				e.printStackTrace();
-				System.exit(1);
-			}
-			if (verbose)
-			{
+			System.out.println("Client: Waiting for " + type + " packet...");
+		}
+		try
+		{
+			generalSocket.receive(recievedPacket);			
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace();
+			System.exit(1);
+		}
+		if (verbose)
+		{
 			System.out.println("Client: " + type + " packet received");
-			}
-			
-			//Process and print the response
-			if(verbose)
+			printDatagram(recievedPacket);
+		}
+		
+		//check for errors
+		byte errorType=response[3];
+		response = recievedPacket.getData();
+		if(response[0] == 0 && response[1] == 5)
+		{
+			switch(errorType)
 			{
-				printDatagram(recievedPacket);
+				//file not found
+		    	case 1:
+		    			System.out.println("File not found, please select again");
+		    			start(this);
+		    			break;
+		    	//improper rights for R/W
+		    	case 2:
+		    			System.out.println("You do not have the rights for this, please select again");
+		    			start(this);
+		    			break;
+		    	//drive full
+		    	case 3:
+		    			System.out.println("Location full, please select a new location to write to");
+		    			start(this);
+		    			break;
+		    	//file already exists
+		    	case 6:
+		    			System.out.println("The file already exists, please select a new file");
+		    			start(this);
+		    			break;
+		    	//unknown error
+		    	default:
+		    			/* TO DO
+		    			 * something
+		    			 */
+		    			break;
 			}
 		}
-		start(this);
+		//no error present
+		else
+		{
+
+		}
 	}
 	
 
