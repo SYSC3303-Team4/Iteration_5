@@ -14,7 +14,7 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-public class TFTPServer extends JFrame{
+public class TFTPServer extends JFrame{ 
 
    // types of requests we can receive
    public static enum Request { READ, WRITE, ERROR};
