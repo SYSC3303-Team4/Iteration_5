@@ -14,7 +14,7 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-public class TFTPServer extends JFrame{
+public class TFTPServer extends JFrame{ 
 
    // types of requests we can receive
    public static enum Request { READ, WRITE, ERROR};
@@ -179,7 +179,7 @@ public class TFTPServer extends JFrame{
             response = writeResp;
          } else { // it was invalid, just quit
             throw new Exception("Not yet implemented");
-         }
+         } 
 
          int caretOffset = commandLine.getCaretPosition();
          int lineNumber = commandLine.getLineOfOffset(caretOffset);

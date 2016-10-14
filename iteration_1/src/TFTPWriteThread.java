@@ -25,6 +25,10 @@
 *                 	v1.1.2
 *                 		-Added Error handling
 *                 		-Added Error creating and sending
+*                 	v1.1.3
+*                 		-Corrected Error handling
+*                		-Fixed many a bug
+*                		-Refactored printing code 
 */
 
 import java.io.ByteArrayOutputStream;
@@ -52,6 +56,7 @@ class TFTPWriteThread  extends ServerThread
     private int blockNumber = 0;
 	private boolean verbose;
     private String threadNumber;
+    private String path= "DEFAULT_TEST_WRITE";
     public static final byte[] response = {0, 4, 0, 0};
     
     
@@ -94,15 +99,7 @@ class TFTPWriteThread  extends ServerThread
 				   }
 				}
 		   }
-		    
-	       System.out.println("Server: Received packet:");
-	       if(verbose){
-	    	   System.out.println("From host: " + receivePacket.getAddress());
-	    	   System.out.println("From host port: " + receivePacket.getPort());
-	    	   System.out.println("Length: " + receivePacket.getLength());
-	    	   System.out.println("Containing: ");
-	    	   System.out.println(new String(receivePacket.getData(),0,receivePacket.getLength()));
-	       }
+		   printReceivedPacket(receivePacket, verbose);
 		    /* Exit Gracefully if the stop is requested. */
 	       if(isInterrupted()){exitGraceFully();return;}
 	       if(verbose){
@@ -114,8 +111,6 @@ class TFTPWriteThread  extends ServerThread
 			}
     	
 	       while(!isInterrupted()){
-	    	   int len, j=0;
-
 
 
 		   //Build and send the first ACK reply in format:
@@ -128,17 +123,8 @@ class TFTPWriteThread  extends ServerThread
 		   if(blockNumber == 0){
 			   sendPacket = new DatagramPacket(response, response.length,
 			       receivePacket.getAddress(), receivePacket.getPort());
-			   len = sendPacket.getLength();
-			    /* Exit Gracefully if the stop is requested. */
-		       if(isInterrupted()){continue;}
-		       System.out.println("Server: Sending packet:");
-		       if(verbose){
-		       System.out.println("To host: " + sendPacket.getAddress());
-		       System.out.println("Destination host port: " + sendPacket.getPort());
-		       System.out.println("Length: " + len);
-		       System.out.println("Containing: ");
-		       System.out.println(Arrays.toString(sendPacket.getData()));
-		       }
+
+			   printSendPacket(sendPacket,verbose);
 		       /*
 		       // Send the datagram packet to the client via a new socket.
 		       try {
@@ -188,7 +174,7 @@ class TFTPWriteThread  extends ServerThread
 	       }
 	      
 	       if(receivePacket1.getData()[0] == 0 && receivePacket1.getData()[1] == 5){
-	    	   printError(receivePacket1);
+	    	   printError(receivePacket1,verbose);
 	    	   
 	       }
 	       else{
@@ -205,7 +191,7 @@ class TFTPWriteThread  extends ServerThread
 		       TFTPWriter writer = new TFTPWriter();    	 
 				
 		       try {
-					writer.write(data,"Tester" + filename.toString());
+					writer.write(data,path + filename.toString());
 				} catch (AccessDeniedException e1) {
 					buildError(2,receivePacket,verbose);
 					e1.printStackTrace();
@@ -242,17 +228,7 @@ class TFTPWriteThread  extends ServerThread
 					     receivePacket.getAddress(), receivePacket.getPort());
 				/* Exit Gracefully if the stop is requested. */
 			   if(isInterrupted()){continue;}
-		       		System.out.println("Server: Sending packet:");
-		       if(verbose){
-			       System.out.println("To host: " + sendPacket.getAddress());
-			       System.out.println("Destination host port: " + sendPacket.getPort());
-			       
-			       System.out.println("Length: " + sendPacket.getLength());
-			       System.out.println("Block Number: " + blockNumber);
-			       System.out.println("Containing: " );
-			       System.out.println(Arrays.toString(sendPacket.getData()));
-		       }
-
+			   printSendPacket(receivePacket,verbose);
 
 		       // Send the datagram packet to the client via a new socket.
 

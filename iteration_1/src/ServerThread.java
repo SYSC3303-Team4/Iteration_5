@@ -28,7 +28,45 @@ public abstract class ServerThread extends Thread{
 		System.out.println("Server: Exiting Gracefully");
 	}
 	
-    protected void printError(DatagramPacket packet){
+	protected void printReceivedPacket(DatagramPacket receivedPacket, boolean verbose){
+		byte[] data = receivedPacket.getData();
+		int packetSize = receivedPacket.getLength();
+		System.out.println("Server: Received Packet");
+		System.out.println("        Source: " + receivedPacket.getAddress());
+		System.out.println("        Port:   " + receivedPacket.getPort());
+		System.out.println("        Bytes:  " + packetSize);
+		System.out.printf("%s", "        Cntn:  ");
+		for(int i = 0; i < packetSize; i++)
+		{
+			System.out.printf("0x%02X", data[i]);
+			System.out.printf("%-2c", ' ');
+		}
+		System.out.println("\n        Cntn:  " + (new String(data,0,packetSize)));
+		System.out.println();
+	}
+	
+	protected void printSendPacket(DatagramPacket sendPacket, boolean verbose){
+		System.out.println("Server: Sending packet...");
+		if(verbose)
+		{
+			byte[] data = sendPacket.getData();
+			int packetSize = sendPacket.getLength();
+			System.out.println("        Host:  " + sendPacket.getAddress());
+			System.out.println("        Port:  " + sendPacket.getPort());
+			System.out.println("        Bytes: " + sendPacket.getLength());
+			System.out.printf("%s", "        Cntn:  ");
+			for(int i = 0; i < packetSize; i++)
+			{
+				System.out.printf("0x%02X", data[i]);
+				System.out.printf("%-2c", ' ');
+			}
+			System.out.println("");
+			System.out.println("        Cntn:  " + (new String(data,0,packetSize)));
+			
+		}
+	}
+	
+    protected void printError(DatagramPacket packet,boolean verbose){
     	System.out.println("Server: Error packet received");
     	System.out.println("From client: " + packet.getAddress());
     	System.out.println("From client port: " + packet.getPort());
@@ -38,6 +76,47 @@ public abstract class ServerThread extends Thread{
 	    System.out.println("ErrorMessage: " );
 	    System.out.println(new String(packet.getData(),
 				   4,packet.getData().length-1));
+    }
+    /* Send Data packet with no data
+    2 bytes    2 bytes       0 bytes
+    ---------------------------------
+DATA  | 03    |   Block #  |    Data    |
+    ---------------------------------
+    */
+    protected void sendNoData(DatagramPacket receivePacket,boolean verbose,int blockNumber,DatagramSocket sendReceiveSocket){
+    	byte[] data = new byte[4];
+    	data[0] = 0;
+    	data[1] = 3;
+		//Encode the block number into the response block 
+		data[3]=(byte)(blockNumber & 0xFF);
+		data[2]=(byte)((blockNumber >> 8)& 0xFF);
+    	
+    	DatagramPacket sendPacket = new DatagramPacket(data, data.length,
+			     receivePacket.getAddress(), receivePacket.getPort());
+	/* Exit Gracefully if the stop is requested. */
+	   if(stopRequested){exitGraceFully();}
+      		System.out.println("Server: Sending packet:");
+      if(verbose){
+	       System.out.println("To host: " + sendPacket.getAddress());
+	       System.out.println("Destination host port: " + sendPacket.getPort());
+	       
+	       System.out.println("Length: " + sendPacket.getLength());
+	       System.out.println("Containing: " );
+	       System.out.println(Arrays.toString(sendPacket.getData()));
+      }
+
+      	try {
+      		sendReceiveSocket.send(sendPacket);
+      	} catch (IOException e) {
+      		e.printStackTrace();
+      		System.exit(1);
+      	}
+      	/* Exit Gracefully if the stop is requested. */
+      	if(stopRequested){exitGraceFully();}
+      	if(verbose){
+      		System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
+   	  	System.out.println();
+      	}
     }
     
     

@@ -24,9 +24,10 @@
  *                   	- Cleaned up code
  *                   	- Fixed Block numbers
  *                   
- *                 	v1.1.3
-*                 		-Added Error handling
-*                 		-Added Error creating and sending
+*                 	v1.1.3
+*                 		-Corrected Error handling
+*                		-Fixed many a bug
+*                		-Refactored printing code 
  */
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -51,6 +52,7 @@ class TFTPReadThread  extends ServerThread
 	private DatagramSocket sendReceiveSocket;
 	private boolean verbose;
 	private static int blockNumber = 1;
+	boolean sendZeroDataPacket = false;
 	private String threadNumber;
 	public static final byte[] response = {0, 3, 0, 0};
 
@@ -70,23 +72,13 @@ class TFTPReadThread  extends ServerThread
 			e.printStackTrace();
 		}
 	}
+	
 
 	public void run() {
+		
+		
+		printReceivedPacket(receivePacket, verbose);
 
-		System.out.println("Server: Received packet:");
-		if(verbose){
-			System.out.println("From host: " + receivePacket.getAddress());
-			System.out.println("From host port: " + receivePacket.getPort());
-			System.out.println("Length: " + receivePacket.getLength());
-			System.out.println("Containing: ");
-			System.out.println(new String(receivePacket.getData(),0,receivePacket.getLength()));
-		}
-
-		if(receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 5){
-			printError(receivePacket);
-
-		}
-		else{
 			/* Exit Gracefully if the stop is requested. */
 			if(isInterrupted()){exitGraceFully();return;}
 			//Parsing Data for filename
@@ -139,26 +131,42 @@ class TFTPReadThread  extends ServerThread
 			
 
 			while(!isInterrupted()){
-				int len;
-	
-	
-	
-	
+		
 				//Encode the block number into the response block 
 				response[3]=(byte)(blockNumber & 0xFF);
 				response[2]=(byte)((blockNumber >> 8)& 0xFF);
 				
-				System.out.println("BLOCK NUMBER INCREMENTED");
 	
 				//Building datagram		
 	
 	
 				byte[] data = reader.pop();
+				//Check if the server needs to send a data Packet with 0 bytes
+				if(data!=null){
+					if(data.length==512 && reader.peek()==null){
+						sendZeroDataPacket = true;
+					}
+				}
+
 				/* If there's no more data to be read exit. */
-				if(data == null){exitGraceFully();return;}
-
-
-
+				if(data == null){
+					if(sendZeroDataPacket == true){
+						sendNoData(receivePacket,verbose, blockNumber,sendReceiveSocket);
+						//Waiting to receive final ACK
+						byte[] finalACK = new byte[4];
+						DatagramPacket finalACKPacket = new DatagramPacket(finalACK, finalACK.length);
+						try {
+							sendReceiveSocket.receive(finalACKPacket);
+						} catch (IOException e) {
+							e.printStackTrace();
+							System.exit(1);
+						} 
+						
+						printReceivedPacket(finalACKPacket, verbose);
+					}
+					System.out.println("Read Request has completed.");
+					exitGraceFully();
+				}	
 				//Builds the datagram in format
 				/*
 				2 bytes    2 bytes       n bytes 
@@ -174,20 +182,10 @@ class TFTPReadThread  extends ServerThread
 				if(isInterrupted()){continue;}
 				sendPacket = new DatagramPacket(dataPrime, dataPrime.length,
 						receivePacket.getAddress(), receivePacket.getPort());
-				len = sendPacket.getLength();
-				System.out.println("Server: Sending packet:");
-				if(verbose){
-				System.out.println("To host: " + sendPacket.getAddress());
-				System.out.println("Destination host port: " + sendPacket.getPort());
-	
-				System.out.println("Length: " + len);
-				System.out.println("Containing: ");
-				System.out.println(Arrays.toString(sendPacket.getData()));
-				}
+				
+				printSendPacket(sendPacket, verbose);
 	
 				// Send the datagram packet to the client via a new socket.
-	
-	
 				try {
 					sendReceiveSocket.send(sendPacket);
 				} catch (IOException e) {
@@ -209,21 +207,8 @@ class TFTPReadThread  extends ServerThread
 					e.printStackTrace();
 					System.exit(1);
 				} 
-				System.out.println("Server: Received packet:");
-				if(verbose){
-					System.out.println("From host: " + receivePacket.getAddress());
-					System.out.println("From host port: " + receivePacket.getPort());
-					System.out.println("Length: " + receivePacket.getLength());
-					System.out.println("Containing: ");
-					System.out.println(new String(receivePacket.getData(),0,receivePacket.getLength()));
-					/* Exit Gracefully if the stop is requested. */
-					if(isInterrupted()){continue;}
-					System.out.println("Request parsed for:");
-					System.out.println("	Filename: " + new String(filename.toByteArray(),
-							0,filename.toByteArray().length));
-					System.out.println("	Mode: " + new String(mode.toByteArray(),
-							0,mode.toByteArray().length) + "\n");
-				}
+				
+				printReceivedPacket(receivePacket, verbose);
 				//Check for ACK in format  
 				/*
 				2 bytes    2 bytes
@@ -238,10 +223,4 @@ class TFTPReadThread  extends ServerThread
 			exitGraceFully();
 		}
 
-
-		// We're finished with this socket, so close it.
-		//sendSocket.close();
-
-		//transcript.append(Thread.currentThread() + " finished\n");
 	}
-}

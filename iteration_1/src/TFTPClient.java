@@ -344,7 +344,7 @@ public class TFTPClient extends JFrame
 	{
 		//initial
 		int blockNum = 1;
-		int oldPort = outPort;
+		int oldPort = outPort; 
 		
 		//read and split file
 		try
