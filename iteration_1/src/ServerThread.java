@@ -9,19 +9,23 @@ public abstract class ServerThread extends Thread{
 	protected boolean stopRequested = false;
 	protected DatagramSocket sendReceiveSocket;
 	
+	public ServerThread(ThreadGroup group, String name)
+	{
+		super(group,name);
+	}
+	
     public void RequestStop()
     {
     	stopRequested = true;
     }
     
-    /* Closes sockets and exits. */
+    /* Closes sockets and before exit. */
 	public void exitGraceFully() {
 		if(sendReceiveSocket != null && sendReceiveSocket.isClosed())
 		{
 			sendReceiveSocket.close();
 		}
 		System.out.println("Server: Exiting Gracefully");
-		System.exit(0);
 	}
 	
     protected void printError(DatagramPacket packet){

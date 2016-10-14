@@ -40,7 +40,7 @@ import java.util.*;
 
 import javax.swing.JTextArea;
 
-class TFTPReadThread  extends ServerThread implements Runnable
+class TFTPReadThread  extends ServerThread
 {
 	/**
 	 * The text area where this thread's output will be displayed.
@@ -55,12 +55,13 @@ class TFTPReadThread  extends ServerThread implements Runnable
 	public static final byte[] response = {0, 3, 0, 0};
 
 
-	public TFTPReadThread(JTextArea transcript, DatagramPacket receivePacketInfo, String thread, Boolean verboseMode) {
+	public TFTPReadThread(ThreadGroup group,JTextArea transcript, DatagramPacket receivePacketInfo, String thread, Boolean verboseMode) {
+		super(group,thread);
 		this.transcript = transcript;
 		receivePacket = receivePacketInfo;
 		threadNumber  = thread;
 		verbose = verboseMode;
-		
+
 		System.out.println(verboseMode);
 		try {
 			sendReceiveSocket = new DatagramSocket();
@@ -80,20 +81,20 @@ class TFTPReadThread  extends ServerThread implements Runnable
 			System.out.println("Containing: ");
 			System.out.println(new String(receivePacket.getData(),0,receivePacket.getLength()));
 		}
-		
-	    if(receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 5){
-	   	   printError(receivePacket);
-	    	   
-	    }
-	    else{
+
+		if(receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 5){
+			printError(receivePacket);
+
+		}
+		else{
 			/* Exit Gracefully if the stop is requested. */
-			if(stopRequested){exitGraceFully();}
+			if(isInterrupted()){exitGraceFully();return;}
 			//Parsing Data for filename
 			ByteArrayOutputStream filename = new ByteArrayOutputStream();
 			ByteArrayOutputStream mode = new ByteArrayOutputStream();
 			boolean change = false; 
 			for(int i = 2; i<receivePacket.getData().length;i++){
-				if(stopRequested){exitGraceFully();}
+				if(isInterrupted()){exitGraceFully();}
 				if(receivePacket.getData()[i]>=32){
 					if(change == false){
 						filename.write(receivePacket.getData()[i]);
@@ -104,7 +105,7 @@ class TFTPReadThread  extends ServerThread implements Runnable
 				}
 				if(receivePacket.getData()[i]!=0){
 					if(receivePacket.getData()[i+1] == 0){
-						change = true;
+						change = true;//switch to parse mode
 						i++;
 					}
 				}
@@ -112,7 +113,7 @@ class TFTPReadThread  extends ServerThread implements Runnable
 			
 	
 			/* Exit Gracefully if the stop is requested. */
-			if(stopRequested){exitGraceFully();}
+			if(isInterrupted()){exitGraceFully();return;}
 			if(verbose){
 				System.out.println("Request parsed for:");
 				System.out.println("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
@@ -136,8 +137,8 @@ class TFTPReadThread  extends ServerThread implements Runnable
 				e.printStackTrace();
 			}
 			
-	
-			while(true){
+
+			while(!isInterrupted()){
 				int len;
 	
 	
@@ -154,10 +155,10 @@ class TFTPReadThread  extends ServerThread implements Runnable
 	
 				byte[] data = reader.pop();
 				/* If there's no more data to be read exit. */
-				if(data == null){exitGraceFully();}
-	
-	
-	
+				if(data == null){exitGraceFully();return;}
+
+
+
 				//Builds the datagram in format
 				/*
 				2 bytes    2 bytes       n bytes 
@@ -170,7 +171,7 @@ class TFTPReadThread  extends ServerThread implements Runnable
 				System.arraycopy(data, 0, dataPrime, response.length, data.length);
 	
 				/* Exit Gracefully if the stop is requested. */
-				if(stopRequested){exitGraceFully();}
+				if(isInterrupted()){continue;}
 				sendPacket = new DatagramPacket(dataPrime, dataPrime.length,
 						receivePacket.getAddress(), receivePacket.getPort());
 				len = sendPacket.getLength();
@@ -195,7 +196,7 @@ class TFTPReadThread  extends ServerThread implements Runnable
 				}
 	
 				/* Exit Gracefully if the stop is requested. */
-				if(stopRequested){exitGraceFully();}
+				if(isInterrupted()){continue;}
 				if(verbose){
 				System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
 				System.out.println();
@@ -210,18 +211,18 @@ class TFTPReadThread  extends ServerThread implements Runnable
 				} 
 				System.out.println("Server: Received packet:");
 				if(verbose){
-				System.out.println("From host: " + receivePacket.getAddress());
-				System.out.println("From host port: " + receivePacket.getPort());
-				System.out.println("Length: " + receivePacket.getLength());
-				System.out.println("Containing: ");
-				System.out.println(new String(receivePacket.getData(),0,receivePacket.getLength()));
-				/* Exit Gracefully if the stop is requested. */
-				if(stopRequested){exitGraceFully();}
-				System.out.println("Request parsed for:");
-				System.out.println("	Filename: " + new String(filename.toByteArray(),
-						0,filename.toByteArray().length));
-				System.out.println("	Mode: " + new String(mode.toByteArray(),
-						0,mode.toByteArray().length) + "\n");
+					System.out.println("From host: " + receivePacket.getAddress());
+					System.out.println("From host port: " + receivePacket.getPort());
+					System.out.println("Length: " + receivePacket.getLength());
+					System.out.println("Containing: ");
+					System.out.println(new String(receivePacket.getData(),0,receivePacket.getLength()));
+					/* Exit Gracefully if the stop is requested. */
+					if(isInterrupted()){continue;}
+					System.out.println("Request parsed for:");
+					System.out.println("	Filename: " + new String(filename.toByteArray(),
+							0,filename.toByteArray().length));
+					System.out.println("	Mode: " + new String(mode.toByteArray(),
+							0,mode.toByteArray().length) + "\n");
 				}
 				//Check for ACK in format  
 				/*
@@ -234,7 +235,8 @@ class TFTPReadThread  extends ServerThread implements Runnable
 					blockNumber++;
 				}
 			}
-	    }
+			exitGraceFully();
+		}
 
 
 		// We're finished with this socket, so close it.
