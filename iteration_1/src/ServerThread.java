@@ -19,7 +19,7 @@ public abstract class ServerThread extends Thread{
     	stopRequested = true;
     }
     
-    /* Closes sockets and exits. */
+    /* Closes sockets and before exit. */
 	public void exitGraceFully() {
 		if(sendReceiveSocket != null && sendReceiveSocket.isClosed())
 		{

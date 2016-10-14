@@ -101,7 +101,7 @@ class TFTPWriteThread  extends ServerThread
 	    	   System.out.println(new String(receivePacket.getData(),0,receivePacket.getLength()));
 	       }
 		    /* Exit Gracefully if the stop is requested. */
-	       if(isInterrupted()){exitGraceFully();}
+	       if(isInterrupted()){exitGraceFully();return;}
 	       if(verbose){
 	    	   System.out.println("Request parsed for:");
 	    	   System.out.println("	Filename: " + new String(filename.toByteArray(),
@@ -110,7 +110,7 @@ class TFTPWriteThread  extends ServerThread
 				   0,mode.toByteArray().length) + "\n");
 			}
     	
-	       while(true && !isInterrupted()){
+	       while(!isInterrupted()){
 	    	   int len, j=0;
 
 
@@ -127,7 +127,7 @@ class TFTPWriteThread  extends ServerThread
 			       receivePacket.getAddress(), receivePacket.getPort());
 			   len = sendPacket.getLength();
 			    /* Exit Gracefully if the stop is requested. */
-		       if(isInterrupted()){exitGraceFully();}
+		       if(isInterrupted()){continue;}
 		       System.out.println("Server: Sending packet:");
 		       if(verbose){
 		       System.out.println("To host: " + sendPacket.getAddress());
@@ -174,7 +174,7 @@ class TFTPWriteThread  extends ServerThread
 		   receivePacket1 = new DatagramPacket(rawData, rawData.length);
 		   
 		    /* Exit Gracefully if the stop is requested. */
-			if(isInterrupted()){exitGraceFully();}
+			if(isInterrupted()){continue;}
 	       System.out.println("Server: Waiting for packet.");
 	       // Block until a datagram packet is received from receiveSocket.
 	       try {
@@ -235,7 +235,7 @@ class TFTPWriteThread  extends ServerThread
 		       sendPacket = new DatagramPacket(response, response.length,
 					     receivePacket.getAddress(), receivePacket.getPort());
 				/* Exit Gracefully if the stop is requested. */
-			   if(isInterrupted()){exitGraceFully();}
+			   if(isInterrupted()){continue;}
 		       		System.out.println("Server: Sending packet:");
 		       if(verbose){
 			       System.out.println("To host: " + sendPacket.getAddress());
@@ -261,13 +261,13 @@ class TFTPWriteThread  extends ServerThread
 		       }
 
 		       try {
-			  sendReceiveSocket.send(sendPacket);
+		    	   sendReceiveSocket.send(sendPacket);
 		       } catch (IOException e) {
 			  e.printStackTrace();
 			  System.exit(1);
 		       }
 				/* Exit Gracefully if the stop is requested. */
-			 if(isInterrupted()){exitGraceFully();}
+			 if(isInterrupted()){continue;}
 			 if(verbose){
 		       System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
 		       System.out.println();
