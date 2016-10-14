@@ -55,7 +55,7 @@ import javax.swing.*;
 
 
 
-public class Console extends JPanel implements UIFramework, ActionListener, Runnable
+public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Runnable
 {
 	//declaring local instance variables
 	private String ID;
@@ -66,7 +66,7 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 	
 	
 	//generic constructor
-	public Console(String name)
+	public ConsoleUI(String name)
 	{
 		//set up layout, save ID, initialize
 		super(new GridBagLayout());
@@ -165,22 +165,13 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
         outputArea.setCaretPosition(outputArea.getDocument().getLength());
 	}
 
-	
-	private synchronized String input() 
-	{
-		//prep inputLine to be cleared
-		inputLine.selectAll();
-		
-		//return contents of inputLine
-		return inputLine.getText();
-	}
 
-	
-	@Override
-	public String inputAndPrint() 
+	//get input from inputLine then prep to clear
+	private String inputAndPrint() 
 	{
 		//get input
-		String inputStr = input();
+		inputLine.selectAll();
+		String inputStr =  inputLine.getText();
 		
 		//print input in proper format
 		print(" >".concat(inputStr));
@@ -207,7 +198,7 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 	//for testing
 	public static void main (String[] args) 
 	{	
-		Console console = new Console("Test Console UI");
+		ConsoleUI console = new ConsoleUI("Test Console UI");
 		console.run();
 		String input;
 		
@@ -229,7 +220,6 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 		console.print("Running clear test...");
 		console.print("Enter 'clear'");
 		input = console.getInput();
-		System.out.println(input);
 		if (input.equals("clear"))
 		{
 			console.clear();
@@ -237,5 +227,4 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 		console.print("Test Complete");
 	}
 	*/
-	
 }
