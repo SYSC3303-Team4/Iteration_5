@@ -2,13 +2,16 @@
 *Class:             Console.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    13/010/2016                                              
-*Version:           1.0.0                                                      
+*Date of Update:    14/010/2016                                              
+*Version:           1.0.2                                                      
 *                                                                                   
 *Purpose:           Generic console for basic output/inputs
 * 
 * 
-*Update Log:		v1.0.1
+*Update Log:		V1.0.2
+*						- method added to print byte array
+*						- formatting for input/output fixed
+*					v1.0.1
 *						- runs on new thread
 *						- external synchronization added
 *						- new methods added
@@ -137,7 +140,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 	@Override
 	public synchronized void print(String printable) 
 	{
-        outputArea.append(" ".concat(printable + "\n"));
+        outputArea.append("    ".concat(printable + "\n"));
         
         //magic code to make sure stuff appears
         outputArea.setCaretPosition(outputArea.getDocument().getLength());
@@ -147,7 +150,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 	@Override
 	public void printIndent(String printable)
 	{
-		print("        ".concat(printable));
+		print("           ".concat(printable));
 	}
 	
 	
@@ -157,12 +160,25 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		outputArea.setText(null);
 	}
 	
+	
 	public synchronized void println()
 	{
-		outputArea.append(" ".concat("\n"));
+		outputArea.append("".concat("\n"));
         
         //magic code to make sure stuff appears
         outputArea.setCaretPosition(outputArea.getDocument().getLength());
+	}
+	
+	
+	public synchronized void printByteArray(byte[] b, int size)
+	{
+		String printable = "Cntn:    ";
+		for(int i = 0; i < size; i++)
+		{
+			printable = (printable + Integer.toHexString(b[i]) + " ");
+			//System.out.println(printable);
+		}
+		printIndent(printable);
 	}
 
 
@@ -174,7 +190,9 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		String inputStr =  inputLine.getText();
 		
 		//print input in proper format
-		print(" >".concat(inputStr));
+		outputArea.append(" >" + inputStr + "\n");
+		//magic code to make sure stuff appears
+        outputArea.setCaretPosition(outputArea.getDocument().getLength());
 		
 		//return input
 		return inputStr;

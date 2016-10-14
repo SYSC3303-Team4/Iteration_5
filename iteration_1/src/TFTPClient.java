@@ -2,7 +2,7 @@
 *Class:             TFTPClient.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    29/09/2016                                              
+*Date of Update:    14/10/2016                                              
 *Version:           1.2.0                                                      
 *                                                                                   
 *Purpose:           Generates a datagram following the format of [0,R/W,STR1,0,STR2,0],
@@ -18,6 +18,7 @@
 *Update Log:		v1.2.0
 *						- UI implemented
 *						- now should support multiple instances
+*						- new commands added for UI
 *					v1.1.5
 *						- recieve method implimented
 *						- generateDATA() method patched to send OPcode
@@ -391,21 +392,8 @@ public class TFTPClient extends JFrame
 		//print packet info IF in verbose
 		if(verbose)
 		{
-			byte[] data = sentPacket.getData();
-			int packetSize = sentPacket.getLength();
 			console.print("Client: Sending packet...");
-			console.print("        Host:  " + sentPacket.getAddress());
-			console.print("        Port:  " + sentPacket.getPort());
-			console.print("        Bytes: " + sentPacket.getLength());
-			System.out.printf("%s", "        Cntn:  ");
-			for(int i = 0; i < packetSize; i++)
-			{
-				System.out.printf("0x%02X", data[i]);
-				System.out.printf("%-2c", ' ');
-			}
-			console.print("");
-			console.print("        Cntn:  " + (new String(data,0,packetSize)));
-			
+			printDatagram(sentPacket);
 		}
 		//send packet
 		try
@@ -588,16 +576,12 @@ public class TFTPClient extends JFrame
 	{
 		byte[] data = datagram.getData();
 		int packetSize = datagram.getLength();
-		console.print("        Source: " + recievedPacket.getAddress());
-		console.print("        Port:   " + recievedPacket.getPort());
-		console.print("        Bytes:  " + packetSize);
-		System.out.printf("%s", "        Cntn:  ");
-		for(int i = 0; i < packetSize; i++)
-		{
-			System.out.printf("0x%02X", data[i]);
-			System.out.printf("%-2c", ' ');
-		}
-		console.print("\n        Cntn:  " + (new String(data,0,packetSize)));
+
+		console.printIndent("Source: " + datagram.getAddress());
+		console.printIndent("Port:      " + datagram.getPort());
+		console.printIndent("Bytes:   " + packetSize);
+		console.printByteArray(data, packetSize);
+		console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
 	}
 	
 	
@@ -608,9 +592,14 @@ public class TFTPClient extends JFrame
 		String input = null;
 		String[] advIn = {"", "", ""};
 		boolean exit = false;
+		boolean runFlag = true;
+		
+		//print starting text
+		console.print("TFTPClient running");
+		console.print("type 'help' for command list");
 		
 		//main input loop
-		while(true)
+		while(runFlag)
 		{
 			//get user input
 			input = console.getInput();
@@ -620,14 +609,29 @@ public class TFTPClient extends JFrame
 			{
 				//list available methods
 				case ("help"):
-					console.print("WORK IN PROGRESS");
+					console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
+					console.print("'help' - print all commands and how to use them");
+					console.print("'clear' - clear screen");
+					console.print("'close' - exit client, close ports, be graceful");
+					console.print("'verbose _BOOL' - toggle verbose mode as true or false");
+					console.print("'testMode _BOOL' - if set true, sends to Host. If set false, sends to Server directly");
+					console.print("'RRQ _FILE _MODE' - send a read request for file _FILE in mode _MODE");
+					console.print("'WRQ _FILE _MODE' - send a read request for file _FILE in mode _MODE");
+					console.println();
 					break;
 				
 				//clear client
 				case ("clear"):
 					console.clear();
 					break;
-			
+					
+				//close client with grace
+				case ("close"):
+					console.print("Closing with grace....");
+					this.close();
+					runFlag = false;
+					System.exit(0);
+
 				//testMode method call
 				case ("testMode true"):
 					testMode(true);
@@ -657,6 +661,7 @@ public class TFTPClient extends JFrame
 							}
 							else
 							{
+								//input excedes max length, no point in checking
 								word++;
 								if (word>2)
 								{
@@ -669,11 +674,11 @@ public class TFTPClient extends JFrame
 						{
 							if(advIn[0].equals("RRQ"))
 							{
-								
+								sendRRQ(advIn[1], advIn[2]);
 							}
 							else if (advIn[0].equals("WRQ"))
 							{
-								
+								sendRRQ(advIn[1], advIn[2]);
 							}
 							else
 							{
@@ -704,7 +709,6 @@ public class TFTPClient extends JFrame
 	{
 		//declaring local variables
 		TFTPClient client = new TFTPClient();
-		byte flipFlop = 0x01;
 		fileChooserFrame = new JTextArea(5,40);
 		fileChooser = new JFileChooser();
 		
