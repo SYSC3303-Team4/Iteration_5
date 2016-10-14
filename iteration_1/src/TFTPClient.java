@@ -602,13 +602,6 @@ public class TFTPClient extends JFrame
 		while(runFlag)
 		{
 			//get user input
-			fileChooserFrame = new JTextArea(5,40);
-			fileChooser = new JFileChooser();
-			fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-			int result = fileChooser.showOpenDialog(fileChooser);
-			if (result == JFileChooser.APPROVE_OPTION) {//file is found
-			    file = fileChooser.getSelectedFile();//get file name
-			}
 			input = console.getInput();
 			
 			//process (basic) input
@@ -623,7 +616,7 @@ public class TFTPClient extends JFrame
 					console.print("'verbose _BOOL' - toggle verbose mode as true or false");
 					console.print("'testMode _BOOL' - if set true, sends to Host. If set false, sends to Server directly");
 					console.print("'RRQ _FILE _MODE' - send a read request for file _FILE in mode _MODE");
-					console.print("'WRQ _FILE _MODE' - send a read request for file _FILE in mode _MODE");
+					console.print("'WRQ _MODE' - send a read request for file _FILE in mode _MODE");
 					console.println();
 					break;
 				
@@ -657,21 +650,23 @@ public class TFTPClient extends JFrame
 					
 				//process adv. input
 				default:
+					int space;
 					
 					if (input.length() >= 4)
 					{
 						//split input (separate based on spaces)
-						for(int i=0, word=0; i<input.length() && !exit; i++)
+						space=0;
+						for(int i=0; i<input.length() && !exit; i++)
 						{
 							if(input.charAt(i) != ' ')
 							{
-								advIn[word] = advIn[word].concat("" + input.charAt(i) );
+								advIn[space] = advIn[space].concat("" + input.charAt(i) );
 							}
 							else
 							{
-								//input excedes max length, no point in checking
-								word++;
-								if (word>2)
+								//input exceeds max length, no point in checking
+								space++;
+								if (space>2)
 								{
 									exit = true;
 								}
@@ -680,14 +675,22 @@ public class TFTPClient extends JFrame
 						//check to see if input was of valid form (a b c)
 						if(!exit)
 						{
-							if(advIn[0].equals("RRQ"))
+							if(advIn[0].equals("RRQ") && space==2)
 							{
 								sendRRQ(advIn[1], advIn[2]);
 							}
-							else if (advIn[0].equals("WRQ"))
+							else if (advIn[0].equals("WRQ") && space==1)
 							{
+								//get user file
+								fileChooserFrame = new JTextArea(5,40);
+								fileChooser = new JFileChooser();
+								fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+								int result = fileChooser.showOpenDialog(fileChooser);
+								if (result == JFileChooser.APPROVE_OPTION) {//file is found
+								    file = fileChooser.getSelectedFile();//get file name
+								}
 								
-								sendWRQ(advIn[1], advIn[2]);
+								sendWRQ(file.getName(), advIn[1]);
 							}
 							else
 							{
