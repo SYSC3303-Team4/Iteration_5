@@ -2,8 +2,8 @@
 *Class:             TFTPClient.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    29/09/2016                                              
-*Version:           1.1.5                                                      
+*Date of Update:    14/10/2016                                              
+*Version:           1.2.0                                                      
 *                                                                                   
 *Purpose:           Generates a datagram following the format of [0,R/W,STR1,0,STR2,0],
 					in which R/W signifies read (1) or write (2), STR1 is a filename,
@@ -15,7 +15,11 @@
 					packet. Datagram can be 512B max
 * 
 * 
-*Update Log:		v1.1.5
+*Update Log:		v1.2.0
+*						- UI implemented
+*						- now should support multiple instances
+*						- new commands added for UI
+*					v1.1.5
 *						- recieve method implimented
 *						- generateDATA() method patched to send OPcode
 *						- client now sends ACKs
@@ -90,6 +94,8 @@ import java.net.*;
 import java.util.*;
 import javax.swing.*;
 
+//import packages
+import ui.* ;
 
 @SuppressWarnings("serial")
 public class TFTPClient extends JFrame
@@ -104,8 +110,9 @@ public class TFTPClient extends JFrame
 	private TFTPWriter writer;
 	private static Scanner scan= new Scanner(System.in);
 	private static JTextArea fileChooserFrame;
-	private static File file;
-	private static JFileChooser fileChooser;
+	private File file;
+	private JFileChooser fileChooser;
+	private ConsoleUI console;
 	
 	//declaring local class constants
 	private static final int IN_PORT_HOST = 23;
@@ -139,6 +146,10 @@ public class TFTPClient extends JFrame
 		reader = new TFTPReader();
 		//make an empty writer
 		writer = new TFTPWriter();
+		
+		//make and run the UI
+		console = new ConsoleUI("TFTPClient.java");
+		console.run();
 	}
 	
 	
@@ -157,6 +168,10 @@ public class TFTPClient extends JFrame
 	public void verboseMode(boolean v)
 	{
 		verbose = v;
+		if(verbose)
+		{
+			console.print("Verbose mode set " + verbose);
+		}
 	}
 	
 	
@@ -172,6 +187,11 @@ public class TFTPClient extends JFrame
 		else
 		{
 			outPort = IN_PORT_SERVER;
+		}
+		
+		if(verbose)
+		{
+			console.print("Test mode set " + t);
 		}
 	}
 	
@@ -196,7 +216,7 @@ public class TFTPClient extends JFrame
 	    
 		if(verbose)
 		{
-			System.out.println("Client: Prepping DATA packet #" + blockNum);
+			console.print("Client: Prepping DATA packet #" + blockNum);
 		}
 		
 		//construct array to hold data
@@ -223,7 +243,7 @@ public class TFTPClient extends JFrame
 			sentPacket = new DatagramPacket(toSend, toSend.length, InetAddress.getLocalHost(), outPort);
 			if(verbose)
 			{
-				System.out.println("Client: Packet successfully created");
+				console.print("Client: Packet successfully created");
 			}
 		}
 		catch(UnknownHostException e)
@@ -251,7 +271,7 @@ public class TFTPClient extends JFrame
 			sentPacket = new DatagramPacket(ack, ack.length, InetAddress.getLocalHost(), outPort);
 			if(verbose)
 			{
-				System.out.println("Client: ACK successfully created");
+				console.print("Client: ACK successfully created");
 			}
 		}
 		catch(UnknownHostException e)
@@ -270,7 +290,7 @@ public class TFTPClient extends JFrame
 		//generate the data to be sent in datagram packet
 		if(verbose)
 		{
-			System.out.println("Client: Prepping packet containing '" + fileName + "'...");
+			console.print("Client: Prepping packet containing '" + fileName + "'...");
 		}	
 		//convert various strings to Byte arrays
 		byte[] fileNameBA = fileName.getBytes();
@@ -308,7 +328,7 @@ public class TFTPClient extends JFrame
 			sentPacket = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), outPort);
 			if(verbose)
 			{
-				System.out.println("Client: Packet successfully created");
+				console.print("Client: Packet successfully created");
 			}
 		}
 		catch(UnknownHostException e)
@@ -371,21 +391,8 @@ public class TFTPClient extends JFrame
 		//print packet info IF in verbose
 		if(verbose)
 		{
-			byte[] data = sentPacket.getData();
-			int packetSize = sentPacket.getLength();
-			System.out.println("Client: Sending packet...");
-			System.out.println("        Host:  " + sentPacket.getAddress());
-			System.out.println("        Port:  " + sentPacket.getPort());
-			System.out.println("        Bytes: " + sentPacket.getLength());
-			System.out.printf("%s", "        Cntn:  ");
-			for(int i = 0; i < packetSize; i++)
-			{
-				System.out.printf("0x%02X", data[i]);
-				System.out.printf("%-2c", ' ');
-			}
-			System.out.println("");
-			System.out.println("        Cntn:  " + (new String(data,0,packetSize)));
-			
+			console.print("Client: Sending packet...");
+			printDatagram(sentPacket);
 		}
 		//send packet
 		try
@@ -397,7 +404,7 @@ public class TFTPClient extends JFrame
 			e.printStackTrace();
 			System.exit(1);
 		}
-		System.out.println("Client: Packet Sent");
+		console.print("Client: Packet Sent");
 	}
 	
 	
@@ -410,7 +417,7 @@ public class TFTPClient extends JFrame
 		//analyze ACK for format
 		if (verbose)
 		{
-			System.out.println("Client: Checking ACK...");
+			console.print("Client: Checking ACK...");
 		}
 		byte[] data = recievedPacket.getData();
 		
@@ -443,9 +450,9 @@ public class TFTPClient extends JFrame
 		{
 			//receive data
 			receivePacket("DATA");
-			System.out.println("RP = " +recievedPacket.getPort());
+			console.print("RP = " +recievedPacket.getPort());
 			outPort = recievedPacket.getPort();
-			System.out.println("OP = " +outPort);
+			console.print("OP = " +outPort);
 			
 			//Process data
 			rawData = new byte[recievedPacket.getLength()] ;
@@ -474,8 +481,8 @@ public class TFTPClient extends JFrame
 			}
 			
 			//check to see if this is final packet
-			System.out.println(rawData.length);
-			System.out.println(recievedPacket.getLength());
+			console.print(""+rawData.length);
+			console.print(""+recievedPacket.getLength());
 			if (recievedPacket.getLength() < MAX_SIZE+4)	
 			{
 				loop = false;
@@ -503,7 +510,7 @@ public class TFTPClient extends JFrame
 		//wait for response
 		if (verbose)
 		{
-			System.out.println("Client: Waiting for " + type + " packet...");
+			console.print("Client: Waiting for " + type + " packet...");
 		}
 		try
 		{
@@ -516,7 +523,7 @@ public class TFTPClient extends JFrame
 		}
 		if (verbose)
 		{
-			System.out.println("Client: " + type + " packet received");
+			console.print("Client: " + type + " packet received");
 			printDatagram(recievedPacket);
 		}
 		
@@ -529,23 +536,23 @@ public class TFTPClient extends JFrame
 			{
 				//file not found
 		    	case 1:
-		    			System.out.println("File not found, client shutting down");
-		    			this.close();
+		    			console.print("File not found, please select again");
+		    			//start(this);
 		    			break;
 		    	//improper rights for R/W
 		    	case 2:
-		    			System.out.println("You do not have the rights for this, client shutting down");
-		    			this.close();
+		    			console.print("You do not have the rights for this, please select again");
+		    			//start(this);
 		    			break;
 		    	//drive full
 		    	case 3:
-		    			System.out.println("Location full, client shutting down");
-		    			this.close();
+		    			console.print("Location full, please select a new location to write to");
+		    			//start(this);
 		    			break;
 		    	//file already exists
 		    	case 6:
-		    			System.out.println("The file already exists, client shutting down");
-		    			this.close();
+		    			console.print("The file already exists, please select a new file");
+		    			//start(this);
 		    			break;
 		    	//unknown error
 		    	default:
@@ -568,16 +575,144 @@ public class TFTPClient extends JFrame
 	{
 		byte[] data = datagram.getData();
 		int packetSize = datagram.getLength();
-		System.out.println("        Source: " + recievedPacket.getAddress());
-		System.out.println("        Port:   " + recievedPacket.getPort());
-		System.out.println("        Bytes:  " + packetSize);
-		System.out.printf("%s", "        Cntn:  ");
-		for(int i = 0; i < packetSize; i++)
+
+		console.printIndent("Source: " + datagram.getAddress());
+		console.printIndent("Port:      " + datagram.getPort());
+		console.printIndent("Bytes:   " + packetSize);
+		console.printByteArray(data, packetSize);
+		console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
+	}
+	
+	
+	
+	public void ClientMain()
+	{
+		//declaring local variables
+		String input = null;
+		String[] advIn = {"", "", ""};
+		boolean exit = false;
+		boolean runFlag = true;
+		
+		//print starting text
+		console.print("TFTPClient running");
+		console.print("type 'help' for command list");
+		
+		//main input loop
+		while(runFlag)
 		{
-			System.out.printf("0x%02X", data[i]);
-			System.out.printf("%-2c", ' ');
+			//get user input
+			input = console.getInput();
+			
+			//process (basic) input
+			switch(input)
+			{
+				//list available methods
+				case ("help"):
+					console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
+					console.print("'help' - print all commands and how to use them");
+					console.print("'clear' - clear screen");
+					console.print("'close' - exit client, close ports, be graceful");
+					console.print("'verbose _BOOL' - toggle verbose mode as true or false");
+					console.print("'testMode _BOOL' - if set true, sends to Host. If set false, sends to Server directly");
+					console.print("'RRQ _FILE _MODE' - send a read request for file _FILE in mode _MODE");
+					console.print("'WRQ _MODE' - send a read request for file _FILE in mode _MODE");
+					console.println();
+					break;
+				
+				//clear client
+				case ("clear"):
+					console.clear();
+					break;
+					
+				//close client with grace
+				case ("close"):
+					console.print("Closing with grace....");
+					this.close();
+					runFlag = false;
+					System.exit(0);
+
+				//testMode method call
+				case ("testMode true"):
+					testMode(true);
+					break;		
+				case ("testMode false"):
+					testMode(false);
+					break;
+					
+				//setVerbose method call
+				case ("verbose true"):
+					verboseMode(true);
+					break;
+				case ("verbose false"):
+					verboseMode(false);
+					break;
+					
+				//process adv. input
+				default:
+					int space;
+					
+					if (input.length() >= 4)
+					{
+						//split input (separate based on spaces)
+						space=0;
+						for(int i=0; i<input.length() && !exit; i++)
+						{
+							if(input.charAt(i) != ' ')
+							{
+								advIn[space] = advIn[space].concat("" + input.charAt(i) );
+							}
+							else
+							{
+								//input exceeds max length, no point in checking
+								space++;
+								if (space>2)
+								{
+									exit = true;
+								}
+							}
+						}
+						//check to see if input was of valid form (a b c)
+						if(!exit)
+						{
+							if(advIn[0].equals("RRQ") && space==2)
+							{
+								sendRRQ(advIn[1], advIn[2]);
+							}
+							else if (advIn[0].equals("WRQ") && space==1)
+							{
+								//get user file
+								fileChooserFrame = new JTextArea(5,40);
+								fileChooser = new JFileChooser();
+								fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+								int result = fileChooser.showOpenDialog(fileChooser);
+								if (result == JFileChooser.APPROVE_OPTION) {//file is found
+								    file = fileChooser.getSelectedFile();//get file name
+								}
+								
+								sendWRQ(file.getName(), advIn[1]);
+							}
+							else
+							{
+								console.print("!!Unknown Input!!");
+							}
+						}
+						else
+						{
+							console.print("!Unknown Input!");
+						}
+						
+						//reset advIn and exit flag
+						advIn[0] = "";
+						advIn[1] = "";
+						advIn[2] = "";
+						exit = false;
+					}
+					else
+					{
+						console.print("!Unknown Input!");
+					}
+			}
 		}
-		System.out.println("\n        Cntn:  " + (new String(data,0,packetSize)));
 	}
 	
 	
@@ -585,18 +720,22 @@ public class TFTPClient extends JFrame
 	{
 		//declaring local variables
 		TFTPClient client = new TFTPClient();
-		byte flipFlop = 0x01;
-		fileChooserFrame = new JTextArea(5,40);
-		fileChooser = new JFileChooser();
 		
 		
+		//run
+		client.ClientMain();
+		
+		
+		
+		
+		/*
 		//Find whether you want to run in test mode or not
-		System.out.println("Test mode: (T)rue or (F)alse?");
+		client.print("Test mode: (T)rue or (F)alse?");
 		String testBool = scan.nextLine();
 		client.testMode(testBool.equalsIgnoreCase("T"));
 		
 		//Find whether you want to run in verbose mode or not
-		System.out.println("Verbose mode: (T)rue or (F)alse?");
+		console.print("Verbose mode: (T)rue or (F)alse?");
 		String verboseBool = scan.nextLine();
 		if (verboseBool.equalsIgnoreCase("T")) client.verboseMode(true);
 		else {client.verboseMode(false);}
@@ -604,67 +743,31 @@ public class TFTPClient extends JFrame
 		//Find whether you want to run in test mode or not
 		
 		start(client);
-	}		
+	}
 		
 		
-public static void start(TFTPClient cl)
-{
-		System.out.println("Send a: (R)ead or (W)rite?");
-		String requestBool = scan.nextLine();
-		if(requestBool.equalsIgnoreCase("W")){
-			//create a window to search for file
-			fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-			int result = fileChooser.showOpenDialog(fileChooser);
-			if (result == JFileChooser.APPROVE_OPTION) {//file is found
-			    file = fileChooser.getSelectedFile();//get file name
+	public static void start(TFTPClient cl)
+	{
+			console.print("Send a: (R)ead or (W)rite?");
+			String requestBool = scan.nextLine();
+			if(requestBool.equalsIgnoreCase("W")){
+				//create a window to search for file
+				fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+				int result = fileChooser.showOpenDialog(fileChooser);
+				if (result == JFileChooser.APPROVE_OPTION) {//file is found
+				    file = fileChooser.getSelectedFile();//get file name
+				}
+				//send full fill (includes wait for ACK)
+				cl.sendWRQ(file.getName(), "octet");//changed from client.yayayay
 			}
-			//send full fill (includes wait for ACK)
-			cl.sendWRQ(file.getName(), "octet");//changed from client.yayayay
-		}
-		else{
-			System.out.print("Enter file name: ");
-			String requestRBool = scan.nextLine();
-			cl.sendRRQ(requestRBool,"octet");//change from client.yayayayay
-		}
-}
+			else{
+				System.out.print("Enter file name: ");
+				String requestRBool = scan.nextLine();
+				cl.sendRRQ(requestRBool,"octet");//change from client.yayayayay
+			}
+	}
 		
 		//receive server response 
-		
-		
-		
-		
-		
-		
-		/*
-		while (reader.peek() != null)
-		{
-			//generate datagram RRW
-			client.generateDatagram("DatagramsOutForHarambe.txt","octet", flipFlop);
-		
-			//send and echo outgoing datagram
-			client.sendAndEcho();
-		
-			//idle until packet is received, echo and and save
-			client.receiveAndEcho();
-			
-			//flip R/W byte
-			if (flipFlop == 0x01)
-			{
-				flipFlop = 0x02;
-			}
-			else
-			{
-				flipFlop = 0x01;
-			}
-			
-			System.out.println("----------------------------------------\n");
-		}
-		*/
-		
-		/*
-		//generate and send bad datagram
-		client.generateDatagram("gArBaGe.trash","trascii", (byte)0x05);
-		client.sendAndEcho();
-		client.receiveAndEcho();
-		*/
+	*/	
 	}
+}

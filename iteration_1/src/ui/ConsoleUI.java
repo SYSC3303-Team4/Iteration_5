@@ -2,13 +2,16 @@
 *Class:             Console.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    13/010/2016                                              
-*Version:           1.0.0                                                      
+*Date of Update:    14/010/2016                                              
+*Version:           1.0.2                                                      
 *                                                                                   
 *Purpose:           Generic console for basic output/inputs
 * 
 * 
-*Update Log:		v1.0.1
+*Update Log:		V1.0.2
+*						- method added to print byte array
+*						- formatting for input/output fixed
+*					v1.0.1
 *						- runs on new thread
 *						- external synchronization added
 *						- new methods added
@@ -55,7 +58,7 @@ import javax.swing.*;
 
 
 
-public class Console extends JPanel implements UIFramework, ActionListener, Runnable
+public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Runnable
 {
 	//declaring local instance variables
 	private String ID;
@@ -66,7 +69,7 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 	
 	
 	//generic constructor
-	public Console(String name)
+	public ConsoleUI(String name)
 	{
 		//set up layout, save ID, initialize
 		super(new GridBagLayout());
@@ -137,7 +140,7 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 	@Override
 	public synchronized void print(String printable) 
 	{
-        outputArea.append(" ".concat(printable + "\n"));
+        outputArea.append("    ".concat(printable + "\n"));
         
         //magic code to make sure stuff appears
         outputArea.setCaretPosition(outputArea.getDocument().getLength());
@@ -147,7 +150,7 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 	@Override
 	public void printIndent(String printable)
 	{
-		print("        ".concat(printable));
+		print("           ".concat(printable));
 	}
 	
 	
@@ -157,33 +160,39 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 		outputArea.setText(null);
 	}
 	
+	
 	public synchronized void println()
 	{
-		outputArea.append(" ".concat("\n"));
+		outputArea.append("".concat("\n"));
         
         //magic code to make sure stuff appears
         outputArea.setCaretPosition(outputArea.getDocument().getLength());
 	}
-
 	
-	private synchronized String input() 
+	
+	public synchronized void printByteArray(byte[] b, int size)
 	{
-		//prep inputLine to be cleared
-		inputLine.selectAll();
-		
-		//return contents of inputLine
-		return inputLine.getText();
+		String printable = "Cntn:    ";
+		for(int i = 0; i < size; i++)
+		{
+			printable = (printable + Integer.toHexString(b[i]) + " ");
+			//System.out.println(printable);
+		}
+		printIndent(printable);
 	}
 
-	
-	@Override
-	public String inputAndPrint() 
+
+	//get input from inputLine then prep to clear
+	private String inputAndPrint() 
 	{
 		//get input
-		String inputStr = input();
+		inputLine.selectAll();
+		String inputStr =  inputLine.getText();
 		
 		//print input in proper format
-		print(" >".concat(inputStr));
+		outputArea.append(" >" + inputStr + "\n");
+		//magic code to make sure stuff appears
+        outputArea.setCaretPosition(outputArea.getDocument().getLength());
 		
 		//return input
 		return inputStr;
@@ -207,7 +216,7 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 	//for testing
 	public static void main (String[] args) 
 	{	
-		Console console = new Console("Test Console UI");
+		ConsoleUI console = new ConsoleUI("Test Console UI");
 		console.run();
 		String input;
 		
@@ -229,7 +238,6 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 		console.print("Running clear test...");
 		console.print("Enter 'clear'");
 		input = console.getInput();
-		System.out.println(input);
 		if (input.equals("clear"))
 		{
 			console.clear();
@@ -237,5 +245,4 @@ public class Console extends JPanel implements UIFramework, ActionListener, Runn
 		console.print("Test Complete");
 	}
 	*/
-	
 }

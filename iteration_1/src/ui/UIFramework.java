@@ -25,9 +25,6 @@ interface UIFramework
 	//generic method to take in user input
 	public abstract String getInput();
 	
-	//generic method to take in user input and display it as well
-	public abstract String inputAndPrint();
-	
 	//generic method to print indented to screen
 	public abstract void printIndent(String printable);
 	
