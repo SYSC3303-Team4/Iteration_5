@@ -529,23 +529,23 @@ public class TFTPClient extends JFrame
 			{
 				//file not found
 		    	case 1:
-		    			System.out.println("File not found, please select again");
-		    			start(this);
+		    			System.out.println("File not found, client shutting down");
+		    			this.close();
 		    			break;
 		    	//improper rights for R/W
 		    	case 2:
-		    			System.out.println("You do not have the rights for this, please select again");
-		    			start(this);
+		    			System.out.println("You do not have the rights for this, client shutting down");
+		    			this.close();
 		    			break;
 		    	//drive full
 		    	case 3:
-		    			System.out.println("Location full, please select a new location to write to");
-		    			start(this);
+		    			System.out.println("Location full, client shutting down");
+		    			this.close();
 		    			break;
 		    	//file already exists
 		    	case 6:
-		    			System.out.println("The file already exists, please select a new file");
-		    			start(this);
+		    			System.out.println("The file already exists, client shutting down");
+		    			this.close();
 		    			break;
 		    	//unknown error
 		    	default:
