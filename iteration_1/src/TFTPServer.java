@@ -179,7 +179,7 @@ public class TFTPServer extends JFrame{
             response = writeResp;
          } else { // it was invalid, just quit
             throw new Exception("Not yet implemented");
-         }
+         } 
 
          int caretOffset = commandLine.getCaretPosition();
          int lineNumber = commandLine.getLineOfOffset(caretOffset);

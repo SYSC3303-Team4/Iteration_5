@@ -35,6 +35,60 @@ public abstract class ServerThread extends Thread{
 	    System.out.println(new String(packet.getData(),
 				   4,packet.getData().length-1));
     }
+    /* Send Data packet with no data
+    2 bytes    2 bytes       0 bytes
+    ---------------------------------
+DATA  | 03    |   Block #  |    Data    |
+    ---------------------------------
+    */
+    protected void sendNoData(DatagramPacket receivePacket,boolean verbose,int blockNumber){
+    	byte[] data = new byte[4];
+    	data[0] = 0;
+    	data[1] = 3;
+		//Encode the block number into the response block 
+		data[3]=(byte)(blockNumber & 0xFF);
+		data[2]=(byte)((blockNumber >> 8)& 0xFF);
+    	
+    	DatagramPacket sendPacket = new DatagramPacket(data, data.length,
+			     receivePacket.getAddress(), receivePacket.getPort());
+	/* Exit Gracefully if the stop is requested. */
+	   if(stopRequested){exitGraceFully();}
+      		System.out.println("Server: Sending packet:");
+      if(verbose){
+	       System.out.println("To host: " + sendPacket.getAddress());
+	       System.out.println("Destination host port: " + sendPacket.getPort());
+	       
+	       System.out.println("Length: " + sendPacket.getLength());
+	       System.out.println("Containing: " );
+	       System.out.println(Arrays.toString(sendPacket.getData()));
+      }
+
+
+      	// Send the datagram packet to the client via a new socket.
+
+      	try {
+      		// Construct a new datagram socket and bind it to any port
+      		// on the local host machine. This socket will be used to
+			// send UDP Datagram packets.
+	       	sendReceiveSocket = new DatagramSocket();
+      	} catch (SocketException se) {
+      		se.printStackTrace();
+      		System.exit(1);
+      	}
+
+      	try {
+      		sendReceiveSocket.send(sendPacket);
+      	} catch (IOException e) {
+      		e.printStackTrace();
+      		System.exit(1);
+      	}
+      	/* Exit Gracefully if the stop is requested. */
+      	if(stopRequested){exitGraceFully();}
+      	if(verbose){
+      		System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
+   	  	System.out.println();
+      	}
+    }
     
     
     //Build an Error Packet with format :

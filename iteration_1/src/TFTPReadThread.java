@@ -70,6 +70,7 @@ class TFTPReadThread  extends ServerThread implements Runnable
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public void run() {
 
 		System.out.println("Server: Received packet:");
@@ -139,22 +140,33 @@ class TFTPReadThread  extends ServerThread implements Runnable
 	
 			while(true){
 				int len;
-	
+				boolean sendZeroDataPacket = false;
 	
 	
 	
 				//Encode the block number into the response block 
 				response[3]=(byte)(blockNumber & 0xFF);
 				response[2]=(byte)((blockNumber >> 8)& 0xFF);
-				
-				System.out.println("BLOCK NUMBER INCREMENTED");
 	
 				//Building datagram		
 	
-	
+
 				byte[] data = reader.pop();
+				//Check if the server needs to send a data Packet with 0 bytes
+				if(!sendZeroDataPacket){
+					if(data.length==512 && reader.peek()==null){
+						sendZeroDataPacket = true;
+					}
+				}
+
 				/* If there's no more data to be read exit. */
-				if(data == null){exitGraceFully();}
+				
+				if(data == null){
+					if(sendZeroDataPacket == true){
+						sendNoData(receivePacket,verbose, blockNumber);
+					}
+					exitGraceFully();
+				}
 	
 	
 	
