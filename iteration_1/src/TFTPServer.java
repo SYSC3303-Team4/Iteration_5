@@ -166,12 +166,12 @@ public class TFTPServer extends JFrame{
          // Create a response.
          if (req==Request.READ) { // for Read it's 0301
         	 threadNum++;
-        	Thread readRequest =  new Thread(initializedThreads, new TFTPReadThread(out, receivePacket, "Thread "+threadNum, verbose));
+        	Thread readRequest =  new TFTPReadThread(initializedThreads, out, receivePacket, "Thread "+threadNum, verbose);
         	readRequest.start();
             response = readResp;
          } else if (req==Request.WRITE) { // for Write it's 0400
         	threadNum++;
-        	Thread writeRequest =  new Thread(initializedThreads, new TFTPWriteThread(out, receivePacket,"Thread "+threadNum, verbose));
+        	Thread writeRequest =  new TFTPWriteThread(initializedThreads,out, receivePacket,"Thread "+threadNum, verbose);
          	writeRequest.start();
             response = writeResp;
          } else { // it was invalid, just quit
@@ -191,7 +191,7 @@ public class TFTPServer extends JFrame{
         		Thread s = threadSet.iterator().next();
         		if(s.getThreadGroup().getName().equals(initializedThreads.getName()))
         		{
-        			//((ServerThread)s).requestStop();
+        			((ServerThread)s).interrupt();
         		}
         	 }
          }
