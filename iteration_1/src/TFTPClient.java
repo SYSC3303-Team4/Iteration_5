@@ -111,8 +111,8 @@ public class TFTPClient extends JFrame
 	private TFTPWriter writer;
 	private static Scanner scan= new Scanner(System.in);
 	private static JTextArea fileChooserFrame;
-	private static File file;
-	private static JFileChooser fileChooser;
+	private File file;
+	private JFileChooser fileChooser;
 	private ConsoleUI console;
 	
 	//declaring local class constants
@@ -602,6 +602,13 @@ public class TFTPClient extends JFrame
 		while(runFlag)
 		{
 			//get user input
+			fileChooserFrame = new JTextArea(5,40);
+			fileChooser = new JFileChooser();
+			fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+			int result = fileChooser.showOpenDialog(fileChooser);
+			if (result == JFileChooser.APPROVE_OPTION) {//file is found
+			    file = fileChooser.getSelectedFile();//get file name
+			}
 			input = console.getInput();
 			
 			//process (basic) input
@@ -650,6 +657,7 @@ public class TFTPClient extends JFrame
 					
 				//process adv. input
 				default:
+					
 					if (input.length() >= 4)
 					{
 						//split input (separate based on spaces)
@@ -678,7 +686,8 @@ public class TFTPClient extends JFrame
 							}
 							else if (advIn[0].equals("WRQ"))
 							{
-								sendRRQ(advIn[1], advIn[2]);
+								
+								sendWRQ(advIn[1], advIn[2]);
 							}
 							else
 							{
@@ -709,8 +718,7 @@ public class TFTPClient extends JFrame
 	{
 		//declaring local variables
 		TFTPClient client = new TFTPClient();
-		fileChooserFrame = new JTextArea(5,40);
-		fileChooser = new JFileChooser();
+		
 		
 		//run
 		client.ClientMain();
