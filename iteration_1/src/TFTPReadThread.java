@@ -123,9 +123,11 @@ class TFTPReadThread  extends ServerThread
 			} catch (FileNotFoundException e1) {
 				buildError(1,receivePacket,verbose);
 				e1.printStackTrace();
+				//exit
 			} catch (IOException e) {
 				buildError(2,receivePacket,verbose);
 				e.printStackTrace();
+				//exit
 			}
 			
 

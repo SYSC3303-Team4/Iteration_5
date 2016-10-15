@@ -41,7 +41,7 @@ public class TFTPReader
 	 * splits file into arrays (0B to MAX_Size in length) 
 	 * (last array will ALWAYS be less than MAX_SIZE in length)
 	 */	
-	public void readAndSplit(String file) throws FileNotFoundException, IOException 
+	public void readAndSplit(String file) throws FileNotFoundException, IOException  
 	{
 		//declaring local variables
 		byte[] arr = new byte[MAX_SIZE];

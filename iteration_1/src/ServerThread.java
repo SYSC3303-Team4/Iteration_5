@@ -166,16 +166,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 				     receivePacket.getAddress(), receivePacket.getPort());
 		/* Exit Gracefully if the stop is requested. */
 		   if(stopRequested){exitGraceFully();}
-	       		console.print("Server: Sending packet:");
-	       if(verbose){
-		       console.print("To host: " + sendPacket.getAddress());
-		       console.print("Destination host port: " + sendPacket.getPort());
-		       
-		       console.print("Length: " + sendPacket.getLength());
-		       console.print("Containing: " );
-		       console.print(Arrays.toString(sendPacket.getData()));
-	       }
-
+		   printSendPacket(sendPacket,verbose);
 
 	       	// Send the datagram packet to the client via a new socket.
 

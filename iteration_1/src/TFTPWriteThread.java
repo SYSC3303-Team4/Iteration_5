@@ -42,11 +42,12 @@ import java.util.Arrays;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 
+import javax.swing.JFileChooser;
 import javax.swing.JTextArea;
 
 import ui.ConsoleUI;
 
-class TFTPWriteThread  extends ServerThread
+class TFTPWriteThread extends ServerThread
 {
     /**
      * The text area where this thread's output will be displayed.
@@ -59,6 +60,9 @@ class TFTPWriteThread  extends ServerThread
     private String threadNumber;
     private String path= "DEFAULT_TEST_WRITE";
     public static final byte[] response = {0, 4, 0, 0};
+    private JTextArea fileChooserFrame;
+	private File file;
+	private JFileChooser fileChooser;
     
     
 
@@ -73,6 +77,14 @@ class TFTPWriteThread  extends ServerThread
 			// TODO Auto-generated catch block    
 			e.printStackTrace();
 			console.print(e.getMessage());
+		}
+        
+        fileChooserFrame = new JTextArea(5,40);
+		fileChooser = new JFileChooser();
+		fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+		int result = fileChooser.showOpenDialog(fileChooser);
+		if (result == JFileChooser.APPROVE_OPTION) {//file is found
+		    file = fileChooser.getSelectedFile();//get file name
 		}
     }
 
@@ -172,11 +184,7 @@ class TFTPWriteThread  extends ServerThread
 	    	   System.exit(1);
 	       }
 	      
-	       if(receivePacket1.getData()[0] == 0 && receivePacket1.getData()[1] == 5){
-	    	   printError(receivePacket1,verbose);
-	    	   
-	       }
-	       else{
+	       printReceivedPacket(receivePacket1,verbose);
 		       byte[] data = new byte[receivePacket1.getLength()-4];
 
 		       //Parse data from DATA packet
@@ -187,26 +195,30 @@ class TFTPWriteThread  extends ServerThread
 
 
 		       //Write file to directory
-		       TFTPWriter writer = new TFTPWriter();    	 
+		       TFTPWriter writer = new TFTPWriter();
+		       if(file.exists() && !file.isDirectory()) { 
+		    	   buildError(6,receivePacket,verbose);
+				}
 				
 		       try {
-					writer.write(data,path + filename.toString());
+					writer.write(data,file.getAbsolutePath());
 				} catch (AccessDeniedException e1) {
 					buildError(2,receivePacket,verbose);
 					e1.printStackTrace();
-				} catch (FileAlreadyExistsException e) {
+					//exit
+				} 
+				catch(IOException e2){
 					buildError(3,receivePacket,verbose);
-					e.printStackTrace();
-				} catch(IOException e2){
-					buildError(6,receivePacket,verbose);
 					e2.printStackTrace();
+					//exit
 				}
 
 		       if(data.length<512){
 		    	   if(verbose){
 		    	   console.print("Server: Final Data Block Received.");
+		    	   System.out.println("Server: Sending last ACK");
+		    	   //SET INTERRUPT TO EXIT LOOP
 		    	   }
-		    	   exitGraceFully();
 		       }
 
 		       //Sending the ACK for previous DATA packet in format:
@@ -227,7 +239,7 @@ class TFTPWriteThread  extends ServerThread
 					     receivePacket.getAddress(), receivePacket.getPort());
 				/* Exit Gracefully if the stop is requested. */
 			   if(isInterrupted()){continue;}
-			   printSendPacket(receivePacket,verbose);
+			   printSendPacket(sendPacket,verbose);
 
 		       // Send the datagram packet to the client via a new socket.
 
@@ -252,9 +264,9 @@ class TFTPWriteThread  extends ServerThread
 			 if(verbose){
 		       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
 			 }
-	       }
+	       
 	    }
-	       exitGraceFully();
+	    exitGraceFully();
     }
     
 
