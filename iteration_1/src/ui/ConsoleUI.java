@@ -113,27 +113,46 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 	
 	
 	//return input, set flag
-	public synchronized String getInput()
+	public synchronized String getInput(boolean wait)
 	{
-		//wait until input is detected
-		while(!inputReady)
+		if(wait)
 		{
-			try
+			//wait until input is detected
+			while(!inputReady)
 			{
-				wait();
+				try
+				{
+					wait();
+				}
+				catch(Exception e)
+				{
+					System.out.println("Error in putting thread to sleep");
+					//error handling
+				}
 			}
-			catch(Exception e)
+			//return and set flags
+			String ret = input;
+			input = null;
+			inputReady = false;
+			return ret;
+		}
+		else
+		{
+			if(inputReady)
 			{
-				System.out.println("Error in putting thread to sleep");
-				//error handling
+				//return and set flags
+				String ret = input;
+				input = null;
+				inputReady = false;
+				return ret;
+			}
+			else
+			{
+				return null;
 			}
 		}
 		
-		//return and set flags
-		String ret = input;
-		input = null;
-		inputReady = false;
-		return ret;
+
 	}
 	
 	

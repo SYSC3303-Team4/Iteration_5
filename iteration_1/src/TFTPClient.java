@@ -601,7 +601,7 @@ public class TFTPClient extends JFrame
 		while(runFlag)
 		{
 			//get user input
-			input = console.getInput();
+			input = console.getInput(true);
 			
 			//process (basic) input
 			switch(input)
@@ -612,10 +612,10 @@ public class TFTPClient extends JFrame
 					console.print("'help' - print all commands and how to use them");
 					console.print("'clear' - clear screen");
 					console.print("'close' - exit client, close ports, be graceful");
-					console.print("'verbose _BOOL' - toggle verbose mode as true or false");
-					console.print("'testMode _BOOL' - if set true, sends to Host. If set false, sends to Server directly");
-					console.print("'RRQ _FILE _MODE' - send a read request for file _FILE in mode _MODE");
-					console.print("'WRQ _MODE' - send a read request for file _FILE in mode _MODE");
+					console.print("'verbose BOOL' - toggle verbose mode as true or false");
+					console.print("'testMode BOOL' - if set true, sends to Host. If set false, sends to Server directly");
+					console.print("'RRQ FILENAME MODE' - send a read request for file FILENAME in mode MODE");
+					console.print("'WRQ MODE' - send a read request in mode MODE");
 					console.println();
 					break;
 				

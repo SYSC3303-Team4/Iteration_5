@@ -23,7 +23,7 @@ interface UIFramework
 	public abstract void print(String printable);
 
 	//generic method to take in user input
-	public abstract String getInput();
+	public abstract String getInput(boolean wait);
 	
 	//generic method to print indented to screen
 	public abstract void printIndent(String printable);
