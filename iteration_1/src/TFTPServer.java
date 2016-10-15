@@ -84,7 +84,7 @@ public class TFTPServer{
 		console.print("Please specify verbose mode true or false");
 		input = console.getInput(true);
 		input.toLowerCase();
-		if (input.equals(true))
+		if (input.equals("true"))
 		{
 			verbose = true;
 		}
@@ -143,12 +143,11 @@ public class TFTPServer{
 					console.print("Host port: " + receivePacket.getPort());
 					len = receivePacket.getLength();
 					console.print("Length: " + len);
-					console.print("Containing: " );
 
-					// print the bytes
-					for (j=0;j<len;j++) {
-						console.print("byte " + j + " " + data[j]);
-					}
+					int packetSize = receivePacket.getLength();
+
+					console.printByteArray(data, packetSize);
+					console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
 
 					// Form a String from the byte array.
 					String received = new String(data,0,len);

@@ -33,19 +33,17 @@ public abstract class ServerThread extends Thread{
 	}
 	
 	protected void printReceivedPacket(DatagramPacket receivedPacket, boolean verbose){
-		byte[] data = receivedPacket.getData();
-		int packetSize = receivedPacket.getLength();
-		console.print("Server: Received Packet");
-		console.print("        Source: " + receivedPacket.getAddress());
-		console.print("        Port:   " + receivedPacket.getPort());
-		console.print("        Bytes:  " + packetSize);
-		System.out.printf("%s", "        Cntn:  ");
-		for(int i = 0; i < packetSize; i++)
-		{
-			System.out.printf("0x%02X", data[i]);
-			System.out.printf("%-2c", ' ');
+		console.print("Server: Received packet...");
+		if(verbose){
+			byte[] data = receivedPacket.getData();
+			int packetSize = receivedPacket.getLength();
+	
+			console.printIndent("Source: " + receivedPacket.getAddress());
+			console.printIndent("Port:      " + receivedPacket.getPort());
+			console.printIndent("Bytes:   " + packetSize);
+			console.printByteArray(data, packetSize);
+			console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
 		}
-		console.print("\n        Cntn:  " + (new String(data,0,packetSize))+"/n");
 	}
 	
 	protected void printSendPacket(DatagramPacket sendPacket, boolean verbose){
@@ -54,17 +52,12 @@ public abstract class ServerThread extends Thread{
 		{
 			byte[] data = sendPacket.getData();
 			int packetSize = sendPacket.getLength();
-			console.print("        Host:  " + sendPacket.getAddress());
-			console.print("        Port:  " + sendPacket.getPort());
-			console.print("        Bytes: " + sendPacket.getLength());
-			System.out.printf("%s", "        Cntn:  ");
-			for(int i = 0; i < packetSize; i++)
-			{
-				System.out.printf("0x%02X", data[i]);
-				System.out.printf("%-2c", ' ');
-			}
-			console.print("");
-			console.print("        Cntn:  " + (new String(data,0,packetSize)));
+
+			console.printIndent("Source: " + sendPacket.getAddress());
+			console.printIndent("Port:      " + sendPacket.getPort());
+			console.printIndent("Bytes:   " + packetSize);
+			console.printByteArray(data, packetSize);
+			console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
 			
 		}
 	}
@@ -98,15 +91,8 @@ DATA  | 03    |   Block #  |    Data    |
 			     receivePacket.getAddress(), receivePacket.getPort());
 	/* Exit Gracefully if the stop is requested. */
 	   if(stopRequested){exitGraceFully();}
-      		console.print("Server: Sending packet:");
-      if(verbose){
-	       console.print("To host: " + sendPacket.getAddress());
-	       console.print("Destination host port: " + sendPacket.getPort());
-	       
-	       console.print("Length: " + sendPacket.getLength());
-	       console.print("Containing: " );
-	       console.print(Arrays.toString(sendPacket.getData()));
-      }
+       console.print("Server: Sending packet:");
+       printSendPacket(sendPacket, verbose);
 
       	try {
       		sendReceiveSocket.send(sendPacket);
@@ -117,7 +103,7 @@ DATA  | 03    |   Block #  |    Data    |
       	/* Exit Gracefully if the stop is requested. */
       	if(stopRequested){exitGraceFully();}
       	if(verbose){
-      		console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
+      		console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
       	}
     }
     
@@ -136,18 +122,22 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     	switch(errorCode){
 	    	case 1:
 	    		errorCode = 1;
+	    		console.print("Server: File not found, sending error packet");
 	    		errorMsg = "File not found.";
 	    		break;
 	    	case 2: 
 	    		errorCode = 2;
+	    		console.print("Server: Access violation, sending error packet");
 	    		errorMsg = "Access violation.";
 	    		break;
 	    	case 3: 
 	    		errorCode = 3;
+	    		console.print("Server: Disk full or allocation exceeded, sending error packet");
 	    		errorMsg = "Disk full or allocation exceeded.";
 	    		break;
 	    	case 6: 
 	    		errorCode = 6;
+	    		console.print("Server: File already exists, sending error packet");
 	    		errorMsg = "File already exists.";
 	    		break;
     	}
@@ -167,18 +157,6 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		/* Exit Gracefully if the stop is requested. */
 		   if(stopRequested){exitGraceFully();}
 		   printSendPacket(sendPacket,verbose);
-
-	       	// Send the datagram packet to the client via a new socket.
-
-	       	try {
-	       		// Construct a new datagram socket and bind it to any port
-	       		// on the local host machine. This socket will be used to
-				// send UDP Datagram packets.
-		       	sendReceiveSocket = new DatagramSocket();
-	       	} catch (SocketException se) {
-	       		se.printStackTrace();
-	       		System.exit(1);
-	       	}
 
 	       	try {
 	       		sendReceiveSocket.send(sendPacket);
