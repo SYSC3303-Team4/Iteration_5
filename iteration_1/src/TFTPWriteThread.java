@@ -63,6 +63,7 @@ class TFTPWriteThread extends ServerThread
     private JTextArea fileChooserFrame;
 	private File file;
 	private JFileChooser fileChooser;
+	private boolean fileFlag = false;
     
     
 
@@ -183,13 +184,15 @@ class TFTPWriteThread extends ServerThread
 		       
 
 		       //Write file to directory
-		       File fileName = new File(filename.toString());
+		       File fileName = new File(file.getAbsolutePath()+filename.toString());
+		       
 		       
 		       TFTPWriter writer = new TFTPWriter();
-		       if(fileName.exists() && !fileName.isDirectory()) { 
+		       if(fileName.exists() && fileFlag == false) { 
 		    	   buildError(6,receivePacket,verbose);
 		    	   return;
 				}
+		       fileFlag = true;
 				
 		       try {
 					writer.write(data,file.getAbsolutePath()+filename.toString());
