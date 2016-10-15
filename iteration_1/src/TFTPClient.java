@@ -380,7 +380,7 @@ public class TFTPClient extends JFrame
 		sendPacket();
 		//wait for ACK
 		receiveACK();
-		//change port to wherever ACK came from
+		//change port to wherever ACK came from 
 		outPort = recievedPacket.getPort();
 		
 		//send DATA

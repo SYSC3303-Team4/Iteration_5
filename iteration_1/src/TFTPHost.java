@@ -262,7 +262,7 @@ public class TFTPHost
 						console.println();
 						loop = false;
 					}
-					//there are still DATA packets to pass, transfer not compelte
+					//there are still DATA packets to pass, transfer not compelte 
 					else
 					{
 						//receive server ACK
