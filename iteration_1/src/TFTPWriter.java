@@ -24,14 +24,20 @@ import java.io.*;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 
+import javax.swing.JFileChooser;
+import javax.swing.JTextArea;
+
 
 
 public class TFTPWriter 
 {
+	private File file;
 	
-	
-	public void write(byte[] data, String file) throws  IOException, AccessDeniedException, FileAlreadyExistsException 
+	public void write(byte[] data, String path) throws  IOException, AccessDeniedException, FileAlreadyExistsException 
 	{
+		
+		
+		file = new File(path);
 		//prep to write to file
 		FileOutputStream output = new FileOutputStream(file,true);//set to false if dont always want to write to end of file
 		//write data to file starting at offset

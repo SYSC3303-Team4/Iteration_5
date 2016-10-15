@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 
+import javax.swing.JFileChooser;
 import javax.swing.JTextArea;
 
 class TFTPWriteThread extends ServerThread
@@ -58,6 +59,9 @@ class TFTPWriteThread extends ServerThread
     private String threadNumber;
     private String path= "DEFAULT_TEST_WRITE";
     public static final byte[] response = {0, 4, 0, 0};
+    private JTextArea fileChooserFrame;
+	private File file;
+	private JFileChooser fileChooser;
     
     
 
@@ -73,6 +77,14 @@ class TFTPWriteThread extends ServerThread
 			// TODO Auto-generated catch block    
 			e.printStackTrace();
 			System.out.println(e.getMessage());
+		}
+        
+        fileChooserFrame = new JTextArea(5,40);
+		fileChooser = new JFileChooser();
+		fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+		int result = fileChooser.showOpenDialog(fileChooser);
+		if (result == JFileChooser.APPROVE_OPTION) {//file is found
+		    file = fileChooser.getSelectedFile();//get file name
 		}
     }
 
@@ -187,16 +199,19 @@ class TFTPWriteThread extends ServerThread
 		       TFTPWriter writer = new TFTPWriter();    	 
 				
 		       try {
-					writer.write(data,path + filename.toString());
+					writer.write(data,file.getAbsolutePath());
 				} catch (AccessDeniedException e1) {
 					buildError(2,receivePacket,verbose);
 					e1.printStackTrace();
+					//exit
 				} catch (FileAlreadyExistsException e) {
 					buildError(3,receivePacket,verbose);
 					e.printStackTrace();
+					//exit
 				} catch(IOException e2){
 					buildError(6,receivePacket,verbose);
 					e2.printStackTrace();
+					//exit
 				}
 
 		       if(data.length<512){

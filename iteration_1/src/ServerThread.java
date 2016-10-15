@@ -164,16 +164,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 				     receivePacket.getAddress(), receivePacket.getPort());
 		/* Exit Gracefully if the stop is requested. */
 		   if(stopRequested){exitGraceFully();}
-	       		System.out.println("Server: Sending packet:");
-	       if(verbose){
-		       System.out.println("To host: " + sendPacket.getAddress());
-		       System.out.println("Destination host port: " + sendPacket.getPort());
-		       
-		       System.out.println("Length: " + sendPacket.getLength());
-		       System.out.println("Containing: " );
-		       System.out.println(Arrays.toString(sendPacket.getData()));
-	       }
-
+		   printSendPacket(sendPacket,verbose);
 
 	       	// Send the datagram packet to the client via a new socket.
 
