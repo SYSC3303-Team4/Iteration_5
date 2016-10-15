@@ -41,12 +41,13 @@ import java.util.*;
 
 import javax.swing.JTextArea;
 
+import ui.ConsoleUI;
+
 class TFTPReadThread  extends ServerThread
 {
 	/**
 	 * The text area where this thread's output will be displayed.
 	 */
-	private JTextArea transcript;
 	private DatagramPacket receivePacket;
 	private DatagramPacket sendPacket;
 	private DatagramSocket sendReceiveSocket;
@@ -57,14 +58,12 @@ class TFTPReadThread  extends ServerThread
 	public static final byte[] response = {0, 3, 0, 0};
 
 
-	public TFTPReadThread(ThreadGroup group,JTextArea transcript, DatagramPacket receivePacketInfo, String thread, Boolean verboseMode) {
-		super(group,thread);
-		this.transcript = transcript;
+	public TFTPReadThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket receivePacketInfo, String thread, Boolean verboseMode) {
+		super(group,thread,transcript);
 		receivePacket = receivePacketInfo;
 		threadNumber  = thread;
 		verbose = verboseMode;
 
-		System.out.println(verboseMode);
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) {
@@ -107,9 +106,9 @@ class TFTPReadThread  extends ServerThread
 			/* Exit Gracefully if the stop is requested. */
 			if(isInterrupted()){exitGraceFully();return;}
 			if(verbose){
-				System.out.println("Request parsed for:");
-				System.out.println("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
-				System.out.println("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
+				console.print("Request parsed for:");
+				console.print("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
+				console.print("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
 			}
 			
 			File file = new File(filename.toString());
@@ -164,7 +163,7 @@ class TFTPReadThread  extends ServerThread
 						
 						printReceivedPacket(finalACKPacket, verbose);
 					}
-					System.out.println("Read Request has completed.");
+					console.print("Read Request has completed.");
 					exitGraceFully();
 				}	
 				//Builds the datagram in format
@@ -196,8 +195,7 @@ class TFTPReadThread  extends ServerThread
 				/* Exit Gracefully if the stop is requested. */
 				if(isInterrupted()){continue;}
 				if(verbose){
-				System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
-				System.out.println();
+				console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
 				}
 	
 				//Waiting to receive ACK

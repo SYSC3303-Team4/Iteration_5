@@ -4,14 +4,18 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.Arrays;
 
+import ui.ConsoleUI;
+
 public abstract class ServerThread extends Thread{
 	
 	protected boolean stopRequested = false;
 	protected DatagramSocket sendReceiveSocket;
+	protected ConsoleUI console;
 	
-	public ServerThread(ThreadGroup group, String name)
+	public ServerThread(ThreadGroup group, String name, ConsoleUI console)
 	{
 		super(group,name);
+		this.console=console;
 	}
 	
     public void RequestStop()
@@ -25,56 +29,55 @@ public abstract class ServerThread extends Thread{
 		{
 			sendReceiveSocket.close();
 		}
-		System.out.println("Server: Exiting Gracefully");
+		console.print("Server: Exiting Gracefully");
 	}
 	
 	protected void printReceivedPacket(DatagramPacket receivedPacket, boolean verbose){
 		byte[] data = receivedPacket.getData();
 		int packetSize = receivedPacket.getLength();
-		System.out.println("Server: Received Packet");
-		System.out.println("        Source: " + receivedPacket.getAddress());
-		System.out.println("        Port:   " + receivedPacket.getPort());
-		System.out.println("        Bytes:  " + packetSize);
+		console.print("Server: Received Packet");
+		console.print("        Source: " + receivedPacket.getAddress());
+		console.print("        Port:   " + receivedPacket.getPort());
+		console.print("        Bytes:  " + packetSize);
 		System.out.printf("%s", "        Cntn:  ");
 		for(int i = 0; i < packetSize; i++)
 		{
 			System.out.printf("0x%02X", data[i]);
 			System.out.printf("%-2c", ' ');
 		}
-		System.out.println("\n        Cntn:  " + (new String(data,0,packetSize)));
-		System.out.println();
+		console.print("\n        Cntn:  " + (new String(data,0,packetSize))+"/n");
 	}
 	
 	protected void printSendPacket(DatagramPacket sendPacket, boolean verbose){
-		System.out.println("Server: Sending packet...");
+		console.print("Server: Sending packet...");
 		if(verbose)
 		{
 			byte[] data = sendPacket.getData();
 			int packetSize = sendPacket.getLength();
-			System.out.println("        Host:  " + sendPacket.getAddress());
-			System.out.println("        Port:  " + sendPacket.getPort());
-			System.out.println("        Bytes: " + sendPacket.getLength());
+			console.print("        Host:  " + sendPacket.getAddress());
+			console.print("        Port:  " + sendPacket.getPort());
+			console.print("        Bytes: " + sendPacket.getLength());
 			System.out.printf("%s", "        Cntn:  ");
 			for(int i = 0; i < packetSize; i++)
 			{
 				System.out.printf("0x%02X", data[i]);
 				System.out.printf("%-2c", ' ');
 			}
-			System.out.println("");
-			System.out.println("        Cntn:  " + (new String(data,0,packetSize)));
+			console.print("");
+			console.print("        Cntn:  " + (new String(data,0,packetSize)));
 			
 		}
 	}
 	
     protected void printError(DatagramPacket packet,boolean verbose){
-    	System.out.println("Server: Error packet received");
-    	System.out.println("From client: " + packet.getAddress());
-    	System.out.println("From client port: " + packet.getPort());
-	    System.out.println("Length: " + packet.getLength());
-	    System.out.println("Error Code: " + new String(packet.getData(),
+    	console.print("Server: Error packet received");
+    	console.print("From client: " + packet.getAddress());
+    	console.print("From client port: " + packet.getPort());
+	    console.print("Length: " + packet.getLength());
+	    console.print("Error Code: " + new String(packet.getData(),
 				   2,2));
-	    System.out.println("ErrorMessage: " );
-	    System.out.println(new String(packet.getData(),
+	    console.print("ErrorMessage: " );
+	    console.print(new String(packet.getData(),
 				   4,packet.getData().length-1));
     }
     /* Send Data packet with no data
@@ -95,14 +98,14 @@ DATA  | 03    |   Block #  |    Data    |
 			     receivePacket.getAddress(), receivePacket.getPort());
 	/* Exit Gracefully if the stop is requested. */
 	   if(stopRequested){exitGraceFully();}
-      		System.out.println("Server: Sending packet:");
+      		console.print("Server: Sending packet:");
       if(verbose){
-	       System.out.println("To host: " + sendPacket.getAddress());
-	       System.out.println("Destination host port: " + sendPacket.getPort());
+	       console.print("To host: " + sendPacket.getAddress());
+	       console.print("Destination host port: " + sendPacket.getPort());
 	       
-	       System.out.println("Length: " + sendPacket.getLength());
-	       System.out.println("Containing: " );
-	       System.out.println(Arrays.toString(sendPacket.getData()));
+	       console.print("Length: " + sendPacket.getLength());
+	       console.print("Containing: " );
+	       console.print(Arrays.toString(sendPacket.getData()));
       }
 
       	try {
@@ -114,8 +117,7 @@ DATA  | 03    |   Block #  |    Data    |
       	/* Exit Gracefully if the stop is requested. */
       	if(stopRequested){exitGraceFully();}
       	if(verbose){
-      		System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
-   	  	System.out.println();
+      		console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
       	}
     }
     
@@ -164,14 +166,14 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 				     receivePacket.getAddress(), receivePacket.getPort());
 		/* Exit Gracefully if the stop is requested. */
 		   if(stopRequested){exitGraceFully();}
-	       		System.out.println("Server: Sending packet:");
+	       		console.print("Server: Sending packet:");
 	       if(verbose){
-		       System.out.println("To host: " + sendPacket.getAddress());
-		       System.out.println("Destination host port: " + sendPacket.getPort());
+		       console.print("To host: " + sendPacket.getAddress());
+		       console.print("Destination host port: " + sendPacket.getPort());
 		       
-		       System.out.println("Length: " + sendPacket.getLength());
-		       System.out.println("Containing: " );
-		       System.out.println(Arrays.toString(sendPacket.getData()));
+		       console.print("Length: " + sendPacket.getLength());
+		       console.print("Containing: " );
+		       console.print(Arrays.toString(sendPacket.getData()));
 	       }
 
 
@@ -196,8 +198,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 	       	/* Exit Gracefully if the stop is requested. */
 	       	if(stopRequested){exitGraceFully();}
 	       	if(verbose){
-	       		System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
-	    	  	System.out.println();
+	       		console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
 	       	}
     	
     }

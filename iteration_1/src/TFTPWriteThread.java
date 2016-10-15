@@ -44,12 +44,13 @@ import java.nio.file.FileAlreadyExistsException;
 
 import javax.swing.JTextArea;
 
+import ui.ConsoleUI;
+
 class TFTPWriteThread  extends ServerThread
 {
     /**
      * The text area where this thread's output will be displayed.
      */
-    JTextArea transcript;
     private DatagramPacket sendPacket;
     private DatagramPacket receivePacket;
     private DatagramPacket receivePacket1;
@@ -61,9 +62,8 @@ class TFTPWriteThread  extends ServerThread
     
     
 
-    public TFTPWriteThread(ThreadGroup group,JTextArea transcript, DatagramPacket receivePacketInfo,String thread, Boolean verboseMode) {
-    	super(group,thread);
-        this.transcript = transcript;
+    public TFTPWriteThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket receivePacketInfo,String thread, Boolean verboseMode) {
+    	super(group,thread,transcript);
         receivePacket = receivePacketInfo;  
         threadNumber = thread;
         verbose = verboseMode;
@@ -72,7 +72,7 @@ class TFTPWriteThread  extends ServerThread
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block    
 			e.printStackTrace();
-			System.out.println(e.getMessage());
+			console.print(e.getMessage());
 		}
     }
 
@@ -103,10 +103,10 @@ class TFTPWriteThread  extends ServerThread
 		    /* Exit Gracefully if the stop is requested. */
 	       if(isInterrupted()){exitGraceFully();return;}
 	       if(verbose){
-	    	   System.out.println("Request parsed for:");
-	    	   System.out.println("	Filename: " + new String(filename.toByteArray(),
+	    	   console.print("Request parsed for:");
+	    	   console.print("	Filename: " + new String(filename.toByteArray(),
 				   0,filename.toByteArray().length));
-	    	   System.out.println("	Mode: " + new String(mode.toByteArray(),
+	    	   console.print("	Mode: " + new String(mode.toByteArray(),
 				   0,mode.toByteArray().length) + "\n");
 			}
     	
@@ -147,8 +147,7 @@ class TFTPWriteThread  extends ServerThread
 		        /* Exit Gracefully if the stop is requested. */
 				if(isInterrupted()){exitGraceFully();}
 				if(verbose){
-		       System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
-		       System.out.println();
+		       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
 				}
 		   }
 
@@ -164,7 +163,7 @@ class TFTPWriteThread  extends ServerThread
 		   
 		    /* Exit Gracefully if the stop is requested. */
 			if(isInterrupted()){continue;}
-	       System.out.println("Server: Waiting for packet.");
+	       console.print("Server: Waiting for packet.");
 	       // Block until a datagram packet is received from receiveSocket.
 	       try {
 	    	   sendReceiveSocket.receive(receivePacket1);
@@ -205,7 +204,7 @@ class TFTPWriteThread  extends ServerThread
 
 		       if(data.length<512){
 		    	   if(verbose){
-		    	   System.out.println("Server: Final Data Block Received.");
+		    	   console.print("Server: Final Data Block Received.");
 		    	   }
 		    	   exitGraceFully();
 		       }
@@ -251,8 +250,7 @@ class TFTPWriteThread  extends ServerThread
 				/* Exit Gracefully if the stop is requested. */
 			 if(isInterrupted()){continue;}
 			 if(verbose){
-		       System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
-		       System.out.println();
+		       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
 			 }
 	       }
 	    }

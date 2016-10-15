@@ -14,7 +14,9 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-public class TFTPServer extends JFrame{ 
+import ui.ConsoleUI;
+
+public class TFTPServer{ 
 
    // types of requests we can receive
    public static enum Request { READ, WRITE, ERROR};
@@ -27,12 +29,8 @@ public class TFTPServer extends JFrame{
    private DatagramSocket receiveSocket, sendSocket;
    private static boolean verbose = false;
    private static Scanner scan= new Scanner(System.in);
+   private ConsoleUI console;
    
-   /**
-    * JTextArea for the factorial thread.
-    */
-   private JTextArea out;
-
    /**
     * JTextArea for the thread executing main().
     */
@@ -46,34 +44,10 @@ public class TFTPServer extends JFrame{
    
    public TFTPServer(String title)
    {
-	   super(title);
-
-       out = new JTextArea(5,40);
-       
-       out.setEditable(false);
-       JScrollPane pane1 = new JScrollPane(out, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-       pane1.setBorder(BorderFactory.createTitledBorder("Output Log"));
-
-       status = new JTextArea(5, 40);
-       status.setVisible(true);
-       status.setEditable(false);
-       JScrollPane pane2 = new JScrollPane(status, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-       pane2.setBorder(BorderFactory.createTitledBorder("Status"));
-       
-       commandLine = new JTextArea(5, 40);
-       commandLine.setVisible(true);
-       commandLine.setEditable(true);
-       JScrollPane pane3 = new JScrollPane(status, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-       pane3.setBorder(BorderFactory.createTitledBorder("Command Line"));
-       
-       out.setVisible(true);
-		System.out.println("Verbose mode: (T)rue or (F)alse?");
-		String verboseBool = scan.nextLine();
-		if (verboseBool.equalsIgnoreCase("T")){
-			verbose = true;
-		}
-
-       
+   
+		//make and run the UI
+		console = new ConsoleUI(title);
+		console.run();
 	   
       try {
          // Construct a datagram socket and bind it to port 69
@@ -81,7 +55,7 @@ public class TFTPServer extends JFrame{
          // receive UDP Datagram packets.
          receiveSocket = new DatagramSocket(69);
       } catch (SocketException se) {
-    	  System.out.println("SOCKET BIND ERROR");
+    	  console.print("SOCKET BIND ERROR");
          se.printStackTrace();
          System.exit(1);
       }
@@ -109,7 +83,7 @@ public class TFTPServer extends JFrame{
          data = new byte[100];
          receivePacket = new DatagramPacket(data, data.length);
 
-         System.out.println("Server: Waiting for packet.");
+         console.print("Server: Waiting for packet.");
          // Block until a datagram packet is received from receiveSocket.
          try {
             receiveSocket.receive(receivePacket);
@@ -119,21 +93,21 @@ public class TFTPServer extends JFrame{
          }
 
          // Process the received datagram.
-         out.append("Server: Packet received:");
-         out.append("From host: " + receivePacket.getAddress());
-         out.append("Host port: " + receivePacket.getPort());
+         console.print("Server: Packet received:");
+         console.print("From host: " + receivePacket.getAddress());
+         console.print("Host port: " + receivePacket.getPort());
          len = receivePacket.getLength();
-         out.append("Length: " + len);
-         out.append("Containing: " );
+         console.print("Length: " + len);
+         console.print("Containing: " );
          
          // print the bytes
         for (j=0;j<len;j++) {
-        	 out.append("byte " + j + " " + data[j]);
+        	console.print("byte " + j + " " + data[j]);
          }
 
          // Form a String from the byte array.
          String received = new String(data,0,len);
-         out.append(received);
+         console.print(received);
 
          // If it's a read, send back DATA (03) block 1
          // If it's a write, send back ACK (04) block 0
@@ -169,12 +143,12 @@ public class TFTPServer extends JFrame{
          // Create a response.
          if (req==Request.READ) { // for Read it's 0301
         	 threadNum++;
-        	Thread readRequest =  new TFTPReadThread(initializedThreads, out, receivePacket, "Thread "+threadNum, verbose);
+        	Thread readRequest =  new TFTPReadThread(initializedThreads,console, receivePacket, "Thread "+threadNum, verbose);
         	readRequest.start();
             response = readResp;
          } else if (req==Request.WRITE) { // for Write it's 0400
         	threadNum++;
-        	Thread writeRequest =  new TFTPWriteThread(initializedThreads,out, receivePacket,"Thread "+threadNum, verbose);
+        	Thread writeRequest =  new TFTPWriteThread(initializedThreads,console, receivePacket,"Thread "+threadNum, verbose);
          	writeRequest.start();
             response = writeResp;
          } else { // it was invalid, just quit
@@ -219,7 +193,7 @@ public class TFTPServer extends JFrame{
    public static void main( String args[] ) throws Exception
    {
 	  
-      TFTPServer c = new TFTPServer("Server");
+      TFTPServer c = new TFTPServer("TFTP Server");
       c.receiveAndSendTFTP();
    }
 }
