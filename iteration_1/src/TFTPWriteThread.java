@@ -44,7 +44,7 @@ import java.nio.file.FileAlreadyExistsException;
 
 import javax.swing.JTextArea;
 
-class TFTPWriteThread  extends ServerThread
+class TFTPWriteThread extends ServerThread
 {
     /**
      * The text area where this thread's output will be displayed.
@@ -173,11 +173,7 @@ class TFTPWriteThread  extends ServerThread
 	    	   System.exit(1);
 	       }
 	      
-	       if(receivePacket1.getData()[0] == 0 && receivePacket1.getData()[1] == 5){
-	    	   printError(receivePacket1,verbose);
-	    	   
-	       }
-	       else{
+	       printReceivedPacket(receivePacket1,verbose);
 		       byte[] data = new byte[receivePacket1.getLength()-4];
 
 		       //Parse data from DATA packet
@@ -206,8 +202,9 @@ class TFTPWriteThread  extends ServerThread
 		       if(data.length<512){
 		    	   if(verbose){
 		    	   System.out.println("Server: Final Data Block Received.");
+		    	   System.out.println("Server: Sending last ACK");
+		    	   //SET INTERRUPT TO EXIT LOOP
 		    	   }
-		    	   exitGraceFully();
 		       }
 
 		       //Sending the ACK for previous DATA packet in format:
@@ -228,7 +225,7 @@ class TFTPWriteThread  extends ServerThread
 					     receivePacket.getAddress(), receivePacket.getPort());
 				/* Exit Gracefully if the stop is requested. */
 			   if(isInterrupted()){continue;}
-			   printSendPacket(receivePacket,verbose);
+			   printSendPacket(sendPacket,verbose);
 
 		       // Send the datagram packet to the client via a new socket.
 
@@ -254,9 +251,9 @@ class TFTPWriteThread  extends ServerThread
 		       System.out.println("Server: packet sent using port " + sendReceiveSocket.getLocalPort());
 		       System.out.println();
 			 }
-	       }
+	       
 	    }
-	       exitGraceFully();
+	    exitGraceFully();
     }
     
 
