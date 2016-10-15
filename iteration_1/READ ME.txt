@@ -11,7 +11,7 @@
                        
 
 
-TFTP Project - Iteration 1
+TFTP Project - Iteration 2
 SYSC 3303
 Group 4
 
@@ -28,37 +28,29 @@ Sarah Garlough			[100965386]
 TEAM LOGISTICS
 
 	Adam Staples
-		- Test case implementation and testing
-		- UI work on Client and Server class
-		- UI debugging
-	
+		- Debugged the writer
+		- Tested Functionality
+		
 	Dan Hogan
-		- Wrote ServerThread.java
-		- In charge of merging code
-		- General debugging for all files
-		- Lots of debug for thread logic
-		- Github managment
+		- Update Readme
+		- Debug
+		- Add more exiting conditions
+		- Refactoring
 	
 	Jason Van Kerkhoven
-		- Wrote TFTPClient.java
-		- Wrote TFTPHost.java
-		- Wrote TFTPReader.java
-		- Debug Client-Server communication
-		- Read Me
+		- Made UI
+		- Patch logic in Host
+		- Integrated UI with Server/Client
+		- Debugged Client and Host
 
 	Nathaniel Charlebois
-		- Wrote TFTPServer.java
-		- Wrote TFTPReadThread.java
-		- Wrote TFTPWriteThread.java
-		- Debugged thread logic
-		- Debug Client-Server communication
+		- Added Server side error handling
+		- Timing Diagrams
+		- Debugger
+		- Refactored Server
 	
 	Sarah Garlough
-		- Wrote TFTPWriter.java
-		- UML artisan
-		- Group communication forum admin
-		- UI for Client and Server classes
-		- UCM MC
+		- Client Side Error handling
 
 
 -----------------------------------------------------------
@@ -71,31 +63,50 @@ CONTENTS:
 	TFTPServer.java		
 	TFTPWriteThread.java	
 	TFTPWriter.java		
-
+	.project
+	.classpath
+	ReadMe.txt
+	1ByteData.txt
+	305ByteData.txt
+	511ByteData.txt
+	512ByteData.txt
+	513ByteData.txt
+	UIFramework.java
+	RRQ_Error_Access_Violation.pdf
+	RRW_Error_File_Not_Found.pdf
+	RRQ_Typical_Case.pdf
+	WRQ_Error_DiskFull.pdf
+	WRQ_Error_NoPermission.pdf
+	WRQ_Typical_Case.pdf
 
 ------------------------------------------------------------
 SET UP INSTRUCTIONS:
 	
-	1.	Load all files into Eclipse workspace/project
+	1.	Load all java files into Eclipse workspace/project
 	2.	Build project
-	3.	Run Server.java
-	4.  Enter verbose or quiet into console
-	4.	Run Client.java*
-	6.  Enter test or normal** into console
-	7.  Enter verbose or quiet into console
-	8.	Enter Read or Write into console
-	9.  Enter name of text file** into console
+	
+	RRQ Instructions
+	1.	Run Server.java
+	2.  Enter true(Verbose) or false(Quite) into console
+	3.	Run Client.java*
+	4.  Enter help on the client to see instructions
+	5.  Enter RRQ FileName Mode, with filename being the file you wish to read.
+	6.	View Output in server and client
+	7.  Use the x on the top of UI window to exit
+	
+	WRQ Instructions
+	1.	Run Server.java
+	2.  Enter true(Verbose) or false(Quite) into console
+	3.	Run Client.java*
+	4.  Enter help on the client to see instructions
+	5.  Enter WRQ Mode
+	6.	A File Explorer will appear to select the directory you would like to write to on the server.
+	7.	View Output in server and client
+	8.  Use the x on the top of UI window to exit
 
 
-	*Note that both programs must be running concurently for 
+	*Note that both programs must be running concurrently for 
 	correct results*
-	
-	**Note test must be set to false as Host is currently not synced
-	 to the server and client**
-	
-	***Note that all external files to be read or written to MUST be
-	 in the directory above src***
-
 
 ------------------------------------------------------------
 FILE INFORMATION:
@@ -162,6 +173,15 @@ TFTPWriter.java
 	Passed byte array and file name by caller. Creates file name based off of passed 
 	info, then writes byte array to file. If the file already exits, defaults to not 
 	overwriting.
+	
+ConsoleUI.java
+
+	Generates GUI. The GUI uses a JTextArea for the output and JTestField for the input. This class 
+	is thread safe through internal synchronization.
+	
+UIFramework.java
+
+	Defines the basic methods a GUI must provide if we choose to implement different GUI types in the future.
 
 
 ------------------------------------------------------------
