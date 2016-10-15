@@ -100,12 +100,12 @@ SET UP INSTRUCTIONS:
 	3.	Run Client.java*
 	4.  Enter help on the client to see instructions
 	5.  Enter WRQ Mode
-	6.	A File Explorer will appear to select the file you would like to write to on the server.
+	6.	A File Explorer will appear to select the directory you would like to write to on the server.
 	7.	View Output in server and client
 	8.  Use the x on the top of UI window to exit
 
 
-	*Note that both programs must be running concurently for 
+	*Note that both programs must be running concurrently for 
 	correct results*
 
 ------------------------------------------------------------
