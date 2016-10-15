@@ -196,7 +196,10 @@ class TFTPWriteThread extends ServerThread
 
 
 		       //Write file to directory
-		       TFTPWriter writer = new TFTPWriter();    	 
+		       TFTPWriter writer = new TFTPWriter();
+		       if(file.exists() && !file.isDirectory()) { 
+		    	   buildError(6,receivePacket,verbose);
+				}
 				
 		       try {
 					writer.write(data,file.getAbsolutePath());
@@ -204,12 +207,9 @@ class TFTPWriteThread extends ServerThread
 					buildError(2,receivePacket,verbose);
 					e1.printStackTrace();
 					//exit
-				} catch (FileAlreadyExistsException e) {
+				} 
+				catch(IOException e2){
 					buildError(3,receivePacket,verbose);
-					e.printStackTrace();
-					//exit
-				} catch(IOException e2){
-					buildError(6,receivePacket,verbose);
 					e2.printStackTrace();
 					//exit
 				}
