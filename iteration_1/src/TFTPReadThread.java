@@ -168,6 +168,7 @@ class TFTPReadThread  extends ServerThread
 					}
 					console.print("Read Request has completed.");
 					exitGraceFully();
+					return;
 				}	
 				//Builds the datagram in format
 				/*

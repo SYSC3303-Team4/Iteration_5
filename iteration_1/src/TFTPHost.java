@@ -40,7 +40,7 @@ public class TFTPHost
 	private static final int CLIENT_RECEIVE_PORT = 23;
 	private static final int SERVER_RECEIVE_PORT = 69;
 	private static final int MAX_SIZE = 512+4;
-	private static final boolean LITE = true ; 			//lite af
+	private static final boolean LIT = true ; 			
 
 	
 	//generic constructor
@@ -166,7 +166,7 @@ public class TFTPHost
 	{
 		console.print("Console Operating...");
 		
-		while(LITE)
+		while(LIT)
 		{
 			//declaring local variables
 			byte RWReq=0;

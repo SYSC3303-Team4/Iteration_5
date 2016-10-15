@@ -9,6 +9,7 @@ import java.net.*;
 import java.util.*;
 
 import javax.swing.BorderFactory;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
 import javax.swing.JScrollPane;
@@ -30,6 +31,10 @@ public class TFTPServer{
 	private static boolean verbose = false;
 	private static Scanner scan= new Scanner(System.in);
 	private ConsoleUI console;
+    private JTextArea fileChooserFrame;
+	private File file;
+	private JFileChooser fileChooser;
+    private String path= "DEFAULT_TEST_WRITE";
 
 	/**
 	 * JTextArea for the thread executing main().
@@ -58,6 +63,14 @@ public class TFTPServer{
 			console.print("SOCKET BIND ERROR");
 			se.printStackTrace();
 			System.exit(1);
+		}
+        fileChooserFrame = new JTextArea(5,40);
+		fileChooser = new JFileChooser();
+		fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		int result = fileChooser.showOpenDialog(fileChooser);
+		if (result == JFileChooser.APPROVE_OPTION) {//file is found
+		    file = fileChooser.getSelectedFile();//get file name
 		}
 	}
 	
@@ -192,7 +205,7 @@ public class TFTPServer{
 						response = readResp;
 					} else if (req==Request.WRITE) { // for Write it's 0400
 						threadNum++;
-						Thread writeRequest =  new TFTPWriteThread(initializedThreads,console, receivePacket,"Thread "+threadNum, verbose);
+						Thread writeRequest =  new TFTPWriteThread(initializedThreads,console, receivePacket,"Thread "+threadNum, verbose,file);
 						writeRequest.start();
 						response = writeResp;
 					} else { // it was invalid, just quit

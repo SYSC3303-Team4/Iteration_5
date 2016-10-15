@@ -58,35 +58,26 @@ class TFTPWriteThread extends ServerThread
     private int blockNumber = 0;
 	private boolean verbose;
     private String threadNumber;
-    private String path= "DEFAULT_TEST_WRITE";
+    File file;
+
     public static final byte[] response = {0, 4, 0, 0};
-    private JTextArea fileChooserFrame;
-	private File file;
-	private JFileChooser fileChooser;
+
 	private boolean fileFlag = false;
     
     
 
-    public TFTPWriteThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket receivePacketInfo,String thread, Boolean verboseMode) {
+    public TFTPWriteThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket receivePacketInfo,String thread, Boolean verboseMode,File file) {
     	super(group,thread,transcript);
         receivePacket = receivePacketInfo;  
         threadNumber = thread;
         verbose = verboseMode;
+        this.file = file;
         try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block    
 			e.printStackTrace();
 			console.print(e.getMessage());
-		}
-        
-        fileChooserFrame = new JTextArea(5,40);
-		fileChooser = new JFileChooser();
-		fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		int result = fileChooser.showOpenDialog(fileChooser);
-		if (result == JFileChooser.APPROVE_OPTION) {//file is found
-		    file = fileChooser.getSelectedFile();//get file name
 		}
     }
 
