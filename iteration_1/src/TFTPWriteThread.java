@@ -82,6 +82,7 @@ class TFTPWriteThread extends ServerThread
         fileChooserFrame = new JTextArea(5,40);
 		fileChooser = new JFileChooser();
 		fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		int result = fileChooser.showOpenDialog(fileChooser);
 		if (result == JFileChooser.APPROVE_OPTION) {//file is found
 		    file = fileChooser.getSelectedFile();//get file name
@@ -137,18 +138,6 @@ class TFTPWriteThread extends ServerThread
 			       receivePacket.getAddress(), receivePacket.getPort());
 
 			   printSendPacket(sendPacket,verbose);
-		       /*
-		       // Send the datagram packet to the client via a new socket.
-		       try {
-			   // Construct a new datagram socket and bind it to any port
-			   // on the local host machine. This socket will be used to
-			   // send UDP Datagram packets.
-			   sendSocket = new DatagramSocket();
-		       } catch (SocketException se) {
-			   se.printStackTrace();
-			   System.exit(1);
-		       }
-		       */
 
 		       try {
 			   sendReceiveSocket.send(sendPacket);
@@ -193,30 +182,32 @@ class TFTPWriteThread extends ServerThread
 		       }
 		       
 
-
 		       //Write file to directory
+		       File fileName = new File(filename.toString());
+		       
 		       TFTPWriter writer = new TFTPWriter();
-		       if(file.exists() && !file.isDirectory()) { 
+		       if(fileName.exists() && !fileName.isDirectory()) { 
 		    	   buildError(6,receivePacket,verbose);
+		    	   return;
 				}
 				
 		       try {
-					writer.write(data,file.getAbsolutePath());
+					writer.write(data,file.getAbsolutePath()+filename.toString());
 				} catch (AccessDeniedException e1) {
 					buildError(2,receivePacket,verbose);
 					e1.printStackTrace();
-					//exit
+					return;
 				} 
 				catch(IOException e2){
 					buildError(3,receivePacket,verbose);
 					e2.printStackTrace();
-					//exit
+					return;
 				}
 
 		       if(data.length<512){
 		    	   if(verbose){
 		    	   console.print("Server: Final Data Block Received.");
-		    	   System.out.println("Server: Sending last ACK");
+		    	   console.print("Server: Sending last ACK");
 		    	   //SET INTERRUPT TO EXIT LOOP
 		    	   }
 		       }
@@ -241,18 +232,6 @@ class TFTPWriteThread extends ServerThread
 			   if(isInterrupted()){continue;}
 			   printSendPacket(sendPacket,verbose);
 
-		       // Send the datagram packet to the client via a new socket.
-
-		       try {
-			  // Construct a new datagram socket and bind it to any port
-			  // on the local host machine. This socket will be used to
-			  // send UDP Datagram packets.
-			  sendReceiveSocket = new DatagramSocket();
-		       } catch (SocketException se) {
-			  se.printStackTrace();
-			  System.exit(1);
-		       }
-
 		       try {
 		    	   sendReceiveSocket.send(sendPacket);
 		       } catch (IOException e) {
@@ -266,6 +245,7 @@ class TFTPWriteThread extends ServerThread
 			 }
 	       
 	    }
+	    console.print("Server: thread closing.");
 	    exitGraceFully();
     }
     

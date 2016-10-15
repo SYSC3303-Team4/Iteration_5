@@ -689,7 +689,7 @@ public class TFTPClient extends JFrame
 								    file = fileChooser.getSelectedFile();//get file name
 								}
 								
-								sendWRQ(file.getAbsolutePath(), advIn[1]);
+								sendWRQ(file.getName(), advIn[1]);
 							}
 							else
 							{

@@ -38,6 +38,7 @@ public class TFTPWriter
 		
 		
 		file = new File(path);
+		System.out.println(path);
 		
 		//prep to write to file
 		FileOutputStream output = new FileOutputStream(file,true);//set to false if dont always want to write to end of file

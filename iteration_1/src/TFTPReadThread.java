@@ -114,6 +114,7 @@ class TFTPReadThread  extends ServerThread
 			File file = new File(filename.toString());
 			if(file.canRead() == false){
 				buildError(2,receivePacket,verbose);
+				return;
 			}
 	
 			TFTPReader reader = new TFTPReader();
@@ -123,11 +124,11 @@ class TFTPReadThread  extends ServerThread
 			} catch (FileNotFoundException e1) {
 				buildError(1,receivePacket,verbose);
 				e1.printStackTrace();
-				//exit
+				return;
 			} catch (IOException e) {
 				buildError(2,receivePacket,verbose);
 				e.printStackTrace();
-				//exit
+				return;
 			}
 			
 
@@ -220,6 +221,7 @@ class TFTPReadThread  extends ServerThread
 					blockNumber++;
 				}
 			}
+			console.print("Server: thread closing.");
 			exitGraceFully();
 		}
 
