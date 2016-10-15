@@ -86,23 +86,27 @@ SET UP INSTRUCTIONS:
 	2.	Build project
 	
 	RRQ Instructions
-	1.	Run Server.java
-	2.  Enter true(Verbose) or false(Quite) into console
-	3.	Run Client.java*
-	4.  Enter help on the client to see instructions
-	5.  Enter RRQ FileName Mode, with filename being the file you wish to read.
-	6.	View Output in server and client
-	7.  Use the x on the top of UI window to exit
+	1. 	Run Host
+	2.	Run Server.java
+	3. 	Choose file dump directory from popup filechooser
+	4.  Enter true(Verbose) or false(Quite) into console
+	5.	Run Client.java*
+	6.  Enter help on the client to see instructions
+	7.  Enter RRQ FileName Mode, with filename being the file you wish to read.
+	8.	View Output in server and client
+	9.  Use the x on the top of UI window to exit
 	
 	WRQ Instructions
-	1.	Run Server.java
-	2.  Enter true(Verbose) or false(Quite) into console
-	3.	Run Client.java*
-	4.  Enter help on the client to see instructions
-	5.  Enter WRQ Mode
-	6.	A File Explorer will appear to select the directory you would like to write to on the server.
-	7.	View Output in server and client
-	8.  Use the x on the top of UI window to exit
+	1. 	Run Host
+	2.	Run Server.java
+	3. 	Choose file dump directory from popup filechooser
+	4.  Enter true(Verbose) or false(Quite) into console
+	5.	Run Client.java*
+	6.  Enter help on the client to see instructions
+	7.  Enter WRQ Mode
+	8.	A File Explorer will appear to select the directory you would like to write to on the server.
+	9.	View Output in server and client
+	10.  Use the x on the top of UI window to exit
 
 
 	*Note that both programs must be running concurrently for 
@@ -186,29 +190,26 @@ UIFramework.java
 
 ------------------------------------------------------------
 TFTP REFERENCE
-	
-	READ REQUEST (RRQ):
+TFTP Formats
 
-		2 bytes     string    1 byte     string   1 byte
-    		------------------------------------------------
-       	       |  0  1	|  Filename  |   0  |    Mode    |   0  |
-     		------------------------------------------------
+   Type   Op #     Format without header
 
-
-	WRITE REQUEST (WRW):
-
-		2 bytes     string    1 byte     string   1 byte
-    		------------------------------------------------
-       	       |  0  2	|  Filename  |   0  |    Mode    |   0  |
-     		------------------------------------------------
-
-
-	DATA PACKET:
-		    	 2 bytes     2 bytes   n bytes (max 512)
-                  	----------------------------------
-                       |  0  3  |   Block #  |   Data     |
-                   	----------------------------------
-
+          2 bytes    string   1 byte     string   1 byte
+          -----------------------------------------------
+   RRQ/  | 01/02 |  Filename  |   0  |    Mode    |   0  |
+   WRQ    -----------------------------------------------
+          2 bytes    2 bytes       n bytes
+          ---------------------------------
+   DATA  | 03    |   Block #  |    Data    |
+          ---------------------------------
+          2 bytes    2 bytes
+          -------------------
+   ACK   | 04    |   Block #  |
+          --------------------
+          2 bytes  2 bytes        string    1 byte
+          ----------------------------------------
+   ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
+          ----------------------------------------
 
 
 
