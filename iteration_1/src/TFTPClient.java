@@ -207,7 +207,7 @@ public class TFTPClient extends JFrame
 	
 	//generate DatagramPacket, save as sentPacket
 	//type: DATA
-	private void generateDATA(int blockNum)
+	private void generateDATAMaster(int blockNum, byte[] data)
 	{
 		//prep for block num
 		byte[] blockNumArr = new byte[2];
@@ -220,7 +220,7 @@ public class TFTPClient extends JFrame
 		}
 		
 		//construct array to hold data
-		byte[] data = reader.pop();
+		//byte[] data = reader.pop();
 		byte[] toSend = new byte[data.length + 4];
 		
 		//constuct array
@@ -251,7 +251,22 @@ public class TFTPClient extends JFrame
 			e.printStackTrace();
 			System.exit(1);
 		}
-		
+	}
+	
+	
+	//generate DatagramPacket, save as sentPacket
+	//type: DATA
+	private void generate0Data(int blockNum)
+	{
+		generateDATAMaster(blockNum, new byte[0]);
+	}
+	
+	
+	//generate DatagramPacket, save as sentPacket
+	//type: DATA
+	private void generateData(int blockNum)
+	{
+		generateDATAMaster(blockNum, reader.pop());
 	}
 	
 	
@@ -345,6 +360,7 @@ public class TFTPClient extends JFrame
 		//initial
 		int blockNum = 1;
 		int oldPort = outPort; 
+		int lastDATAPacketLength = 0;
 		
 		//read and split file
 		try
@@ -363,21 +379,29 @@ public class TFTPClient extends JFrame
 		//send RRQ/RRW
 		sendPacket();
 		//wait for ACK
-		receivePacket("ACK");
+		receiveACK();
 		//change port to wherever ACK came from
 		outPort = recievedPacket.getPort();
 		
 		//send DATA
-		while ( !(reader.isEmpty()) )
+		while ( !(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4)
 		{
+			
 			//send DATA
-			generateDATA(blockNum);
+			if(reader.isEmpty())
+			{
+				generate0Data(blockNum);
+			}
+			else
+			{
+				generateData(blockNum);
+			}
+			lastDATAPacketLength = sentPacket.getLength();
 			sendPacket();
 			blockNum++;
 			
 			//wait for ACK
 			receiveACK();
-			
 		}
 		
 		//reset port
@@ -420,12 +444,6 @@ public class TFTPClient extends JFrame
 			console.print("Client: Checking ACK...");
 		}
 		byte[] data = recievedPacket.getData();
-		
-		//print data if verbose
-		if (verbose)
-		{
-			printDatagram(recievedPacket);
-		}
 		
 		//check ACK for validity
 		// _________________PUT CODE HERE_____________

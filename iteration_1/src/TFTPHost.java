@@ -19,6 +19,8 @@
 import java.io.*;
 import java.net.*;
 
+import ui.ConsoleUI;
+
 
 public class TFTPHost 
 {
@@ -27,24 +29,29 @@ public class TFTPHost
 	private DatagramPacket sentPacket;
 	private DatagramPacket receivedPacket;
 	private DatagramSocket inSocket;
-	private DatagramSocket outSocket;
-	private DatagramSocket generalSocket;
+	private DatagramSocket generalClientSocket;
+	private DatagramSocket generalServerSocket;
 	private int clientPort;
+	private int serverThreadPort;
 	private boolean verbose;
+	private ConsoleUI console;
 		
 	//declaring local class constants
-	private static final int CLIENT_PORT = 23;
+	private static final int CLIENT_RECEIVE_PORT = 23;
 	private static final int SERVER_RECEIVE_PORT = 69;
-	private static final int MAX_SIZE = 100;
+	private static final int MAX_SIZE = 512+4;
+	private static final boolean LITE = true ; 			//lite af
 
 	
 	//generic constructor
 	public TFTPHost()
 	{
-		//construct socket for incoming client communication, bind to IN_PORT
+		//construct sockets
 		try
 		{
-			inSocket = new DatagramSocket(CLIENT_PORT);
+			inSocket = new DatagramSocket(CLIENT_RECEIVE_PORT);
+			generalServerSocket = new DatagramSocket();
+			generalClientSocket = new DatagramSocket();
 		}
 		//enter if socket creation results in failure
 		catch (SocketException se)
@@ -52,18 +59,13 @@ public class TFTPHost
 			se.printStackTrace();
 			System.exit(1);
 		}
-		//construct socket for general server communication
-		try
-		{
-			generalSocket = new DatagramSocket();
-		}
-		catch(SocketException se)
-		{
-			se.printStackTrace();
-			System.exit(1);
-		}
+		
 		//initialize echo --> off
 		verbose = false;
+		
+		//run UI
+		console = new ConsoleUI("Error Simulator");
+		console.run();
 	}
 	
 	
@@ -71,14 +73,6 @@ public class TFTPHost
 	public DatagramSocket getInSocket()
 	{
 		return inSocket;
-	}
-	public DatagramSocket getOutSocket()
-	{
-		return outSocket;
-	}
-	public DatagramSocket getGeneralSocket()
-	{
-		return generalSocket;
 	}
 	public void setClientPort(int n)
 	{
@@ -92,26 +86,36 @@ public class TFTPHost
 	{
 		return receivedPacket;
 	}
-	public void setOutSocket(DatagramSocket soc)
-	{
-		outSocket = soc;
-	}
 	public void setVerbose(boolean f)
 	{
 		verbose = f;
 	}
 	
 	
+	//print datagram contents
+	private void printDatagram(DatagramPacket datagram)
+	{
+		byte[] data = datagram.getData();
+		int packetSize = datagram.getLength();
+
+		console.printIndent("Source: " + datagram.getAddress());
+		console.printIndent("Port:      " + datagram.getPort());
+		console.printIndent("Bytes:   " + packetSize);
+		console.printByteArray(data, packetSize);
+		console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
+	}
+	
+	
 	
 	//receive packet on inPort
-	public void receiveAndEcho(DatagramSocket inputSocket)
+	public void receiveDatagram(DatagramSocket inputSocket)
 	{
 		//construct an empty datagram packet for receiving purposes
 		byte[] arrayholder = new byte[MAX_SIZE];
 		receivedPacket = new DatagramPacket(arrayholder, arrayholder.length);
 		
 		//wait for incoming data
-		System.out.println("Host:   Waiting for data...");
+		console.print("Waiting for data...");
 		try
 		{
 			inputSocket.receive(receivedPacket);
@@ -124,19 +128,8 @@ public class TFTPHost
 		}
 		
 		//deconstruct packet and print contents
-		byte[] data = receivedPacket.getData();
-		int packetSize = receivedPacket.getLength();
-		System.out.println("Host:   Packet received");
-		System.out.println("        Source: " + receivedPacket.getAddress());
-		System.out.println("        Port:   " + receivedPacket.getPort());
-		System.out.println("        Bytes:  " + packetSize);
-		System.out.println("        Cntn:  " + (new String(data,0,packetSize)));
-		System.out.printf("%s", "        Cntn:  ");
-		for(int i = 0; i < packetSize; i++)
-		{
-			System.out.printf("0x%02X", data[i]);
-			System.out.printf("%-2c", ' ');
-		}
+		console.print("Packet successfully received");
+		printDatagram(receivedPacket);
 	}
 	
 	
@@ -144,26 +137,15 @@ public class TFTPHost
 	/**
 	 * 
 	 */
-	public void sendAndEcho(int outPort, DatagramSocket socket)
+	public void sendDatagram(int outPort, DatagramSocket socket)
 	{
 		//prep packet to send
-		System.out.println("\nHost:   Sending packet...");
+		console.print("Sending packet...");
 		sentPacket = receivedPacket;
 		sentPacket.setPort(outPort );
 		
 		//print contents
-		byte[] data = sentPacket.getData();
-		int packetSize = sentPacket.getLength();
-		System.out.println("        Source: " + sentPacket.getAddress());
-		System.out.println("        Port:   " + sentPacket.getPort());
-		System.out.println("        Bytes:  " + packetSize);
-		System.out.println("        Cntn:  " + (new String(data,0,packetSize)));
-		System.out.printf("%s", "        Cntn:  ");
-		for(int i = 0; i < packetSize; i++)
-		{
-			System.out.printf("0x%02X", data[i]);
-			System.out.printf("%-2c", ' ');
-		}
+		printDatagram(sentPacket);
 		
 		//send packet
 		try
@@ -175,7 +157,122 @@ public class TFTPHost
 			e.printStackTrace();
 			System.exit(1);
 		}
-		System.out.println("\nHost:   Packet successfully sent");
+		console.print("Packet successfully sent");
+		
+	}
+	
+	
+	public void mainPassingLoop()
+	{
+		console.print("Console Operating...");
+		
+		while(LITE)
+		{
+			//declaring local variables
+			byte RWReq=0;
+			boolean loop=true;
+			int lastDataPacketLength=0;
+			
+			//wait for original RRQ/WRQ from client
+			receiveDatagram(inSocket);
+			//save port 
+			clientPort = receivedPacket.getPort();
+		
+			//determine if this is a valid RRQ/WRQ
+			byte[] data = new byte[2];
+			data = receivedPacket.getData();
+			//valid
+			if (data[0] == 0 && (data[1] == 1 || data[1] == 2) )
+			{
+				RWReq = data[1];
+			}
+			//something awful has happened
+			else
+			{
+				console.print("Something awful happend");
+				System.exit(0);
+			}
+			
+			//send RRQ/WRQ to server
+			sendDatagram(SERVER_RECEIVE_PORT, generalServerSocket);
+			
+			//receive 1st packet
+			receiveDatagram(generalServerSocket);
+			serverThreadPort = receivedPacket.getPort();
+			
+			
+			//do the rest if RRQ
+			if(RWReq == 1)
+			{
+				while(loop)
+				{
+					//save packet size if of type DATA
+					if ( (receivedPacket.getData())[1] == 3)
+					{
+						lastDataPacketLength = receivedPacket.getLength();
+					}
+					//send DATA to client
+					sendDatagram(clientPort, generalClientSocket);
+					//receive client ACK
+					receiveDatagram(generalClientSocket);
+					//send ACK to server
+					sendDatagram(serverThreadPort, generalServerSocket);
+					
+					//receive more data and loop if datagram.size==516
+					//final ack sent to server, data transfer complete
+					if (lastDataPacketLength < MAX_SIZE)
+					{
+						console.print("Data Transfer Complete");
+						console.println();
+						loop = false;
+					}
+					//more data left, receive and loop back
+					else
+					{
+						receiveDatagram(generalServerSocket);
+					}
+				}
+			}
+			//do the rest if WRQ
+			else
+			{
+				while(loop)
+				{
+					//send ACK to client
+					sendDatagram(clientPort, generalClientSocket);
+					//receive client DATA, save size
+					receiveDatagram(generalClientSocket);
+					if ( (receivedPacket.getData())[1] == 3)
+					{
+						lastDataPacketLength = receivedPacket.getLength();
+					}
+					//send DATA to server
+					sendDatagram(serverThreadPort, generalServerSocket);
+					
+					//final DATA sent, receive and fwd final ACK
+					if (lastDataPacketLength < MAX_SIZE)
+					{
+						//receive final server ACK
+						receiveDatagram(generalServerSocket);
+						//fwd ACK to clien
+						sendDatagram(clientPort, generalClientSocket);
+					
+						//terminate transfer
+						console.print("Data Transfer Complete");
+						console.println();
+						loop = false;
+					}
+					//there are still DATA packets to pass, transfer not compelte
+					else
+					{
+						//receive server ACK
+						receiveDatagram(generalServerSocket);
+					}
+				}
+			}
+				
+		}
+		
 		
 	}
 	
@@ -185,12 +282,19 @@ public class TFTPHost
 		//declaring local variables
 		TFTPHost host = new TFTPHost();
 		
+		//run
+		host.mainPassingLoop();
+		
+		
+		
+		
+		/*
 		while(true)
 		{
 			//wait for client's packet (save clients port)
 			host.receiveAndEcho(host.getInSocket());
 			host.setClientPort(host.getReceivedPacket().getPort());
-			//System.out.println("\n>> " + host.getClientPort());
+			//console.print("\n>> " + host.getClientPort());
 			
 			//send packet to server and wait for response
 			host.sendAndEcho(SERVER_RECEIVE_PORT, host.getGeneralSocket());
@@ -210,8 +314,9 @@ public class TFTPHost
 			
 			//send packet to client
 			host.sendAndEcho(host.getClientPort(), host.getOutSocket());
-			System.out.println("----------------------------------------\n");
+			console.print("----------------------------------------\n");
 		}
+		*/
 	}
 
 }
