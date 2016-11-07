@@ -2,13 +2,21 @@
 *Class:             Console.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    14/010/2016                                              
-*Version:           1.0.2                                                      
+*Date of Update:    07/11/2016                                              
+*Version:           1.1.0                                                      
 *                                                                                   
 *Purpose:           Generic console for basic output/inputs
 * 
 * 
-*Update Log:		V1.0.2
+*Update Log:		v1.1.0
+*						- getInput(bool x) method added to support older implementation of method as
+*						  getInput()
+*						- getInput(bool x) patched to properly return null
+*						- proper input parsing method added --> getParsedInput(bool x)
+*						- consolidated actionEvent(..) and getInputText() into a single method
+*						- printByteArray(..) method changed
+*						- added new test method
+*					v1.0.2
 *						- method added to print byte array
 *						- formatting for input/output fixed
 *					v1.0.1
@@ -112,9 +120,35 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 	}
 	
 	
-	//return input, set flag
+	//return PARSED input, set flag
+	public String[] getParsedInput(boolean wait)
+	{
+		//call method to get input
+		String in = getInput(wait);
+		
+		//split and return
+		if (in != null)
+		{
+			return in.split(" ");
+		}
+		else
+		{
+			return null;
+		}
+	}
+	
+	
+	//added for backwards compatibility with other version of method
+	public String getInput()
+	{
+		return getInput(true);
+	}
+	
+	
+	//return RAW input, set flag
 	public synchronized String getInput(boolean wait)
 	{
+		//wait for valid input
 		if(wait)
 		{
 			//wait until input is detected
@@ -126,16 +160,18 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 				}
 				catch(Exception e)
 				{
-					System.out.println("Error in putting thread to sleep");
+					System.out.println("!Error in putting thread to sleep!");
 					//error handling
 				}
 			}
+			
 			//return and set flags
 			String ret = input;
 			input = null;
 			inputReady = false;
 			return ret;
 		}
+		//return whatever input is
 		else
 		{
 			if(inputReady)
@@ -151,8 +187,6 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 				return null;
 			}
 		}
-		
-
 	}
 	
 	
@@ -194,41 +228,128 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		String printable = "Cntn:    ";
 		for(int i = 0; i < size; i++)
 		{
-			printable = (printable + Integer.toHexString(b[i]) + " ");
-			//System.out.println(printable);
+			printable = printable + (String.format("%02x", b[i])).toUpperCase() + " ";
+			//printable = (printable + Integer.toHexString(b[i] & 0xFF) + " ");
 		}
 		printIndent(printable);
-	}
-
-
-	//get input from inputLine then prep to clear
-	private String inputAndPrint() 
-	{
-		//get input
-		inputLine.selectAll();
-		String inputStr =  inputLine.getText();
-		
-		//print input in proper format
-		outputArea.append(" >" + inputStr + "\n");
-		//magic code to make sure stuff appears
-        outputArea.setCaretPosition(outputArea.getDocument().getLength());
-		
-		//return input
-		return inputStr;
-		
 	}
 
 
 	@Override
 	//enter key pressed
 	public synchronized void actionPerformed(ActionEvent e) 
-	{	
-		//get input, set inputReady to 1, notify anybody waiting on input
-		input = inputAndPrint();
+	{		
+		//get input, save to input field
+		inputLine.selectAll();
+		input =  inputLine.getText();
+				
+		//print input in proper format
+		outputArea.append(" >" + input + "\n");
+		//magic code to make sure stuff appears
+		outputArea.setCaretPosition(outputArea.getDocument().getLength());
+		
+		//set inputReady to true, notify anybody waiting on input
 		inputReady = true;
 		notifyAll();
 	}
 	
+	
+	//tester for console
+	public void testAll()
+	{
+		//declaring local variables
+		byte[] testArr1 = {(byte)0x00, (byte)0xFF, (byte)0x01, (byte)0x10, (byte)0x20, (byte)0x38};
+		byte[] testArr2 = {(byte)0xFA, (byte)0xDE, (byte)0xD0, (byte)0x0A, (byte)0xDD};
+		String input;
+		String inputArr[];
+		
+		this.clear();
+		
+		//standard output+indent output test
+		this.print("Running Output Test...");
+		this.printIndent("Raviolo");
+		this.printIndent("Raviolo");
+		this.printIndent("Give me the formioli");
+		this.print("Test Complete");
+		this.println();
+		
+		//input with waiting test
+		this.print("Running Input Test...");
+		input = this.getInput();
+		this.print("Input 1:    " + input);
+		input = this.getInput();
+		this.print("Input 2:    " + input);
+		this.print("Test Complete");
+		this.println();
+		
+		//parsed input
+		this.print("Running Input Test w/ Parsing...");
+		inputArr = this.getParsedInput(true);
+		this.print("Input 1:");
+		for(int i=0; i<inputArr.length; i++)
+		{
+			this.printIndent(inputArr[i]);
+		}
+		this.print("Running Input Test w/ Parsing...");
+		inputArr = this.getParsedInput(true);
+		this.print("Input 2:");
+		for(int i=0; i<inputArr.length; i++)
+		{
+			this.printIndent(inputArr[i]);
+		}
+		this.print("Running Input Test w/ Parsing...");
+		inputArr = this.getParsedInput(true);
+		this.print("Input 3:");
+		for(int i=0; i<inputArr.length; i++)
+		{
+			this.printIndent(inputArr[i]);
+		}
+		this.println();
+		
+		//input without wait test
+		this.print("Running Input Test (no wait, expect null)...");
+		input = this.getInput(false);
+		this.print("Input 1:    " + input);
+		this.print("Running Input Test (no wait, expect null)...");
+		input = this.getInput(false);
+		this.print("Input 2:    " + input);
+		this.print("Running Input Test (no wait, expect value)...");
+		this.print("PLEASE ENTER AN INPUT IN THE NEXT TEN(10) SECONDS");
+		try 
+		{
+		    Thread.sleep(10000);
+		} 
+		catch(InterruptedException ex) 
+		{
+		    Thread.currentThread().interrupt();
+		}
+		input = this.getInput(false);
+		this.print("Input 3:    " + input);
+		this.print("Running Input Test (no wait, expect null)...");
+		input = this.getInput(false);
+		this.print("Input 4:    " + input);
+		this.println();
+
+		
+		//test byte arr print
+		this.print("Running byte arr test 1...");
+		this.print("Expected:       00 FF 01 10 20 38");
+		this.printByteArray(testArr1, testArr1.length);
+		this.print("Running byte arr test 2...");
+		this.print("Expected:       FA DE D0 0A DD");
+		this.printByteArray(testArr2, testArr2.length);
+		
+		//test clear
+		this.print("Running clear test...");
+		this.print("Enter 'clear'");
+		input = this.getInput();
+		if (input.equals("clear"))
+		{
+			this.clear();
+		}
+		
+		this.print("Test Complete");
+	}
 	
 	
 	/*
@@ -237,31 +358,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 	{	
 		ConsoleUI console = new ConsoleUI("Test Console UI");
 		console.run();
-		String input;
-		
-		console.print("Running Output Test...");
-		console.printIndent("Raviolo");
-		console.printIndent("Raviolo");
-		console.printIndent("Give me the formioli");
-		console.print("Test Complete");
-		console.println();
-		
-		console.print("Running Input Test...");
-		input = console.getInput();
-		console.print("Input 1:    " + input);
-		input = console.getInput();
-		console.print("Input 2:    " + input);
-		console.print("Test Complete");
-		console.println();
-		
-		console.print("Running clear test...");
-		console.print("Enter 'clear'");
-		input = console.getInput();
-		if (input.equals("clear"))
-		{
-			console.clear();
-		}
-		console.print("Test Complete");
+		console.testAll();
 	}
 	*/
 }

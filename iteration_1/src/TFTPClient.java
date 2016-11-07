@@ -2,8 +2,8 @@
 *Class:             TFTPClient.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    14/10/2016                                              
-*Version:           1.2.0                                                      
+*Date of Update:    07/11/2016                                              
+*Version:           1.2.1                                                      
 *                                                                                   
 *Purpose:           Generates a datagram following the format of [0,R/W,STR1,0,STR2,0],
 					in which R/W signifies read (1) or write (2), STR1 is a filename,
@@ -12,10 +12,15 @@
 					process ten times, then sends a datagram packet that DOES NOT
 					follow the expected format stated above. Waits for response from
 					IntermediateHost. We DO NOT expect a response to the badly formated
-					packet. Datagram can be 512B max
+					packet. Each datagram can be 512B max
 * 
 * 
-*Update Log:		v1.2.0
+*Update Log:		v1.2.1
+*						- command list printed at startup (as per request from literally everyone)
+*						- input method completely redesigned
+*						- UI now handles input parsing
+*						- is now more robust with inputs
+*					v1.2.0
 *						- UI implemented
 *						- now should support multiple instances
 *						- new commands added for UI
@@ -66,26 +71,12 @@
 *						- added method testMode(...)
 *						- added var verbose
 *						- close method added
-						- name changed from 'Client' to 'TFTPClient'
-						 (are you happy now Sarah??!?!?!?!?!)
+*						- name changed from 'Client' to 'TFTPClient'
+*						 (are you happy now Sarah??!?!?!?!?!)
 *					v1.0.0
 *                       - null
 */
 
-/*
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ TO DO ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~(as of v1.1.3)
- *		[x] !!!!!!!!FIX CLIENT RECEIVE ERROR!!!!!!!!
- *		[x] Add receiving and checking of ACKs
- *		[x] Further check reader to make sure it is sending the correct packets
- *		[x] Patch receive method with a master method that can handle multiple packets
- *		[x] Figure out what to do with all incoming packets
- *		[x] Add packet numbering (is it a 16bit int or a 0byte followed by a 8bit number????)
- *		[x] Test functionality w/ modified server
- *		[ ] Integrate with UI
- *		[ ] Write a test class if time permits (????)
- *		[ ] Update ReadMe.txt
- *		[x] TFTPWriter class
- */
 
 
 //import external libraries
@@ -118,6 +109,7 @@ public class TFTPClient extends JFrame
 	private static final int IN_PORT_HOST = 23;
 	private static final int IN_PORT_SERVER = 69;
 	private static final int MAX_SIZE = 512;
+	private static final String DEFAULT_MODE = "ASCII";
 	private static final byte[] OPCODE_RRQ =  {0,1}; 
 	private static final byte[] OPCODE_WRQ =  {0,2};
 	private static final byte[] OPCODE_DATA = {0,3};
@@ -606,129 +598,177 @@ public class TFTPClient extends JFrame
 	public void ClientMain()
 	{
 		//declaring local variables
-		String input = null;
-		String[] advIn = {"", "", ""};
-		boolean exit = false;
+		String input[] = null;
 		boolean runFlag = true;
 		
 		//print starting text
 		console.print("TFTPClient running");
 		console.print("type 'help' for command list");
+		console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
+		console.print("'help'                                   - print all commands and how to use them");
+		console.print("'clear'                                  - clear screen");
+		console.print("'close'                                 - exit client, close ports, be graceful");
+		console.print("'verbose BOOL'                - toggle verbose mode as true or false");
+		console.print("'testmode BOOL'             - if set true, sends to Host. If set false, sends to Server directly");
+		console.print("'test'                                    - runs a test for the console");
+		console.println();
+		console.print("'push MODE'                    - push a file to the server in mode MODE (ex, ASCII)");
+		console.print("'push'                                - push a file to the server in mode: ASCII");
+		console.print("'pull FILENAME MODE'  - pull a file from the server in mode MODE (ex ASCII)");
+		console.print("'pull FILENAME'               - pull a file from the server in mode: ASCII");
+		console.println();
+		console.print("'rrq FILENAME MODE'    - send a read request for file FILENAME in mode MODE");
+		console.print("'wrq MODE'                       - send a write request in mode MODE");
+		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		console.println();
 		
 		//main input loop
 		while(runFlag)
 		{
-			//get user input
-			input = console.getInput(true);
+			//get PARSED user input
+			input = console.getParsedInput(true);
 			
-			//process (basic) input
-			switch(input)
+			//process input based on param num
+			switch(input.length)
 			{
-				//list available methods
-				case ("help"):
-					console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
-					console.print("'help' - print all commands and how to use them");
-					console.print("'clear' - clear screen");
-					console.print("'close' - exit client, close ports, be graceful");
-					console.print("'verbose BOOL' - toggle verbose mode as true or false");
-					console.print("'testMode BOOL' - if set true, sends to Host. If set false, sends to Server directly");
-					console.print("'RRQ FILENAME MODE' - send a read request for file FILENAME in mode MODE");
-					console.print("'WRQ MODE' - send a read request in mode MODE");
-					console.println();
-					break;
-				
-				//clear client
-				case ("clear"):
-					console.clear();
-					break;
+				case(1):
 					
-				//close client with grace
-				case ("close"):
-					console.print("Closing with grace....");
-					this.close();
-					runFlag = false;
-					System.exit(0);
-
-				//testMode method call
-				case ("testMode true"):
-					testMode(true);
-					break;		
-				case ("testMode false"):
-					testMode(false);
-					break;
-					
-				//setVerbose method call
-				case ("verbose true"):
-					verboseMode(true);
-					break;
-				case ("verbose false"):
-					verboseMode(false);
-					break;
-					
-				//process adv. input
-				default:
-					int space;
-					
-					if (input.length() >= 4)
+					//print commands
+					if (input[0].equals("help"))
 					{
-						//split input (separate based on spaces)
-						space=0;
-						for(int i=0; i<input.length() && !exit; i++)
-						{
-							if(input.charAt(i) != ' ')
-							{
-								advIn[space] = advIn[space].concat("" + input.charAt(i) );
-							}
-							else
-							{
-								//input exceeds max length, no point in checking
-								space++;
-								if (space>2)
-								{
-									exit = true;
-								}
-							}
+						console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
+						console.print("'help'                                   - print all commands and how to use them");
+						console.print("'clear'                                  - clear screen");
+						console.print("'close'                                 - exit client, close ports, be graceful");
+						console.print("'verbose BOOL'                - toggle verbose mode as true or false");
+						console.print("'testmode BOOL'             - if set true, sends to Host. If set false, sends to Server directly");
+						console.print("'test'                                    - runs a test for the console");
+						console.println();
+						console.print("'push MODE'                    - push a file to the server in mode MODE (ex, ASCII)");
+						console.print("'push'                                - push a file to the server in mode: ASCII");
+						console.print("'pull FILENAME MODE'  - pull a file from the server in mode MODE (ex ASCII)");
+						console.print("'pull FILENAME'               - pull a file from the server in mode: ASCII");
+						console.println();
+						console.print("'rrq FILENAME MODE'    - send a read request for file FILENAME in mode MODE");
+						console.print("'wrq MODE'                       - send a write request in mode MODE");
+						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+						console.println();
+					}
+					//clear console
+					else if (input[0].equals("clear"))
+					{
+						console.clear();
+					}
+					//close console with grace
+					else if (input[0].equals("close"))
+					{
+						console.print("Closing with grace....");
+						runFlag = false;
+						this.close();
+						System.exit(0);
+					}
+					//run simple console test
+					else if (input[0].equals("test"))
+					{
+						console.testAll();
+					}
+					//push a file (WRQ) to server in default mode
+					else if (input[0].equals("push"))
+					{
+						//get user file
+						fileChooserFrame = new JTextArea(5,40);
+						fileChooser = new JFileChooser();
+						fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+						int result = fileChooser.showOpenDialog(fileChooser);
+						if (result == JFileChooser.APPROVE_OPTION) {//file is found
+						    file = fileChooser.getSelectedFile();//get file name
 						}
-						//check to see if input was of valid form (a b c)
-						if(!exit)
+						//enter WRQ protocol
+						sendWRQ(file.getName(), DEFAULT_MODE);
+					}
+					//BAD (WOLF) INPUT
+					else
+					{
+						console.print("! Unknown Input !");
+					}
+					break;
+					
+				case(2):
+					//toggle verbose
+					if (input[0].equals("verbose"))
+					{
+						if (input[1].equals("true"))
 						{
-							if(advIn[0].equals("RRQ") && space==2)
-							{
-								sendRRQ(advIn[1], advIn[2]);
-							}
-							else if (advIn[0].equals("WRQ") && space==1)
-							{
-								//get user file
-								fileChooserFrame = new JTextArea(5,40);
-								fileChooser = new JFileChooser();
-								fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-								int result = fileChooser.showOpenDialog(fileChooser);
-								if (result == JFileChooser.APPROVE_OPTION) {//file is found
-								    file = fileChooser.getSelectedFile();//get file name
-								}
-								
-								sendWRQ(file.getName(), advIn[1]);
-							}
-							else
-							{
-								console.print("!!Unknown Input!!");
-							}
+							verboseMode(true);
+						}
+						else if (input[1].equals("false"))
+						{
+							verboseMode(false);
 						}
 						else
 						{
-							console.print("!Unknown Input!");
+							console.print("! Unknown Input !");
 						}
-						
-						//reset advIn and exit flag
-						advIn[0] = "";
-						advIn[1] = "";
-						advIn[2] = "";
-						exit = false;
 					}
+					//toggle test mode
+					else if (input[0].equals("testmode"))
+					{
+						if (input[1].equals("true"))
+						{
+							testMode(true);
+						}
+						else if (input[1].equals("false"))
+						{
+							testMode(false);
+						}
+						else
+						{
+							console.print("! Unknown Input !");
+						}
+					}
+					//push in mode and old wrq MODE 
+					else if (input[0].equals("push") || input[0].equals("wrq"))
+					{
+						//get user file
+						fileChooserFrame = new JTextArea(5,40);
+						fileChooser = new JFileChooser();
+						fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+						int result = fileChooser.showOpenDialog(fileChooser);
+						if (result == JFileChooser.APPROVE_OPTION) {//file is found
+						    file = fileChooser.getSelectedFile();//get file name
+						}
+						//enter WRQ protocol
+						sendWRQ(file.getName(), input[1]);
+					}
+					//pull in default mode
+					else if (input[0].equals("pull"))
+					{
+						sendRRQ(input[1], DEFAULT_MODE);
+					}
+					//BAD (WOLF) INPUT
 					else
 					{
-						console.print("!Unknown Input!");
+						console.print("! Unknown Input !");
 					}
+					break;
+				
+				case(3):
+					//pull FILE MODE or legacy rrq FILE MODE
+					if (input[0].equals("pull") || input[0].equals("rrq"))
+					{
+						sendRRQ(input[1], input[2]);
+					}
+					//BAD (WOLF) INPUT
+					else
+					{
+						console.print("! Unknown Input !");
+					}
+					break;
+				
+				default:
+					//BAD (WOLF) INPUT
+					console.print("! Unknown Input !");
+					break;
 			}
 		}
 	}
@@ -739,53 +779,7 @@ public class TFTPClient extends JFrame
 		//declaring local variables
 		TFTPClient client = new TFTPClient();
 		
-		
 		//run
 		client.ClientMain();
-		
-		
-		
-		
-		/*
-		//Find whether you want to run in test mode or not
-		client.print("Test mode: (T)rue or (F)alse?");
-		String testBool = scan.nextLine();
-		client.testMode(testBool.equalsIgnoreCase("T"));
-		
-		//Find whether you want to run in verbose mode or not
-		console.print("Verbose mode: (T)rue or (F)alse?");
-		String verboseBool = scan.nextLine();
-		if (verboseBool.equalsIgnoreCase("T")) client.verboseMode(true);
-		else {client.verboseMode(false);}
-		
-		//Find whether you want to run in test mode or not
-		
-		start(client);
-	}
-		
-		
-	public static void start(TFTPClient cl)
-	{
-			console.print("Send a: (R)ead or (W)rite?");
-			String requestBool = scan.nextLine();
-			if(requestBool.equalsIgnoreCase("W")){
-				//create a window to search for file
-				fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-				int result = fileChooser.showOpenDialog(fileChooser);
-				if (result == JFileChooser.APPROVE_OPTION) {//file is found
-				    file = fileChooser.getSelectedFile();//get file name
-				}
-				//send full fill (includes wait for ACK)
-				cl.sendWRQ(file.getName(), "octet");//changed from client.yayayay
-			}
-			else{
-				System.out.print("Enter file name: ");
-				String requestRBool = scan.nextLine();
-				cl.sendRRQ(requestRBool,"octet");//change from client.yayayayay
-			}
-	}
-		
-		//receive server response 
-	*/	
 	}
 }
