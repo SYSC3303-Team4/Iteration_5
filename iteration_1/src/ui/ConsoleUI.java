@@ -223,7 +223,6 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		{
 			printable = printable + (String.format("%02x", b[i])).toUpperCase() + " ";
 			//printable = (printable + Integer.toHexString(b[i] & 0xFF) + " ");
-			System.out.println(printable);
 		}
 		printIndent(printable);
 	}
