@@ -2,8 +2,8 @@
 *Class:             Console.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    14/010/2016                                              
-*Version:           1.0.2                                                      
+*Date of Update:    07/11/2016                                              
+*Version:           1.1.0                                                      
 *                                                                                   
 *Purpose:           Generic console for basic output/inputs
 * 
