@@ -127,7 +127,14 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		String in = getInput(wait);
 		
 		//split and return
-		return in.split(" ");
+		if (in != null)
+		{
+			return in.split(" ");
+		}
+		else
+		{
+			return null;
+		}
 	}
 	
 	

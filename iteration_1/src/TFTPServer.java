@@ -89,15 +89,15 @@ public class TFTPServer{
 		String filename, mode;
 		int len, j=0, k=0;
 		int threadNum = 0;
-		String input = "";
+		String basicInput = null;
+		String input[] = null;
 		boolean runFlag = true;
 		ThreadGroup initializedThreads = new ThreadGroup("ServerThread");
 		
 		//check for initial input
 		console.print("Please specify verbose mode true or false");
-		input = console.getInput(true);
-		input.toLowerCase();
-		if (input.equals("true"))
+		basicInput = console.getInput(true);
+		if (basicInput.equals("true"))
 		{
 			verbose = true;
 		}
@@ -109,26 +109,39 @@ public class TFTPServer{
 		//main input loop
 		while(runFlag) 
 		{
-			input = console.getInput(false);
+			input = console.getParsedInput(false);
+			
+			//handle inputs based on param number
 			if(input != null)
 			{
-				if(input.equals("close"))
+				switch (input.length)
 				{
-					runFlag = false;
-					/* 
-					Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
-					while(threadSet.iterator().hasNext()){
-						Thread s = threadSet.iterator().next();
-						if(s.getThreadGroup().getName().equals(initializedThreads.getName()))
+					case(1):
+						//close
+						if(input.equals("close"))
 						{
-							((ServerThread)s).interrupt();
+							runFlag = false;
+							/* 
+							Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+							while(threadSet.iterator().hasNext()){
+								Thread s = threadSet.iterator().next();
+								if(s.getThreadGroup().getName().equals(initializedThreads.getName()))
+								{
+									((ServerThread)s).interrupt();
+								}
+							}
+							*/
 						}
-					}
-					*/
-				}
-				else
-				{
-					console.print("!UNKNOWN INPUT!");
+						//bad input
+						else
+						{
+							console.print("! Unknown Input !");
+						}
+						break;
+					
+					default:
+						//bad input
+						console.print("! Unknown Input !");
 				}
 			}
 			else
