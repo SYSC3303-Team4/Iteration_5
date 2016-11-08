@@ -4,6 +4,8 @@
 // sends back the appropriate response without any actual file transfer.
 // One socket (69) is used to receive (it stays open) and another for each response. 
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*; 
 import java.net.*;
 import java.util.*;
@@ -17,7 +19,8 @@ import javax.swing.JTextArea;
 
 import ui.ConsoleUI;
 
-public class TFTPServer{ 
+public class TFTPServer implements ActionListener
+{
 
 	// types of requests we can receive
 	public static enum Request { READ, WRITE, ERROR};
@@ -35,6 +38,8 @@ public class TFTPServer{
 	private File file;
 	private JFileChooser fileChooser;
     private String path= "DEFAULT_TEST_WRITE";
+    
+    private boolean runFlag  = true;
 
 	/**
 	 * JTextArea for the thread executing main().
@@ -51,7 +56,7 @@ public class TFTPServer{
 	{
 
 		//make and run the UI
-		console = new ConsoleUI(title);
+		console = new ConsoleUI(title, this);
 		console.run();
 
 		try {
@@ -89,146 +94,92 @@ public class TFTPServer{
 		String filename, mode;
 		int len, j=0, k=0;
 		int threadNum = 0;
-		String basicInput = null;
-		String input[] = null;
-		boolean runFlag = true;
 		ThreadGroup initializedThreads = new ThreadGroup("ServerThread");
-		
-		//check for initial input
-		console.print("Please specify verbose mode true or false");
-		basicInput = console.getInput(true);
-		if (basicInput.equals("true"))
-		{
-			verbose = true;
-		}
-		else
-		{
-			verbose = false;
-		}
 		
 		//main input loop
 		while(runFlag) 
-		{
-			input = console.getParsedInput(false);
-			
-			//handle inputs based on param number
-			if(input != null)
-			{
-				switch (input.length)
-				{
-					case(1):
-						//close
-						if(input.equals("close"))
-						{
-							runFlag = false;
-							/* 
-							Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
-							while(threadSet.iterator().hasNext()){
-								Thread s = threadSet.iterator().next();
-								if(s.getThreadGroup().getName().equals(initializedThreads.getName()))
-								{
-									((ServerThread)s).interrupt();
-								}
-							}
-							*/
-						}
-						//bad input
-						else
-						{
-							console.print("! Unknown Input !");
-						}
-						break;
-					
-					default:
-						//bad input
-						console.print("! Unknown Input !");
-				}
+		{	
+			// loop forever
+			// Construct a DatagramPacket for receiving packets up
+			// to 100 bytes long (the length of the byte array).
+
+			data = new byte[100];
+			receivePacket = new DatagramPacket(data, data.length);
+
+			console.print("Server: Waiting for packet.");
+			// Block until a datagram packet is received from receiveSocket.
+			try {
+				receiveSocket.receive(receivePacket);
 			}
-			else
-			{
-					// loop forever
-					// Construct a DatagramPacket for receiving packets up
-					// to 100 bytes long (the length of the byte array).
-
-					data = new byte[100];
-					receivePacket = new DatagramPacket(data, data.length);
-
-					console.print("Server: Waiting for packet.");
-					// Block until a datagram packet is received from receiveSocket.
-					try {
-						receiveSocket.receive(receivePacket);
-					}
-					catch (IOException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-
-					// Process the received datagram.
-					console.print("Server: Packet received:");
-					console.print("From host: " + receivePacket.getAddress());
-					console.print("Host port: " + receivePacket.getPort());
-					len = receivePacket.getLength();
-					console.print("Length: " + len);
-
-					int packetSize = receivePacket.getLength();
-
-					console.printByteArray(data, packetSize);
-					console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
-
-					// Form a String from the byte array.
-					String received = new String(data,0,len);
-					console.print(received);
-
-					// If it's a read, send back DATA (03) block 1
-					// If it's a write, send back ACK (04) block 0
-					// Otherwise, ignore it
-					if (data[0]!=0) req = Request.ERROR; // bad
-					else if (data[1]==1) req = Request.READ; // could be read
-					else if (data[1]==2) req = Request.WRITE; // could be write
-					else req = Request.ERROR; // bad
-
-					if (req!=Request.ERROR) { // check for filename
-						// search for next all 0 byte
-						for(j=2;j<len;j++) {
-							if (data[j] == 0) break;
-						}
-						if (j==len) req=Request.ERROR; // didn't find a 0 byte
-						if (j==2) req=Request.ERROR; // filename is 0 bytes long
-						// otherwise, extract filename
-						filename = new String(data,2,j-2);
-					}
-
-					if(req!=Request.ERROR) { // check for mode
-						// search for next all 0 byte
-						for(k=j+1;k<len;k++) { 
-							if (data[k] == 0) break;
-						}
-						if (k==len) req=Request.ERROR; // didn't find a 0 byte
-						if (k==j+1) req=Request.ERROR; // mode is 0 bytes long
-						mode = new String(data,j,k-j-1);
-					}
-
-					if(k!=len-1) req=Request.ERROR; // other stuff at end of packet        
-
-					// Create a response.
-					if (req==Request.READ) { // for Read it's 0301
-						threadNum++;
-						Thread readRequest =  new TFTPReadThread(initializedThreads,console, receivePacket, "Thread "+threadNum, verbose);
-						readRequest.start();
-						response = readResp;
-					} else if (req==Request.WRITE) { // for Write it's 0400
-						threadNum++;
-						Thread writeRequest =  new TFTPWriteThread(initializedThreads,console, receivePacket,"Thread "+threadNum, verbose,file);
-						writeRequest.start();
-						response = writeResp;
-					} else { // it was invalid, just quit
-						throw new Exception("Not yet implemented");
-					} 
-				}
+			catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
 			}
-			System.exit(0);
 
-		} 
+			// Process the received datagram.
+			console.print("Server: Packet received:");
+			console.print("From host: " + receivePacket.getAddress());
+			console.print("Host port: " + receivePacket.getPort());
+			len = receivePacket.getLength();
+			console.print("Length: " + len);
+
+			int packetSize = receivePacket.getLength();
+
+			console.printByteArray(data, packetSize);
+			console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
+
+			// Form a String from the byte array.
+			String received = new String(data,0,len);
+			console.print(received);
+
+			// If it's a read, send back DATA (03) block 1
+			// If it's a write, send back ACK (04) block 0
+			// Otherwise, ignore it
+			if (data[0]!=0) req = Request.ERROR; // bad
+			else if (data[1]==1) req = Request.READ; // could be read
+			else if (data[1]==2) req = Request.WRITE; // could be write
+			else req = Request.ERROR; // bad
+
+			if (req!=Request.ERROR) { // check for filename
+				// search for next all 0 byte
+				for(j=2;j<len;j++) {
+					if (data[j] == 0) break;
+				}
+				if (j==len) req=Request.ERROR; // didn't find a 0 byte
+				if (j==2) req=Request.ERROR; // filename is 0 bytes long
+				// otherwise, extract filename
+				filename = new String(data,2,j-2);
+			}
+
+			if(req!=Request.ERROR) { // check for mode
+				// search for next all 0 byte
+				for(k=j+1;k<len;k++) { 
+					if (data[k] == 0) break;
+				}
+				if (k==len) req=Request.ERROR; // didn't find a 0 byte
+				if (k==j+1) req=Request.ERROR; // mode is 0 bytes long
+				mode = new String(data,j,k-j-1);
+			}
+
+			if(k!=len-1) req=Request.ERROR; // other stuff at end of packet        
+
+			// Create a response.
+			if (req==Request.READ) { // for Read it's 0301
+				threadNum++;
+				Thread readRequest =  new TFTPReadThread(initializedThreads,console, receivePacket, "Thread "+threadNum, verbose);
+				readRequest.start();
+				response = readResp;
+			} else if (req==Request.WRITE) { // for Write it's 0400
+				threadNum++;
+				Thread writeRequest =  new TFTPWriteThread(initializedThreads,console, receivePacket,"Thread "+threadNum, verbose,file);
+				writeRequest.start();
+				response = writeResp;
+			} else { // it was invalid, just quit
+				throw new Exception("Not yet implemented");
+			} 
+		}
+	System.exit(0);
+	} 
 
 	Thread[] getServerThreads( final ThreadGroup group ) {
 		if ( group == null )
@@ -249,5 +200,102 @@ public class TFTPServer{
 
 		TFTPServer c = new TFTPServer("TFTP Server");
 		c.receiveAndSendTFTP();
+	}
+
+
+	@Override
+	//ISR. Called whenever user has new input, interrupts current process *WHENEVER* new input
+	public void actionPerformed(ActionEvent e) 
+	{
+		//get input. Do not wait (in case ISR called prematurely we dont want to cause server lag)
+		console.actionPerformed(e);
+		String[] input = console.getParsedInput(false);
+		
+		//process input, handle inputs based on param number
+		if(input != null)
+		{
+			switch (input.length)
+			{
+				case(1):
+					//print help
+					if (input[0].equals("help"))
+					{
+						console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
+						console.print("'help'                                   - print all commands and how to use them");
+						console.print("'clear'                                  - clear screen");
+						console.print("'close'                                 - exit client, close ports, be graceful");
+						console.print("'verbose BOOL'                - toggle verbose mode as true or false");
+						console.print("'test'                                    - runs a test for the console");
+						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+						console.println();
+					}
+					//clear console
+					else if (input[0].equals("clear"))
+					{
+						this.console.clear();
+					}
+					//close
+					else if(input[0].equals("close"))
+					{
+						runFlag = false;
+						/* 
+						Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+						while(threadSet.iterator().hasNext()){
+							Thread s = threadSet.iterator().next();
+							if(s.getThreadGroup().getName().equals(initializedThreads.getName()))
+							{
+								((ServerThread)s).interrupt();
+							}
+						}
+						*/
+					}
+					//run basic console test
+					// ### THIS WILL STOP SERVER FROM DISPLAYING ANYTHING TO CONSOLE FOR DURATION OF TEST ###
+					else if(input[0].equals("test"))
+					{
+						this.console.testAll();
+					}
+					//bad input
+					else
+					{
+						console.print("! Unknown Input !");
+					}
+					break;
+				
+				case(2):
+					//toggle verbose
+					if(input[0].equals("verbose"))
+					{
+						if(input[1].equals("true"))
+						{
+							this.verbose = true;
+						}
+						else if (input[1].equals("false"))
+						{
+							this.verbose = false;
+						}
+						else
+						{
+							console.print("! Unknown Input !");
+						}
+					}
+					//bad input
+					else
+					{
+						console.print("! Unknown Input !");
+					}
+					break;
+					
+				default:
+					//bad input
+					console.print("! Unknown Input !");
+			}
+		}
+		/*we should never enter this. Implies ISR called prematurely or other class instances reading input
+		before this instance */
+		else
+		{
+			this.console.printError("ISR called prematurely");
+		}
 	}
 }
