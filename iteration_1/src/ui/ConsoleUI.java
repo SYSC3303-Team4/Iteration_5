@@ -16,6 +16,7 @@
 *						- consolidated actionEvent(..) and getInputText() into a single method
 *						- printByteArray(..) method changed
 *						- added new test method
+*						- output field now has word wrap (ie no more pesky horizontal scroll)
 *					v1.0.2
 *						- method added to print byte array
 *						- formatting for input/output fixed
@@ -85,11 +86,15 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		inputReady = false;
 		input = null;
 		
-		//create text fields for output and input
+		//create text fields inputs
 		inputLine = new JTextField(45);
 		inputLine.addActionListener(this);
+		
+		//set text fields for output
 		outputArea = new JTextArea(35,45);
 		outputArea.setEditable(false);
+		outputArea.setLineWrap(true);			//horizontal word wrap true
+		outputArea.setWrapStyleWord(true);		//horizontal word wrap true
 		JScrollPane scrollPane = new JScrollPane(outputArea);
 
         //Add text areas in gridlayout
