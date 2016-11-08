@@ -2,13 +2,15 @@
 *Class:             Console.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    07/11/2016                                              
-*Version:           1.1.0                                                      
+*Date of Update:    08/11/2016                                              
+*Version:           1.1.1                                                      
 *                                                                                   
 *Purpose:           Generic console for basic output/inputs
 * 
 * 
-*Update Log:		v1.1.0
+*Update Log:		v1.1.1
+*						- new constructor added for ISR based inputs
+*					v1.1.0
 *						- getInput(bool x) method added to support older implementation of method as
 *						  getInput()
 *						- getInput(bool x) patched to properly return null
@@ -78,6 +80,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 	
 	
 	//generic constructor
+	//### NOTE THIS SHOULD IMPLIMENT ConsoleUI(String, ActionListener) EVENTUALLY ###
 	public ConsoleUI(String name)
 	{
 		//set up layout, save ID, initialize
@@ -89,6 +92,38 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		//create text fields inputs
 		inputLine = new JTextField(45);
 		inputLine.addActionListener(this);
+		
+		//set text fields for output
+		outputArea = new JTextArea(35,45);
+		outputArea.setEditable(false);
+		outputArea.setLineWrap(true);			//horizontal word wrap true
+		outputArea.setWrapStyleWord(true);		//horizontal word wrap true
+		JScrollPane scrollPane = new JScrollPane(outputArea);
+
+        //Add text areas in gridlayout
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        add(scrollPane, c);
+        c.fill = GridBagConstraints.BOTH;
+        c.weightx = 5.0;
+        c.weighty = 5.0;
+        add(inputLine, c);
+	}
+	
+	
+	//constructor for ISR based input
+	public ConsoleUI(String name, ActionListener listener)
+	{
+		//set up layout, save ID, initialize
+		super(new GridBagLayout());
+		ID = name;
+		inputReady = false;
+		input = null;
+		
+		//create text fields inputs
+		inputLine = new JTextField(45);
+		inputLine.addActionListener(listener);
 		
 		//set text fields for output
 		outputArea = new JTextArea(35,45);
@@ -202,7 +237,14 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
         
         //magic code to make sure stuff appears
         outputArea.setCaretPosition(outputArea.getDocument().getLength());
-	} 
+	}
+	
+	
+	@Override
+	public void printError(String errorMsg)
+	{
+		print("!!ERROR!!   " + errorMsg + "   !!ERROR!!");
+	}
 	
 	
 	@Override
