@@ -175,7 +175,7 @@ class TFTPWriteThread extends ServerThread
 		       
 
 		       //Write file to directory
-		       File fileName = new File(file.getAbsolutePath()+filename.toString());
+		       File fileName = new File(file.getAbsolutePath()+"/"+filename.toString());
 		       
 		       
 		       TFTPWriter writer = new TFTPWriter();
@@ -186,7 +186,7 @@ class TFTPWriteThread extends ServerThread
 		       fileFlag = true;
 				
 		       try {
-					writer.write(data,file.getAbsolutePath()+filename.toString());
+					writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
 				} catch (AccessDeniedException e1) {
 					buildError(2,receivePacket,verbose);
 					e1.printStackTrace();

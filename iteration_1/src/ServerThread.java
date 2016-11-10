@@ -167,7 +167,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 	       	/* Exit Gracefully if the stop is requested. */
 	       	if(stopRequested){exitGraceFully();}
 	       	if(verbose){
-	       		console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
+	       		console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
 	       	}
     	
     }
