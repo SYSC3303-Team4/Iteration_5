@@ -8,7 +8,9 @@
 *Purpose:           Basically an Enum
 * 
 * 
-*Update Log:		v1.0.0
+*Update Log:		v1.0.1
+*						- added packetType
+*					v1.0.0
 *						- null
 */
 package inputs;
@@ -20,14 +22,16 @@ public class Input
 	private int blockNum;
 	private int mode;
 	private int delay;
+	private int packetType;
 	
 	
 	//generic constructor
-	Input(int mode, int blockNum, int delay)
+	Input(int mode, int packetType, int blockNum, int delay)
 	{
 		this.mode = mode;
 		this.blockNum = blockNum;
 		this.delay = delay;
+		this.packetType = packetType;
 	}
 	
 	
@@ -44,12 +48,16 @@ public class Input
 	{
 		return delay;
 	}
+	public int getPacketType()
+	{
+		return packetType;
+	}
 	
 	
 	@Override
 	//print as string
 	public String toString()
 	{
-		return ("BlockNum: " + blockNum + " || Mode: " + mode + " || Delay: " + delay);
+		return ("BlockNum: " + blockNum + "PacketType: " + packetType + " || Mode: " + mode + " || Delay: " + delay);
 	}
 }

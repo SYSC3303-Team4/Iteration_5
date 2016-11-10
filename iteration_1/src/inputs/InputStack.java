@@ -34,10 +34,10 @@ public class InputStack
 	
 	
 	//push to stack with sort
-	public void push(int mode, int blockNum, int delay)
+	public void push(int mode, int packetType, int blockNum, int delay)
 	{
 		//create Input
-		Input newInput =  new Input(mode, blockNum, delay);
+		Input newInput = new Input(mode, packetType, blockNum, delay);
 		
 		//nothing in stack, add to front
 		if (length == 0)
