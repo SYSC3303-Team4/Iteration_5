@@ -104,6 +104,9 @@ public class TFTPClient extends JFrame
 	private File file;
 	private JFileChooser fileChooser;
 	private ConsoleUI console;
+	private int blockNum = 1;
+	private boolean duplicateACK = false;
+
 	
 	//declaring local class constants
 	private static final int IN_PORT_HOST = 23;
@@ -114,6 +117,7 @@ public class TFTPClient extends JFrame
 	private static final byte[] OPCODE_WRQ =  {0,2};
 	private static final byte[] OPCODE_DATA = {0,3};
 	private static final byte[] OPCODE_ACK = {0,4};
+	
 	
 	
 	//generic constructor
@@ -215,7 +219,7 @@ public class TFTPClient extends JFrame
 		//byte[] data = reader.pop();
 		byte[] toSend = new byte[data.length + 4];
 		
-		//constuct array
+		//construct array
 		for(int i=0; i<2; i++)
 		{
 			toSend[i] = OPCODE_DATA[i];
@@ -350,7 +354,7 @@ public class TFTPClient extends JFrame
 	public void sendWRQ(String file, String mode)
 	{
 		//initial
-		int blockNum = 1;
+
 		int oldPort = outPort; 
 		int lastDATAPacketLength = 0;
 		
@@ -378,19 +382,20 @@ public class TFTPClient extends JFrame
 		//send DATA
 		while ( !(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4)
 		{
-			
-			//send DATA
-			if(reader.isEmpty())
-			{
-				generate0Data(blockNum);
+			if(!duplicateACK){
+				//send DATA
+				if(reader.isEmpty())
+				{
+					generate0Data(blockNum);
+				}
+				else
+				{
+					generateData(blockNum);
+				}
+				lastDATAPacketLength = sentPacket.getLength();
+				sendPacket();
+				blockNum++;
 			}
-			else
-			{
-				generateData(blockNum);
-			}
-			lastDATAPacketLength = sentPacket.getLength();
-			sendPacket();
-			blockNum++;
 			
 			//wait for ACK
 			receiveACK();
@@ -398,6 +403,7 @@ public class TFTPClient extends JFrame
 		
 		//reset port
 		outPort = oldPort;
+		blockNum = 0;
 	}
 	
 	
@@ -426,19 +432,39 @@ public class TFTPClient extends JFrame
 	
 	//receive ACK
 	public void receiveACK()
-	{		
-		//receive ACK
-		receivePacket("ACK");
+	{	
+
+		//Encode the block number into the response block 
+		byte[] blockArray = new byte[2];
+		blockArray[1]=(byte)(blockNum & 0xFF);
+		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
 		
-		//analyze ACK for format
-		if (verbose)
-		{
-			console.print("Client: Checking ACK...");
-		}
-		byte[] data = recievedPacket.getData();
+
+			//receive ACK
+			receivePacket("ACK");
+			
+			//analyze ACK for format
+			if (verbose)
+			{
+				console.print("Client: Checking ACK...");
+			}
+			byte[] data = recievedPacket.getData();
+			
+			//check ACK for validity
+			if(data[0] == 0 && data[1] == 4){
+				//Check if the blockNumber corresponds to the expected blockNumber
+				if(blockArray[1] == data[3] && blockArray[0] == data[2]){
+					blockNum++;
+				}
+				else{
+					duplicateACK = true;
+				}
+			}
+			else{
+				//ITERATION 5 ERROR
+				//Invalid TFTP code
+			}
 		
-		//check ACK for validity
-		// _________________PUT CODE HERE_____________
 	}
 	
 	

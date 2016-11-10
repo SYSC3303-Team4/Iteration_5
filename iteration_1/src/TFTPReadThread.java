@@ -54,6 +54,7 @@ class TFTPReadThread  extends ServerThread
 	private boolean verbose;
 	private static int blockNumber = 1;
 	boolean sendZeroDataPacket = false;
+	boolean duplicateACK = false;
 	private String threadNumber;
 	public static final byte[] response = {0, 3, 0, 0};
 
@@ -134,73 +135,76 @@ class TFTPReadThread  extends ServerThread
 
 			while(!isInterrupted()){
 		
-				//Encode the block number into the response block 
-				response[3]=(byte)(blockNumber & 0xFF);
-				response[2]=(byte)((blockNumber >> 8)& 0xFF);
-				
+				if(!duplicateACK){
+					//Encode the block number into the response block 
+					response[3]=(byte)(blockNumber & 0xFF);
+					response[2]=(byte)((blockNumber >> 8)& 0xFF);
+					
+		
+					//Building datagram		
+		
+					
+					byte[] data = reader.pop();
+					//Check if the server needs to send a data Packet with 0 bytes
+					if(data!=null){
+						if(data.length==512 && reader.peek()==null){
+							sendZeroDataPacket = true;
+						}
+					}
 	
-				//Building datagram		
-	
-	
-				byte[] data = reader.pop();
-				//Check if the server needs to send a data Packet with 0 bytes
-				if(data!=null){
-					if(data.length==512 && reader.peek()==null){
-						sendZeroDataPacket = true;
+					/* If there's no more data to be read exit. */
+					if(data == null){
+						if(sendZeroDataPacket == true){
+							sendNoData(receivePacket,verbose, blockNumber,sendReceiveSocket);
+							//Waiting to receive final ACK
+							byte[] finalACK = new byte[4];
+							DatagramPacket finalACKPacket = new DatagramPacket(finalACK, finalACK.length);
+							try {
+								sendReceiveSocket.receive(finalACKPacket);
+							} catch (IOException e) {
+								e.printStackTrace();
+								System.exit(1);
+							} 
+							
+							printReceivedPacket(finalACKPacket, verbose);
+						}
+						console.print("Read Request has completed.");
+						exitGraceFully();
+						return;
+					}	
+					//Builds the datagram in format
+					/*
+					2 bytes    2 bytes       n bytes 
+					---------------------------------
+				 DATA  | 03    |   Block #  |    Data    |
+					---------------------------------
+					 */
+		
+					byte dataPrime[] = Arrays.copyOf(response, response.length + data.length); 
+					System.arraycopy(data, 0, dataPrime, response.length, data.length);
+		
+					/* Exit Gracefully if the stop is requested. */
+					if(isInterrupted()){continue;}
+					sendPacket = new DatagramPacket(dataPrime, dataPrime.length,
+							receivePacket.getAddress(), receivePacket.getPort());
+					
+					printSendPacket(sendPacket, verbose);
+		
+					// Send the datagram packet to the client via a new socket.
+					try {
+						sendReceiveSocket.send(sendPacket);
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.exit(1); 
+					}
+		
+					/* Exit Gracefully if the stop is requested. */
+					if(isInterrupted()){continue;}
+					if(verbose){
+					console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
 					}
 				}
-
-				/* If there's no more data to be read exit. */
-				if(data == null){
-					if(sendZeroDataPacket == true){
-						sendNoData(receivePacket,verbose, blockNumber,sendReceiveSocket);
-						//Waiting to receive final ACK
-						byte[] finalACK = new byte[4];
-						DatagramPacket finalACKPacket = new DatagramPacket(finalACK, finalACK.length);
-						try {
-							sendReceiveSocket.receive(finalACKPacket);
-						} catch (IOException e) {
-							e.printStackTrace();
-							System.exit(1);
-						} 
-						
-						printReceivedPacket(finalACKPacket, verbose);
-					}
-					console.print("Read Request has completed.");
-					exitGraceFully();
-					return;
-				}	
-				//Builds the datagram in format
-				/*
-				2 bytes    2 bytes       n bytes 
-				---------------------------------
-			 DATA  | 03    |   Block #  |    Data    |
-				---------------------------------
-				 */
-	
-				byte dataPrime[] = Arrays.copyOf(response, response.length + data.length); 
-				System.arraycopy(data, 0, dataPrime, response.length, data.length);
-	
-				/* Exit Gracefully if the stop is requested. */
-				if(isInterrupted()){continue;}
-				sendPacket = new DatagramPacket(dataPrime, dataPrime.length,
-						receivePacket.getAddress(), receivePacket.getPort());
-				
-				printSendPacket(sendPacket, verbose);
-	
-				// Send the datagram packet to the client via a new socket.
-				try {
-					sendReceiveSocket.send(sendPacket);
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.exit(1); 
-				}
-	
-				/* Exit Gracefully if the stop is requested. */
-				if(isInterrupted()){continue;}
-				if(verbose){
-				console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
-				}
+				duplicateACK = false;
 	
 				//Waiting to receive ACK
 				try {
@@ -218,9 +222,22 @@ class TFTPReadThread  extends ServerThread
 			 ACK   | 04    |   Block #  |
 				--------------------
 				 */
+				
 				if(receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 4){
-					blockNumber++;
+					//Check if the blockNumber corresponds to the expected blockNumber
+					if(response[3] == receivePacket.getData()[3] && response[2] == receivePacket.getData()[2]){
+						blockNumber++;
+					}
+					else{
+						duplicateACK = true;
+					}
 				}
+				else{
+					//ITERATION 5 ERROR
+					//Invalid TFTP code
+				}
+
+				 
 			}
 			console.print("Server: thread closing.");
 			exitGraceFully();
