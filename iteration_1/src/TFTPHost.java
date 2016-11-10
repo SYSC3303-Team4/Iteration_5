@@ -10,7 +10,9 @@
 					this process indefinitely. Designed to allow for the simulation of errors and lost packets in future.
 * 
 * 
-*Update Log:        v1.0.0
+*Update Log:        v2.0.0
+*						- input methods added (non-isr)
+*					v1.0.0
 *                       - null
 */
 
@@ -18,6 +20,7 @@
 //imports
 import java.io.*;
 import java.net.*;
+import java.util.Stack;
 
 import ui.ConsoleUI;
 
@@ -35,6 +38,8 @@ public class TFTPHost
 	private int serverThreadPort;
 	private boolean verbose;
 	private ConsoleUI console;
+	private boolean runFlag;
+	private Stack inputStack = new Stack();
 		
 	//declaring local class constants
 	private static final int CLIENT_RECEIVE_PORT = 23;
@@ -60,8 +65,9 @@ public class TFTPHost
 			System.exit(1);
 		}
 		
-		//initialize echo --> off
+		//initialize echo --> off, run --> true
 		verbose = false;
+		runFlag = true;
 		
 		//run UI
 		console = new ConsoleUI("Error Simulator");
@@ -166,13 +172,40 @@ public class TFTPHost
 	{
 		console.print("Console Operating...");
 		
-		while(LIT)
+		//declaring local variables
+		byte RWReq=0;
+		boolean loop=true;
+		int lastDataPacketLength=0;
+		
+		//print starting text
+		console.print("TFTPClient running");
+		console.print("type 'help' for command list");
+		console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
+		console.print("'help'                                   - print all commands and how to use them");
+		console.print("'clear'                                  - clear screen");
+		console.print("'close'                                 - exit client, close ports, be graceful");
+		console.print("'verbose BOOL'                - toggle verbose mode as true or false");
+		console.print("'test'                                    - runs a test for the console");
+		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		console.println();
+		
+		//main input loop
+		while(runFlag && LIT)
 		{
-			//declaring local variables
-			byte RWReq=0;
-			boolean loop=true;
-			int lastDataPacketLength=0;
 			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			/* OLD CODE
 			//wait for original RRQ/WRQ from client
 			receiveDatagram(inSocket);
 			//save port 
@@ -270,10 +303,8 @@ public class TFTPHost
 					}
 				}
 			}
-				
+			*/	
 		}
-		
-		
 	}
 	
 	
@@ -281,42 +312,8 @@ public class TFTPHost
 	{
 		//declaring local variables
 		TFTPHost host = new TFTPHost();
-		
 		//run
 		host.mainPassingLoop();
-		
-		
-		
-		
-		/*
-		while(true)
-		{
-			//wait for client's packet (save clients port)
-			host.receiveAndEcho(host.getInSocket());
-			host.setClientPort(host.getReceivedPacket().getPort());
-			//console.print("\n>> " + host.getClientPort());
-			
-			//send packet to server and wait for response
-			host.sendAndEcho(SERVER_RECEIVE_PORT, host.getGeneralSocket());
-			host.receiveAndEcho(host.getGeneralSocket());
-			
-			//prep socket to use for sending datagram packet
-			//create temp socket, random port
-			try
-			{
-				host.setOutSocket(new DatagramSocket());
-			}
-			catch(SocketException se)
-			{
-				se.printStackTrace();
-				System.exit(1);
-			}
-			
-			//send packet to client
-			host.sendAndEcho(host.getClientPort(), host.getOutSocket());
-			console.print("----------------------------------------\n");
-		}
-		*/
 	}
 
 }
