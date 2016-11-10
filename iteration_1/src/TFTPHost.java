@@ -241,7 +241,7 @@ public class TFTPHost
 		if (data[0] == 0 && (data[1] == 1 || data[1] == 2) )
 		{
 			RWReq = data[1];
-		}
+		}     
 		//something awful has happened
 		else
 		{
