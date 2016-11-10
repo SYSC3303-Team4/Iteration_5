@@ -495,9 +495,7 @@ public class TFTPClient extends JFrame
 			rawData = receivedPacket.getData();
 			procData = new byte[receivedPacket.getLength() - DATA_OFFSET];
 			byte[] blockNum = new byte[2];
-			console.print("Received Packet Length: "+receivedPacket.getLength());
 			int reLen = receivedPacket.getLength();
-			console.print("reLen Length: "+reLen);
 			for(int i=0; i<reLen-DATA_OFFSET; i++)
 			{
 				procData[i] = rawData[i+DATA_OFFSET];
@@ -520,8 +518,6 @@ public class TFTPClient extends JFrame
 			}
 			
 			//check to see if this is final packet
-			console.print("ProcData Length: "+procData.length);
-			console.print("Received Packet Length: "+receivedPacket.getLength());
 			if (receivedPacket.getLength() < MAX_SIZE+4)	
 			{
 				loop = false;
