@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
@@ -116,127 +117,144 @@ class TFTPWriteThread extends ServerThread
 			}
     	
 	       while(!isInterrupted()){
-
-
-		   //Build and send the first ACK reply in format:
-		   /*
-		  2 bytes    2 bytes
-		  -------------------
-	   ACK   | 04    |   Block #  |
-		  --------------------
-		    */
-		   if(blockNumber == 0){
-			   sendPacket = new DatagramPacket(response, response.length,
-			       receivePacket.getAddress(), receivePacket.getPort());
-
-			   printSendPacket(sendPacket,verbose);
-
-		       try {
-			   sendReceiveSocket.send(sendPacket);
-		       } catch (IOException e) {
-			   e.printStackTrace();
-			   System.exit(1);
-		       }
-		        /* Exit Gracefully if the stop is requested. */
-				if(isInterrupted()){exitGraceFully();}
-				if(verbose){
-		       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
-				}
-		   }
-
-	       //Wait for next DATA datagram in format:
-	       /*
-		  2 bytes    2 bytes       n bytes
-		  ---------------------------------
-	   DATA  | 03    |   Block #  |    Data    |
-		  ---------------------------------
-		*/
-		   byte[] rawData = new byte[516];
-		   receivePacket1 = new DatagramPacket(rawData, rawData.length);
-		   
-		    /* Exit Gracefully if the stop is requested. */
-			if(isInterrupted()){continue;}
-	       console.print("Server: Waiting for packet.");
-	       // Block until a datagram packet is received from receiveSocket.
-	       try {
-	    	   sendReceiveSocket.receive(receivePacket1);
-	       } catch (IOException e) {
-	    	   e.printStackTrace();
-	    	   System.exit(1);
-	       }
-	      
-	       printReceivedPacket(receivePacket1,verbose);
-		       byte[] data = new byte[receivePacket1.getLength()-4];
-
-		       //Parse data from DATA packet
-		       for(int i = 4; i < receivePacket1.getLength();i++){
-		    	   data[i-4] = receivePacket1.getData()[i];
-		       }
-		       
-
-		       //Write file to directory
-		       File fileName = new File(file.getAbsolutePath()+"/"+filename.toString());
-		       
-		       
-		       TFTPWriter writer = new TFTPWriter();
-		       if(fileName.exists() && fileFlag == false) { 
-		    	   buildError(6,receivePacket,verbose);
-		    	   return;
-				}
-		       fileFlag = true;
-				
-		       try {
-					writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
-				} catch (AccessDeniedException e1) {
-					buildError(2,receivePacket,verbose);
-					e1.printStackTrace();
-					return;
-				} 
-				catch(IOException e2){
-					buildError(3,receivePacket,verbose);
-					e2.printStackTrace();
-					return;
-				}
-
-		       if(data.length<512){
-		    	   if(verbose){
-		    	   console.print("Server: Final Data Block Received.");
-		    	   console.print("Server: Sending last ACK");
-		    	   //SET INTERRUPT TO EXIT LOOP
-		    	   }
-		       }
-
-		       //Sending the ACK for previous DATA packet in format:
-		       /*
+	
+	
+			   //Build and send the first ACK reply in format:
+			   /*
 			  2 bytes    2 bytes
 			  -------------------
 		   ACK   | 04    |   Block #  |
 			  --------------------
+			    */
+
+			   if(blockNumber == 0){
+				   sendPacket = new DatagramPacket(response, response.length,
+				       receivePacket.getAddress(), receivePacket.getPort());
+	
+				   printSendPacket(sendPacket,verbose);
+	
+			       try {
+				   sendReceiveSocket.send(sendPacket);
+			       } catch (IOException e) {
+				   e.printStackTrace();
+				   System.exit(1);
+			       }
+			        /* Exit Gracefully if the stop is requested. */
+					if(isInterrupted()){exitGraceFully();}
+					if(verbose){
+			       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
+					}
+			   }
+	    	   
+	
+		       //Wait for next DATA datagram in format:
+		       /*
+			  2 bytes    2 bytes       n bytes
+			  ---------------------------------
+		   DATA  | 03    |   Block #  |    Data    |
+			  ---------------------------------
 			*/
-
-			   response[2]=receivePacket1.getData()[2];
-			   response[3]=receivePacket1.getData()[3];
-			   blockNumber++;
-
+			   byte[] rawData = new byte[516];
+			   receivePacket1 = new DatagramPacket(rawData, rawData.length);
 			   
-			   
-		       sendPacket = new DatagramPacket(response, response.length,
-					     receivePacket.getAddress(), receivePacket.getPort());
-				/* Exit Gracefully if the stop is requested. */
+			    /* Exit Gracefully if the stop is requested. */
 			   if(isInterrupted()){continue;}
-			   printSendPacket(sendPacket,verbose);
-
+			   
+		       console.print("Server: Waiting for packet.");
+		       // Block until a datagram packet is received from receiveSocket.
 		       try {
-		    	   sendReceiveSocket.send(sendPacket);
+		    	   sendReceiveSocket.receive(receivePacket1);
 		       } catch (IOException e) {
-			  e.printStackTrace();
-			  System.exit(1);
+					if (e instanceof SocketTimeoutException){
+						//Retransmit every timeout
+						//Quite after 5 timeouts
+						timeouts++;
+						if(timeouts == 5){
+							exitGraceFully();
+						}
+						retransmit = true;
+					}
+					else{					
+						e.printStackTrace();
+						System.exit(1);
+					}
 		       }
-				/* Exit Gracefully if the stop is requested. */
-			 if(isInterrupted()){continue;}
-			 if(verbose){
-		       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
-			 }
+		       if(!retransmit){
+		       
+		    	   printReceivedPacket(receivePacket1,verbose);
+			       byte[] data = new byte[receivePacket1.getLength()-4];
+	
+			       //Parse data from DATA packet
+			       for(int i = 4; i < receivePacket1.getLength();i++){
+			    	   data[i-4] = receivePacket1.getData()[i];
+			       }
+			       
+	
+			       //Write file to directory
+			       File fileName = new File(file.getAbsolutePath()+"/"+filename.toString());
+			       
+			       
+			       TFTPWriter writer = new TFTPWriter();
+			       if(fileName.exists() && fileFlag == false) { 
+			    	   buildError(6,receivePacket,verbose);
+			    	   return;
+					}
+			       fileFlag = true;
+					
+			       try {
+						writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
+					} catch (AccessDeniedException e1) {
+						buildError(2,receivePacket,verbose);
+						e1.printStackTrace();
+						return;
+					} 
+					catch(IOException e2){
+						buildError(3,receivePacket,verbose);
+						e2.printStackTrace();
+						return;
+					}
+	
+			       if(data.length<512){
+			    	   if(verbose){
+			    	   console.print("Server: Final Data Block Received.");
+			    	   console.print("Server: Sending last ACK");
+			    	   //SET INTERRUPT TO EXIT LOOP
+			    	   exitGraceFully();
+			    	   }
+			       }
+	
+			       //Sending the ACK for previous DATA packet in format:
+			       /*
+				  2 bytes    2 bytes
+				  -------------------
+			   ACK   | 04    |   Block #  |
+				  --------------------
+				*/
+	
+				   response[2]=receivePacket1.getData()[2];
+				   response[3]=receivePacket1.getData()[3];
+				   blockNumber++;
+	
+				   
+				   
+			       sendPacket = new DatagramPacket(response, response.length,
+						     receivePacket.getAddress(), receivePacket.getPort());
+					/* Exit Gracefully if the stop is requested. */
+				   if(isInterrupted()){continue;}
+				   printSendPacket(sendPacket,verbose);
+	
+			       try {
+			    	   sendReceiveSocket.send(sendPacket);
+			       } catch (IOException e) {
+				  e.printStackTrace();
+				  System.exit(1);
+			       }
+					/* Exit Gracefully if the stop is requested. */
+				 if(isInterrupted()){continue;}
+				 if(verbose){
+			       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
+				 }
+		     }
 	       
 	    }
 	    console.print("Server: thread closing.");
