@@ -211,7 +211,7 @@ public class TFTPClient extends JFrame
 		blockNumArr[1]=(byte)(blockNum & 0xFF);
 		blockNumArr[0]=(byte)((blockNum >> 8)& 0xFF);
 	    
-		if(verbose)
+		if(verbose)    
 		{
 			console.print("Client: Prepping DATA packet #" + blockNum);
 		}
