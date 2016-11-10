@@ -57,9 +57,9 @@ public class TestBench
 				};
 		
 		//run all threads
-		threadA.start();
 		threadB.start();
 		threadC.start();
+		threadA.start();
 		
 	}
 

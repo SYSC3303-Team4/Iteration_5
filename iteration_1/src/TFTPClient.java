@@ -93,7 +93,7 @@ public class TFTPClient extends JFrame
 {
 	//declaring local instance variables
 	private DatagramPacket sentPacket;
-	private DatagramPacket recievedPacket;
+	private DatagramPacket receivedPacket;
 	private DatagramSocket generalSocket;
 	private boolean verbose;
 	private int outPort;
@@ -112,6 +112,7 @@ public class TFTPClient extends JFrame
 	private static final int IN_PORT_HOST = 23;
 	private static final int IN_PORT_SERVER = 69;
 	private static final int MAX_SIZE = 512;
+	private static final int DATA_OFFSET = 4;
 	private static final String DEFAULT_MODE = "ASCII";
 	private static final byte[] OPCODE_RRQ =  {0,1}; 
 	private static final byte[] OPCODE_WRQ =  {0,2};
@@ -154,9 +155,9 @@ public class TFTPClient extends JFrame
 	{
 		return sentPacket;
 	}
-	public DatagramPacket getRecievedPacket()
+	public DatagramPacket getreceivedPacket()
 	{
-		return recievedPacket;
+		return receivedPacket;
 	}
 	
 	
@@ -377,12 +378,12 @@ public class TFTPClient extends JFrame
 		//wait for ACK
 		receiveACK();
 		//change port to wherever ACK came from 
-		outPort = recievedPacket.getPort();
+		outPort = receivedPacket.getPort();
 		
 		//send DATA
 		while ( !(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4)
 		{
-			if(!duplicateACK){
+			if(duplicateACK){
 				//send DATA
 				if(reader.isEmpty())
 				{
@@ -404,6 +405,7 @@ public class TFTPClient extends JFrame
 		//reset port
 		outPort = oldPort;
 		blockNum = 0;
+		console.print("----------------------WRQ COMPLETE----------------------");
 	}
 	
 	
@@ -448,7 +450,7 @@ public class TFTPClient extends JFrame
 			{
 				console.print("Client: Checking ACK...");
 			}
-			byte[] data = recievedPacket.getData();
+			byte[] data = receivedPacket.getData();
 			
 			//check ACK for validity
 			if(data[0] == 0 && data[1] == 4){
@@ -486,18 +488,19 @@ public class TFTPClient extends JFrame
 		{
 			//receive data
 			receivePacket("DATA");
-			console.print("RP = " +recievedPacket.getPort());
-			outPort = recievedPacket.getPort();
-			console.print("OP = " +outPort);
+			outPort = receivedPacket.getPort();
 			
 			//Process data
-			rawData = new byte[recievedPacket.getLength()] ;
-			rawData = recievedPacket.getData();					//check later, buggy
-			procData = new byte[rawData.length - 4];			//ditto 
+			rawData = new byte[receivedPacket.getLength()] ;
+			rawData = receivedPacket.getData();
+			procData = new byte[receivedPacket.getLength() - DATA_OFFSET];
 			byte[] blockNum = new byte[2];
-			for(int i=0; i<procData.length; i++)
+			console.print("Received Packet Length: "+receivedPacket.getLength());
+			int reLen = receivedPacket.getLength();
+			console.print("reLen Length: "+reLen);
+			for(int i=0; i<reLen-DATA_OFFSET; i++)
 			{
-				procData[i] = rawData[i+4];
+				procData[i] = rawData[i+DATA_OFFSET];
 			}
 			
 			//save data
@@ -517,9 +520,9 @@ public class TFTPClient extends JFrame
 			}
 			
 			//check to see if this is final packet
-			console.print(""+rawData.length);
-			console.print(""+recievedPacket.getLength());
-			if (recievedPacket.getLength() < MAX_SIZE+4)	
+			console.print("ProcData Length: "+procData.length);
+			console.print("Received Packet Length: "+receivedPacket.getLength());
+			if (receivedPacket.getLength() < MAX_SIZE+4)	
 			{
 				loop = false;
 			}
@@ -532,6 +535,8 @@ public class TFTPClient extends JFrame
 			generateACK(blockNum);
 			sendPacket();
 		}
+		
+		console.print("----------------------RRQ COMPLETE----------------------");
 		outPort = oldPort;
 	}
 	
@@ -541,7 +546,7 @@ public class TFTPClient extends JFrame
 	{	
 		//prep for response
 		byte[] response = new byte[MAX_SIZE+4];
-		recievedPacket = new DatagramPacket(response, response.length);
+		receivedPacket = new DatagramPacket(response, response.length);
 		
 		//wait for response
 		if (verbose)
@@ -550,7 +555,7 @@ public class TFTPClient extends JFrame
 		}
 		try
 		{
-			generalSocket.receive(recievedPacket);			
+			generalSocket.receive(receivedPacket);			
 		}
 		catch(IOException e)
 		{
@@ -560,12 +565,12 @@ public class TFTPClient extends JFrame
 		if (verbose)
 		{
 			console.print("Client: " + type + " packet received");
-			printDatagram(recievedPacket);
+			printDatagram(receivedPacket);
 		}
 		
 		//check for errors
 		byte errorType=response[3];
-		response = recievedPacket.getData();
+		response = receivedPacket.getData();
 		if(response[0] == 0 && response[1] == 5)
 		{
 			switch(errorType)
