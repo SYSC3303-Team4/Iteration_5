@@ -142,7 +142,7 @@ class TFTPWriteThread extends ServerThread
 			        /* Exit Gracefully if the stop is requested. */
 					if(isInterrupted()){exitGraceFully();}
 					if(verbose){
-			       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
+			       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
 					}
 			   }
 	    	   
@@ -252,7 +252,7 @@ class TFTPWriteThread extends ServerThread
 					/* Exit Gracefully if the stop is requested. */
 				 if(isInterrupted()){continue;}
 				 if(verbose){
-			       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
+			       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
 				 }
 		     }
 	       
