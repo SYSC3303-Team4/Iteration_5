@@ -383,7 +383,7 @@ public class TFTPClient extends JFrame
 		//send DATA
 		while ( !(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4)
 		{
-			if(duplicateACK){
+			if(duplicateACK){ //previously (duplicateACK) 
 				//send DATA
 				if(reader.isEmpty())
 				{
@@ -395,7 +395,7 @@ public class TFTPClient extends JFrame
 				}
 				lastDATAPacketLength = sentPacket.getLength();
 				sendPacket();
-				blockNum++;
+				//blockNum++;
 			}
 			
 			//wait for ACK
