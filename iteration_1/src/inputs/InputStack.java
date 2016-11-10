@@ -8,7 +8,9 @@
 *Purpose:           Sorted stack of input strings. Sorted in terms of block num
 * 
 * 
-*Update Log:		v1.0.0
+*Update Log:		v1.0.1
+*						- added human readable thing
+*					v1.0.0
 *						- very basic implementation of framework v1.0.0
 */
 package inputs;
@@ -30,6 +32,12 @@ public class InputStack
 	{
 		pseudoStack = new LinkedList<Input>();
 		length = 0;
+	}
+	
+	
+	public int length()
+	{
+		return length;
 	}
 	
 	
@@ -103,6 +111,29 @@ public class InputStack
 			for(int i=0; i<length; i++)
 			{
 				printable = printable + "ITEM: " + i + " --> " + pseudoStack.get(i).toString() + "\n";
+			}
+		}
+		
+		return printable;
+	}
+	
+	
+	//print as HUMAN READABLE string
+	public String toFancyString()
+	{
+		//return string
+		String printable = "";
+		
+		//make returnable object
+		if(length == 0)
+		{
+			printable = "EMPTY";
+		}
+		else
+		{
+			for(int i=0; i<length; i++)
+			{
+				printable = printable + "ITEM: " + i + " --> " + pseudoStack.get(i).toFancyString() + "\n" + "    ";
 			}
 		}
 		

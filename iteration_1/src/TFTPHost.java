@@ -12,6 +12,7 @@
 * 
 *Update Log:        v2.0.0
 *						- input methods added (non-isr)
+*						- input now saves to InputStack
 *					v1.0.0
 *                       - null
 */
@@ -20,14 +21,17 @@
 //imports
 import java.io.*;
 import java.net.*;
-import java.util.Stack;
+
+import javax.swing.JFileChooser;
+import javax.swing.JTextArea;
+
+import inputs.*;
 
 import ui.ConsoleUI;
 
 
 public class TFTPHost 
 {
-	
 	//declaring local instance variables
 	private DatagramPacket sentPacket;
 	private DatagramPacket receivedPacket;
@@ -38,8 +42,7 @@ public class TFTPHost
 	private int serverThreadPort;
 	private boolean verbose;
 	private ConsoleUI console;
-	private boolean runFlag;
-	private Stack inputStack = new Stack();
+	private InputStack inputStack = new InputStack();
 		
 	//declaring local class constants
 	private static final int CLIENT_RECEIVE_PORT = 23;
@@ -65,9 +68,8 @@ public class TFTPHost
 			System.exit(1);
 		}
 		
-		//initialize echo --> off, run --> true
+		//initialize echo --> off
 		verbose = false;
-		runFlag = true;
 		
 		//run UI
 		console = new ConsoleUI("Error Simulator");
@@ -170,15 +172,14 @@ public class TFTPHost
 	
 	public void mainPassingLoop()
 	{
-		console.print("Console Operating...");
+		console.print("TFTPHost Operating...");
 		
 		//declaring local variables
-		byte RWReq=0;
-		boolean loop=true;
-		int lastDataPacketLength=0;
+		boolean runFlag = true;
+		String input[] = null;
+		int packetType, blockNum, delay;
 		
 		//print starting text
-		console.print("TFTPClient running");
 		console.print("type 'help' for command list");
 		console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
 		console.print("'help'                                   - print all commands and how to use them");
@@ -186,124 +187,188 @@ public class TFTPHost
 		console.print("'close'                                 - exit client, close ports, be graceful");
 		console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 		console.print("'test'                                    - runs a test for the console");
+		console.print("'errors'              - display a summary of all errors to be simulated");
 		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		console.println();
 		
 		//main input loop
 		while(runFlag && LIT)
 		{
+			//get PARSED user input
+			input = console.getParsedInput(true);
 			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			/* OLD CODE
-			//wait for original RRQ/WRQ from client
-			receiveDatagram(inSocket);
-			//save port 
-			clientPort = receivedPacket.getPort();
-		
-			//determine if this is a valid RRQ/WRQ
-			byte[] data = new byte[2];
-			data = receivedPacket.getData();
-			//valid
-			if (data[0] == 0 && (data[1] == 1 || data[1] == 2) )
+			//process input based on param number
+			switch(input.length)
 			{
-				RWReq = data[1];
-			}
-			//something awful has happened
-			else
-			{
-				console.print("Something awful happend");
-				System.exit(0);
-			}
-			
-			//send RRQ/WRQ to server
-			sendDatagram(SERVER_RECEIVE_PORT, generalServerSocket);
-			
-			//receive 1st packet
-			receiveDatagram(generalServerSocket);
-			serverThreadPort = receivedPacket.getPort();
-			
-			
-			//do the rest if RRQ
-			if(RWReq == 1)
-			{
-				while(loop)
-				{
-					//save packet size if of type DATA
-					if ( (receivedPacket.getData())[1] == 3)
+				case(1):
+					//print commands
+					if (input[0].equals("help"))
 					{
-						lastDataPacketLength = receivedPacket.getLength();
-					}
-					//send DATA to client
-					sendDatagram(clientPort, generalClientSocket);
-					//receive client ACK
-					receiveDatagram(generalClientSocket);
-					//send ACK to server
-					sendDatagram(serverThreadPort, generalServerSocket);
-					
-					//receive more data and loop if datagram.size==516
-					//final ack sent to server, data transfer complete
-					if (lastDataPacketLength < MAX_SIZE)
-					{
-						console.print("Data Transfer Complete");
+						console.print("type 'help' for command list");
+						console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
+						console.print("'help'                                   - print all commands and how to use them");
+						console.print("'clear'                                  - clear screen");
+						console.print("'close'                                 - exit client, close ports, be graceful");
+						console.print("'verbose BOOL'                - toggle verbose mode as true or false");
+						console.print("'test'                                    - runs a test for the console");
+						console.print("'errors'              - display a summary of all errors to be simulated");
+						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 						console.println();
-						loop = false;
 					}
-					//more data left, receive and loop back
+					//display inputs
+					else if (input[0].equals("errors"))
+					{
+						console.print(inputStack.toFancyString());
+					}
+					//run the console
+					else if (input[0].equals("run"))
+					{
+						//TODO SARAHS FUNCTION HERE
+					}
+					//clear console
+					else if (input[0].equals("clear"))
+					{
+						console.clear();
+					}
+					//close console with grace
+					else if (input[0].equals("close"))
+					{
+						console.print("Closing with grace....");
+						runFlag = false;
+						//this.close();
+						System.exit(0);
+					}
+					//run simple console test
+					else if (input[0].equals("test"))
+					{
+						console.testAll();
+					}
+					//BAD INPUT
 					else
 					{
-						receiveDatagram(generalServerSocket);
+						console.print("! Unknown Input !");
 					}
-				}
-			}
-			//do the rest if WRQ
-			else
-			{
-				while(loop)
-				{
-					//send ACK to client
-					sendDatagram(clientPort, generalClientSocket);
-					//receive client DATA, save size
-					receiveDatagram(generalClientSocket);
-					if ( (receivedPacket.getData())[1] == 3)
-					{
-						lastDataPacketLength = receivedPacket.getLength();
-					}
-					//send DATA to server
-					sendDatagram(serverThreadPort, generalServerSocket);
+					break;
 					
-					//final DATA sent, receive and fwd final ACK
-					if (lastDataPacketLength < MAX_SIZE)
+				case(2):
+					//toggle verbose
+					if (input[0].equals("verbose"))
 					{
-						//receive final server ACK
-						receiveDatagram(generalServerSocket);
-						//fwd ACK to clien
-						sendDatagram(clientPort, generalClientSocket);
-					
-						//terminate transfer
-						console.print("Data Transfer Complete");
-						console.println();
-						loop = false;
+						if (input[1].equals("true"))
+						{
+							verbose = true;
+						}
+						else if (input[1].equals("false"))
+						{
+							verbose = false;
+						}
+						else
+						{
+							console.print("! Unknown Input !");
+						}
 					}
-					//there are still DATA packets to pass, transfer not compelte 
+					break;
+				
+				case(3):
+					//duplicate packet
+					if(input[0].equals("dup") || input[0].equals("1"))
+					{
+						//convert verbs from string to int
+						try
+						{
+							if (input[1].equals("data"))
+							{
+								packetType = 4;
+							}
+							else if (input[1].equals("ack"))
+							{
+								packetType = 3;
+							}
+							else
+							{
+								packetType = Integer.parseInt(input[1]);
+							}
+							blockNum = Integer.parseInt(input[2]);
+							
+							//add to inputStack
+							inputStack.push(1, packetType, blockNum, 0);
+						}
+						catch (NumberFormatException nfe)
+						{
+							console.printError("Error 2 - NAN");
+						}
+					}
+					//lost packet
+					else if (input[0].equals("lose") || input[0].equals("2"))
+					{
+						//convert verbs from string to int
+						try
+						{
+							if (input[1].equals("data"))
+							{
+								packetType = 4;
+							}
+							else if (input[1].equals("ack"))
+							{
+								packetType = 3;
+							}
+							else
+							{
+								packetType = Integer.parseInt(input[1]);
+							}
+							blockNum = Integer.parseInt(input[2]);
+							
+							//add to inputStack
+							inputStack.push(2, packetType, blockNum, 0);
+						}
+						catch (NumberFormatException nfe)
+						{
+							console.printError("Error 2 - NAN");
+						}
+					}
 					else
 					{
-						//receive server ACK
-						receiveDatagram(generalServerSocket);
+						console.print("! Unknown Input !");
 					}
-				}
+					break;
+				
+				case(4):
+					//delay packet
+					if(input[0].equals("delay") || input[0].equals("0"))
+					{
+						//convert verbs from string to int
+						try
+						{
+							if (input[1].equals("data"))
+							{
+								packetType = 4;
+							}
+							else if (input[1].equals("ack"))
+							{
+								packetType = 3;
+							}
+							else
+							{
+								packetType = Integer.parseInt(input[1]);
+							}
+							blockNum = Integer.parseInt(input[2]);
+							delay = Integer.parseInt(input[3]);
+							
+							//add to inputStack
+							inputStack.push(0, packetType, blockNum, delay);
+						}
+						catch (NumberFormatException nfe)
+						{
+							console.printError("Error 2 - NAN");
+						}
+					}
+					//bad input
+					else
+					{
+						console.print("! Unknown Input !");
+					}
+					break;
 			}
-			*/	
 		}
 	}
 	
