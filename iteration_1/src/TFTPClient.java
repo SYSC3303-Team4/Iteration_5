@@ -454,10 +454,6 @@ public class TFTPClient extends JFrame
 			
 			//check ACK for validity
 			if(data[0] == 0 && data[1] == 4){
-				System.out.println("BlockArray[1]: " + blockArray[1]);
-				System.out.println("BlockArray[0]: " + blockArray[0]);
-				System.out.println("data[3]: " + data[3]);
-				System.out.println("data[2]: " + data[2]);
 				
 				//Check if the blockNumber corresponds to the expected blockNumber
 				if(blockArray[1] == data[3] && blockArray[0] == data[2]){
