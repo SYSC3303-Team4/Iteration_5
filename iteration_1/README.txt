@@ -11,7 +11,7 @@
                        
  
 
-TFTP Project - Iteration 2
+TFTP Project - Iteration 3
 SYSC 3303
 Group 4
 
@@ -21,97 +21,207 @@ Jason Van Kerkhoven		[100974276]
 Nathaniel Charlebois		[100964496]
 Sarah Garlough			[100965386]
 
-30/09/2016
+11/10/2016
 
 
 -----------------------------------------------------------
 TEAM LOGISTICS
 
 	Adam Staples
-		- Debugged the writer
-		- Tested Functionality
+		- Bug Fixes
+		- Timing Diagram
+		- Corrected Old Timing Diagrams
+		- UML Artesian
 		
 	Dan Hogan
-		- Update Readme
-		- Debug
-		- Add more exiting conditions
-		- Refactoring
+		- Bug Fixes
+		- Improved TFTPServer directory chooser
+		- Small Features
+		- Added delay error into TFTPHost
+		- Readme
 	
 	Jason Van Kerkhoven
-		- Made UI
-		- Patch logic in Host
-		- Integrated UI with Server/Client
-		- Debugged Client and Host
+		- Refactored UI
+		- Created InputStack.java and Input.java datatypes
+		- Integrated UI into TFTPHost
+		- Bug Fixes
 
 	Nathaniel Charlebois
-		- Added Server side error handling
-		- Timing Diagrams
-		- Debugger
-		- Refactored Server
+		- Server side re-transmission and timeout protocols 
+		- Client side re-transmission and timeout protocols
+		- Server Thread debugging
+		- Server file writting debugging
+		- Bug Fixes
 	
 	Sarah Garlough
-		- Client Side Error handling
+		- Bug Fixes
+		- Implimented lost and duplicate packets in TFTPHost
+		- Debugging for Host UI
 
 
 -----------------------------------------------------------
 CONTENTS:
-	ServerThread.java	
-	TFTPCLient.java		
-	TFTPHost.java		
-	TFTPReadThread.java	
-	TFTPReader.java		
-	TFTPServer.java		
-	TFTPWriteThread.java	
-	TFTPWriter.java		
-	.project
-	.classpath
-	ReadMe.txt
-	1ByteData.txt
-	305ByteData.txt
-	511ByteData.txt
-	512ByteData.txt
-	513ByteData.txt
-	UIFramework.java
-	RRQ_Error_Access_Violation.pdf
-	RRW_Error_File_Not_Found.pdf
-	RRQ_Typical_Case.pdf
-	WRQ_Error_DiskFull.pdf
-	WRQ_Error_NoPermission.pdf
-	WRQ_Typical_Case.pdf
+	Package: scr
+		ServerThread.java	
+		TFTPCLient.java		
+		TFTPHost.java		
+		TFTPReadThread.java	
+		TFTPReader.java		
+		TFTPServer.java		
+		TFTPWriteThread.java	
+		TFTPWriter.java
+		TestBench.java
+		
+	Package: ui
+		UIFramework.java
+		ConsoleUI.java
+		
+	Package: inputs
+		Input.java
+		InputStack.java
+	
+	Test Files:
+		1ByteData.txt
+		305ByteData.txt
+		511ByteData.txt
+		512ByteData.txt
+		513ByteData.txt
+		Oxford_Medical_Publications_Manual_of_Surgery.txt
+	
+	Timing Diagrams:
+		RRQ_Error_Access_Violation.pdf
+		RRW_Error_File_Not_Found.pdf
+		RRQ_Typical_Case.pdf
+		WRQ_Error_DiskFull.pdf
+		WRQ_Error_NoPermission.pdf
+		WRQ_Typical_Case.pdf
+	
+	Miscellaneous:
+		.project
+		.classpath
+		README.txt
+
+
 
 ------------------------------------------------------------
-SET UP INSTRUCTIONS:
-	
-	1.	Load all java files into Eclipse workspace/project
-	2.	Build project
-	
-	RRQ Instructions
-	1. 	Run Host
-	2.	Run Server.java
-	3. 	Choose file dump directory from popup filechooser
-	4.  Enter true(Verbose) or false(Quite) into console
-	5.	Run Client.java*
-	6.  Enter help on the client to see instructions
-	7.  Enter RRQ FileName Mode, with filename being the file you wish to read.
-	8.	View Output in server and client
-	9.  Use the x on the top of UI window to exit
-	
-	WRQ Instructions
-	1. 	Run Host
-	2.	Run Server.java
-	3. 	Choose file dump directory from popup filechooser
-	4.  Enter true(Verbose) or false(Quite) into console
-	5.	Run Client.java*
-	6.  Enter help on the client to see instructions
-	7.  Enter WRQ Mode
-	8.	A File Explorer will appear to select the directory you would like to write to on the server.
-	9.	View Output in server and client
-	10.  Use the x on the top of UI window to exit
+OPERATING INSTRUCTIONS
 
-
-	*Note that both programs must be running concurrently for 
-	correct results*
-
+	Instances of TFTPClient, TFTPHost, and TFTPServer class are designed to work with the standard UI produced 
+	for this project, ConsoleUI.
+	
+	By default, verbose mode is set to false for all of the classes listed above. Additionally, test mode by default
+	is set to false for any instance of TFTPClient.
+	
+	The ConsoleUI class functions using a noun-extended verb input format, that is, inputs are typed into
+	the console using a "noun" to denote what you want it to do, followed by a number of "verbs" denoting
+	how you want to do it. Verbs can be thought of as parameters to a function, while nouns are the function
+	call itself. To illustrate, a standard function verbose(Boolean b) would be called as 'verbose b'. Verbose
+	acts as the noun, while the boolean value b acts as the verb. Nouns/verbs are seperated by a single space.
+	
+	All acceptable noun-verb inputs can be called for viewing in any of the three runnable classes assoiciated with
+	this project (ie TFTPClient, TFTPHost, and TFTPServer) by typing 'help' into the relavent console.
+	
+	ConsoleUI echos any user input to the screen in addition to any output generated by the associated program.
+	User input is denoted with a '>' character preceding it.
+	
+	Instances of all required classes (TFTPClient, TFTPHost, TFTPServer) can be launched at the same time through
+	running TestBench.java. This class trivially creates 3 threads and run an instance of either client, host, and server
+	on each repsectively. Alternatively, each class can be started and run seperately instead of using the provided test
+	bench.
+	
+	Directly after the launch of TFTPServer, a dialog box will apear prompting you to select a directory for use.
+	This is the directory which the server will read all files from, and write all files to. This directory can be located
+	anywhere on your machine. A directory MUST be chosen for the server to function.
+	
+	It should also be noted for additional simplicity, the commands 'pull' and 'push' are used in addition to specifying RRQ or 
+	WRQ. The use of push, pull, rrq, and wrq commands are given in greater detail below. The 'push' command opens a file explorer,
+	which in turn allows for the selection of the file you wish to push (write) to the server. The 'pull' command allows the
+	client to read a file (RRQ) from the server, and save it to the main directory (ie above src).
+	
+	
+	
+	TFTPClient:
+	----------------------------------------------------
+		The list of all accepted commands** to the client are given as:
+		**Please note that words in all caps (ie B, MODE) are to denote a verb
+		
+		'help'			: Print all commands and how to use to the console
+		'clear'			: Clear the console output of all text
+		'close'			: Shutdown the TFTPClient currently running
+		'verbose B'		: Switch the client into verbose mode B, where B is a boolean variable.
+				  	  For example, for verbose to be set true type 'verbose true'. For verbose
+				  	  false, type 'verbose false'.
+		'testmode B'		: Switch the client to regular mode and test mode. When in test mode, client
+					  passes all communications through the host (error simulator). When NOT in
+					  test mode, client passes all communications directly to the server.
+					  To toggle test mode on, type 'testmode true'. To toggle test mode off (ie
+					  run in regular mode) type 'testmode false'.
+		'test'			: Run a simple test of UI functionally. Note that while this test is running,
+					  the UI will lose all functionality until the test is fully complete.
+		'push MODE'		: Push a file FROM the client TO the server. Ergo, send a write request to the
+					  server. This command is synonymous to 'wrq MODE'. MODE is any string input.
+		'push'			: Push a file FROM the client TO the server. Ergo, send a write request to the
+					  server. This ALWAYS sends the write request in mode ASCII.
+		'pull FILE MODE'	: Requests a file FROM the server TO the client. Ergo, send a read request for file
+					  FILE in mode MODE. Both FILE and MODE are any strings. It should be noted that
+					  FILE cannot have any spaces in it.
+		'pull FILE'		: Identical to 'pull FILE MODE'. MODE is set by default to ASCII.
+		'rrq FILE MODE'		: Identical to 'pull FILE MODE'.
+		'wrq MODE'		: Identical to 'push MODE'
+	
+	
+	TFTPHost:
+	----------------------------------------------------
+		The list of all accepted commands** to the host are given as:
+		**Please note that words in all caps (ie B, PT, BN, DL) are to denote verb
+		
+		'help'			: Print all commands and how to use to the console
+		'clear'			: Clear the console output of all text
+		'close'			: Shutdown the host, freeing up all ports
+		'verbose B'		: Switch the host into verbose mode B, where B is a boolean variable.
+				  	  For example, for verbose to be set true type 'verbose true'. For verbose
+				  	  false, type 'verbose false'.
+		'run'			: Set the host to run for one (1) complete file transfer with any and all errors
+					  simulated. If no errors were entered, host will just pass the packets through normally.
+		'test'			: Run a simple test of UI functionally. Note that while this test is running,
+					  the UI will lose all functionality until the test is fully complete.
+		'errors'		: Print the sorted stack of all inputed errors you want the host to simulate.
+		'delay PT BN DL'	: Add a delay type error to packet type PT, block number BN, delaying for DL.
+					  For instance, to delay ACK packet #2 by 1000ms, type 'delay ack 2 1000'. 
+					  Alternatively, type '0 4 2 1000'. PT can be either the integer
+					  code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
+					  written code as a string (ack, data, wrq, rrq).
+		'dup PT BN'		: Add a duplicate type error to packet type PT, block number BN
+					  For instance, to duplicate ACK packet #2 by 1000ms, type 'dup ack 2'. 
+					  Alternatively, type 'dup 4 2'. PT can be either the integer
+					  code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
+					  written code as a string (ack, data, wrq, rrq).
+		'lose PT BN'		: Add a lose type error to packet type PT, block number BN.
+					  For instance, to lose ACK packet #2, type 'lose ack 2'. 
+					  Alternatively, type '2 4 2'. PT can be either the integer
+					  code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
+					  written code as a string (ack, data, wrq, rrq).		  
+		'0 PT BN DL'		: Functions exactly the same as 'delay PT BN DL'
+		'1 PT BN'		: Functions exactly the same as 'dup PT BN'
+		'2 PT BN'		: Functions exactly the same as 'lose PT BN' 
+		
+		
+	TFTPHost:
+	----------------------------------------------------
+		The list of all accepted commands** to the host are given as:
+		**Please note that words in all caps (ie B, PT, BN, DL) are to denote verb
+		
+		'help'			: Print all commands and how to use to the console
+		'clear'			: Clear the console output of all text
+		'close'			: Shutdown the server, freeing up all ports
+		'verbose B'		: Switch the server into verbose mode B, where B is a boolean variable.
+				  	  For example, for verbose to be set true type 'verbose true'. For verbose
+				  	  false, type 'verbose false'.			  
+		'test'			: Run a simple test of UI functionally. Note that while this test is running,
+					  the UI will lose all functionality until the test is fully complete.
+				
+				
+				
 ------------------------------------------------------------
 FILE INFORMATION:
 
@@ -124,8 +234,8 @@ ServerThread.java
 TFTPCLient.java
 
 	Makes a read or write request to either a TFTPServer or a
-	TFTPHost. When read, sends a datagram:RRQ/WRQ, then procedes
-	to recieve datagrams:DATA from the server/host. Sends an
+	TFTPHost. When read, sends a datagram:RRQ/WRQ, then proceeds
+	to receive datagrams:DATA from the server/host. Sends an
 	ACK to server after each datagram is received. Writes all
 	incoming data to a file.
 	Client can also make a write request to the server. It sends
@@ -136,7 +246,9 @@ TFTPCLient.java
 
 TFTPHost.java
 
-	Acts as a server, but allows errors to be simulated and propigated.
+	Acts as an intermediate host between the server and clients. If in test 
+	mode all messages will flow through the host were they can be manipulated.
+	The intermediate host has the ability to lose, delay, duplicate. 
 
 
 TFTPReadThread.java
@@ -186,6 +298,11 @@ ConsoleUI.java
 UIFramework.java
 
 	Defines the basic methods a GUI must provide if we choose to implement different GUI types in the future.
+	
+TestBench.java
+	
+	Launches an instance of the server, client and host for quick testing.
+
 
 
 ------------------------------------------------------------
