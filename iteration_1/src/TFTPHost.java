@@ -215,7 +215,7 @@ public class TFTPHost
 	}
 	
 	public void maybeSend(int clientPort,DatagramSocket generalClientSocket,DatagramPacket receivedPacket)
-	{
+	{    
 		if(inputStack.peek()!=null)	
 		{
 			byte byteBlockNum[]=new byte[2];
