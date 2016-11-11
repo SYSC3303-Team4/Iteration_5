@@ -13,6 +13,7 @@
 *Update Log:        v2.0.0
 *						- input methods added (non-isr)
 *						- input now saves to InputStack
+*						- help menu added
 *					v1.0.0
 *                       - null
 */
@@ -393,7 +394,15 @@ public class TFTPHost
 		console.print("'close'                                 - exit client, close ports, be graceful");
 		console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 		console.print("'test'                                    - runs a test for the console");
-		console.print("'errors'              - display a summary of all errors to be simulated");
+		console.print("'errors'                               - display a summary of all errors to be simulated");
+		console.println();
+		console.print("'delay PT BN DL'              - set a delay for packet type PT, block number BN for DL blocks");
+		console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
+		console.print("'lose PT BN'                      - lose packet type PT, block number BN");
+		console.println();
+		console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
+		console.print("'1 PT BN '                         - duplicate packety type PT, block number BN");
+		console.print("'2 PT BN'                          - lose packet type PT, block number BN");
 		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		console.println();
 		
@@ -417,7 +426,15 @@ public class TFTPHost
 						console.print("'close'                                 - exit client, close ports, be graceful");
 						console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 						console.print("'test'                                    - runs a test for the console");
-						console.print("'errors'              - display a summary of all errors to be simulated");
+						console.print("'errors'                               - display a summary of all errors to be simulated");
+						console.println();
+						console.print("'delay PT BN DL'              - set a delay for packet type PT, block number BN for DL blocks");
+						console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
+						console.print("'lose PT BN'                      - lose packet type PT, block number BN");
+						console.println();
+						console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
+						console.print("'1 PT BN '                         - duplicate packety type PT, block number BN");
+						console.print("'2 PT BN'                          - lose packet type PT, block number BN");
 						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 						console.println();
 					}
