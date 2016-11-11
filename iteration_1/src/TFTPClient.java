@@ -106,7 +106,13 @@ public class TFTPClient extends JFrame
 	private ConsoleUI console;
 	private int blockNum = 0;
 	private boolean duplicateACK = false;
-
+	private boolean retransmitACK = false;
+	private boolean retransmitDATA = false;
+	
+	//INIT socket timeout variables
+	protected static final int TIMEOUT = 5; //Seconds
+	protected static final int MAX_TIMEOUTS = 5;
+	protected int timeouts = 0;
 	
 	//declaring local class constants
 	private static final int IN_PORT_HOST = 23;
@@ -384,6 +390,7 @@ public class TFTPClient extends JFrame
 		while ( !(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4)
 		{
 			if(!duplicateACK){ 
+				
 				//send DATA
 				if(reader.isEmpty())
 				{
@@ -396,6 +403,7 @@ public class TFTPClient extends JFrame
 				lastDATAPacketLength = sentPacket.getLength();
 				sendPacket();
 				//blockNum++;
+			
 			}
 			
 			//wait for ACK
@@ -445,27 +453,29 @@ public class TFTPClient extends JFrame
 			//receive ACK
 			receivePacket("ACK");
 			
-			//analyze ACK for format
-			if (verbose)
-			{
-				console.print("Client: Checking ACK...");
-			}
-			byte[] data = receivedPacket.getData();
-			
-			//check ACK for validity
-			if(data[0] == 0 && data[1] == 4){
+			if(!retransmitACK){
+				//analyze ACK for format
+				if (verbose)
+				{
+					console.print("Client: Checking ACK...");
+				}
+				byte[] data = receivedPacket.getData();
 				
-				//Check if the blockNumber corresponds to the expected blockNumber
-				if(blockArray[1] == data[3] && blockArray[0] == data[2]){
-					blockNum++;
+				//check ACK for validity
+				if(data[0] == 0 && data[1] == 4){
+					
+					//Check if the blockNumber corresponds to the expected blockNumber
+					if(blockArray[1] == data[3] && blockArray[0] == data[2]){
+						blockNum++;
+					}
+					else{
+						duplicateACK = true;
+					}
 				}
 				else{
-					duplicateACK = true;
+					//ITERATION 5 ERROR
+					//Invalid TFTP code
 				}
-			}
-			else{
-				//ITERATION 5 ERROR
-				//Invalid TFTP code
 			}
 		
 	}
@@ -487,49 +497,53 @@ public class TFTPClient extends JFrame
 		
 		while(loop)
 		{
+			byte[] blockNumByte = new byte[2];
+			blockNumByte[1]=(byte)(blockNum & 0xFF);
+			blockNumByte[0]=(byte)((blockNum >> 8)& 0xFF);
 			//receive data
 			receivePacket("DATA");
-			outPort = receivedPacket.getPort();
-			
-			//Process data
-			rawData = new byte[receivedPacket.getLength()] ;
-			rawData = receivedPacket.getData();
-			procData = new byte[receivedPacket.getLength() - DATA_OFFSET];
-			byte[] blockNum = new byte[2];
-			int reLen = receivedPacket.getLength();
-			for(int i=0; i<reLen-DATA_OFFSET; i++)
-			{
-				procData[i] = rawData[i+DATA_OFFSET];
+			if(!retransmitDATA){
+				outPort = receivedPacket.getPort();
+				
+				//Process data
+				rawData = new byte[receivedPacket.getLength()] ;
+				rawData = receivedPacket.getData();
+				procData = new byte[receivedPacket.getLength() - DATA_OFFSET];
+	
+				int reLen = receivedPacket.getLength();
+				for(int i=0; i<reLen-DATA_OFFSET; i++)
+				{
+					procData[i] = rawData[i+DATA_OFFSET];
+				}
+				
+				//save data
+				try
+				{
+					writer.write(procData,"Received"+file);
+				}
+				catch(FileNotFoundException e)
+				{
+					e.printStackTrace();
+					System.exit(1);
+				}
+				catch(IOException e)
+				{
+					e.printStackTrace();
+					System.exit(1);
+				}
+				
+				//check to see if this is final packet
+				if (receivedPacket.getLength() < MAX_SIZE+4)	
+				{
+					loop = false;
+				}
+				
+				//get block num
+				blockNumByte[0] = rawData[2];
+				blockNumByte[1] = rawData[3];
 			}
-			
-			//save data
-			try
-			{
-				writer.write(procData,"Received"+file);
-			}
-			catch(FileNotFoundException e)
-			{
-				e.printStackTrace();
-				System.exit(1);
-			}
-			catch(IOException e)
-			{
-				e.printStackTrace();
-				System.exit(1);
-			}
-			
-			//check to see if this is final packet
-			if (receivedPacket.getLength() < MAX_SIZE+4)	
-			{
-				loop = false;
-			}
-			
-			//get block num
-			blockNum[0] = rawData[2];
-			blockNum[1] = rawData[3];
-			
 			//send out ACK and prep for more data
-			generateACK(blockNum);
+			generateACK(blockNumByte);
 			sendPacket();
 		}
 		
@@ -556,8 +570,24 @@ public class TFTPClient extends JFrame
 		}
 		catch(IOException e)
 		{
-			e.printStackTrace();
-			System.exit(1);
+			if (e instanceof SocketTimeoutException){
+				//Retransmit every timeout
+				//Quite after 5 timeouts
+				timeouts++;
+				if(timeouts == 5){
+					close();
+				}
+				if(type == "ACK"){
+					retransmitACK = true;
+				}
+				else{
+					retransmitDATA = true;
+				}
+			}
+			else{					
+				e.printStackTrace();
+				System.exit(1);
+			}
 		}
 		if (verbose)
 		{
