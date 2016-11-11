@@ -86,10 +86,10 @@ SET UP INSTRUCTIONS:
 	2.	Build project
 	
 	RRQ Instructions
-	1. 	Run Host
-	2.	Run Server.java
-	3. 	Choose file dump directory from popup filechooser
-	4.  Enter true(Verbose) or false(Quite) into console
+	1. 	Run testBench.java(Runs TFTPClient, TFTPHost, TFTPServer)	
+	3. 	Choose the Server's file dump directory from popup filechooser
+	4.  Select desired parameters in TFTPClient, TFTPHost, TFTPServer
+		4.1	
 	5.	Run Client.java*
 	6.  Enter help on the client to see instructions
 	7.  Enter RRQ FileName Mode, with filename being the file you wish to read.
