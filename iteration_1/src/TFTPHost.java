@@ -205,16 +205,65 @@ public class TFTPHost
 	
 	public void duplicatePack( int clientPort,DatagramSocket  generalClientSocket)
 	{
-		System.out.println("IN duplicate PACKET, SENDING REGULARALY");
+		sendDatagram(clientPort, generalClientSocket);
 		sendDatagram(clientPort, generalClientSocket);
 	}
 	
 	public void loosePack( int clientPort,DatagramSocket  generalClientSocket)
 	{
-		System.out.println("IN duplicate PACKET, SENDING REGULARALY");
-		sendDatagram(clientPort, generalClientSocket);
+		
 	}
 	
+	public void maybeSend(int clientPort,DatagramSocket generalClientSocket,DatagramPacket receivedPacket)
+	{
+		if(inputStack.peek()!=null)	
+		{
+			byte byteBlockNum[]=new byte[2];
+			int bNum=inputStack.peek().getBlockNum();
+			int mode=inputStack.peek().getMode();
+			int delay=inputStack.peek().getDelay();
+			int packType=inputStack.peek().getPacketType();
+			byte bytePackType[] = new byte[2];
+			
+			bytePackType[1] = (byte)(packType & 0xFF);
+			bytePackType[0] = (byte)((packType >> 8)& 0xFF);
+			
+			byteBlockNum[1] = (byte)(bNum & 0xFF);
+			byteBlockNum[0] = (byte)((bNum >> 8)& 0xFF);
+			
+			console.print("bytePackType[0]: "+ bytePackType[0]);
+			console.print("bytePackType[1]: "+bytePackType[1]);
+			
+			console.print("receivedPacket.getData()[0]: "+ receivedPacket.getData()[0]);
+			console.print("receivedPacket.getData()[1]: "+receivedPacket.getData()[1]);
+			
+			
+			if(bytePackType[1]==receivedPacket.getData()[1] && bytePackType[0] == receivedPacket.getData()[0]){
+				console.print("Now checking blocknums");
+				if(byteBlockNum[1]==receivedPacket.getData()[3] && byteBlockNum[0]==receivedPacket.getData()[2]){
+					//proper packet type and block num, mess with this one right here
+					System.out.println("SWEET BABY JESUS PLEASE WORK");
+					passIt(mode, delay,clientPort, generalClientSocket );
+					//sendDatagram(clientPort, generalClientSocket);
+					inputStack.pop();
+				}
+
+			}
+			
+			else
+			{
+				System.out.println("No part Match");
+				sendDatagram(clientPort, generalClientSocket);
+				
+			}
+		}
+	
+		else
+		{
+			System.out.println("empty stack");
+			sendDatagram(clientPort, generalClientSocket);
+		}
+	}
 	
 	public void errorSimHandle()
 	{
@@ -225,17 +274,8 @@ public class TFTPHost
 		
 		//sarahs Vars
 		System.out.println("Actually in errorSim");
-		if(inputStack.peek()!=null)
+		while(true)
 		{
-			
-		
-			
-			int mode=inputStack.peek().getMode();
-			int packType=inputStack.peek().getPacketType();
-			int bNum=inputStack.peek().getBlockNum();
-			int delay=inputStack.peek().getDelay();
-			byte comper[]=new byte[2];
-			
 			
 			//wait for original RRQ/WRQ from client
 			receiveDatagram(inSocket);
@@ -249,7 +289,7 @@ public class TFTPHost
 			if (data[0] == 0 && (data[1] == 1 || data[1] == 2) )
 			{
 				RWReq = data[1];
-			}     
+			}
 			//something awful has happened
 			else
 			{
@@ -258,7 +298,7 @@ public class TFTPHost
 			}
 			
 			//send RRQ/WRQ to server
-			sendDatagram(SERVER_RECEIVE_PORT, generalServerSocket);
+			maybeSend(SERVER_RECEIVE_PORT,generalServerSocket, receivedPacket);
 			
 			//receive 1st packet
 			receiveDatagram(generalServerSocket);
@@ -268,8 +308,7 @@ public class TFTPHost
 			//do the rest if RRQ
 			if(RWReq == 1)
 			{
-				
-				while(loop)///SARAH STARTED FUCKING WITH SHIT, HIDE YO KIDS
+				while(loop)
 				{
 					//save packet size if of type DATA
 					if ( (receivedPacket.getData())[1] == 3)
@@ -277,24 +316,11 @@ public class TFTPHost
 						lastDataPacketLength = receivedPacket.getLength();
 					}
 					//send DATA to client
-					
-					comper[1]=(byte)(bNum & 0xFF);
-					comper[0]=(byte)((bNum >> 8)& 0xFF);
-					
-					if(packType==(receivedPacket.getData())[1] && comper[1]==(receivedPacket.getData())[3] && comper[0]==(receivedPacket.getData())[2])
-					{
-						inputStack.pop();
-						//proper packet type and block num, mess with this one right here
-						System.out.println("SWEET BABY JESUS PLEASE WORK");
-						passIt(mode, delay,clientPort, generalClientSocket );
-						//sendDatagram(clientPort, generalClientSocket);
-					}
+					maybeSend(clientPort,generalClientSocket, receivedPacket);;
 					//receive client ACK
 					receiveDatagram(generalClientSocket);
-					
-					
 					//send ACK to server
-					sendDatagram(serverThreadPort, generalServerSocket);
+					maybeSend(serverThreadPort,generalServerSocket, receivedPacket);
 					
 					//receive more data and loop if datagram.size==516
 					//final ack sent to server, data transfer complete
@@ -317,7 +343,7 @@ public class TFTPHost
 				while(loop)
 				{
 					//send ACK to client
-					sendDatagram(clientPort, generalClientSocket);
+					maybeSend(clientPort,generalClientSocket, receivedPacket);
 					//receive client DATA, save size
 					receiveDatagram(generalClientSocket);
 					if ( (receivedPacket.getData())[1] == 3)
@@ -325,16 +351,15 @@ public class TFTPHost
 						lastDataPacketLength = receivedPacket.getLength();
 					}
 					//send DATA to server
-					sendDatagram(serverThreadPort, generalServerSocket);
-					
+					maybeSend(serverThreadPort,generalServerSocket, receivedPacket);
+					maybeSend(clientPort,generalClientSocket, receivedPacket);
 					//final DATA sent, receive and fwd final ACK
 					if (lastDataPacketLength < MAX_SIZE)
 					{
 						//receive final server ACK
 						receiveDatagram(generalServerSocket);
 						//fwd ACK to clien
-						sendDatagram(clientPort, generalClientSocket);
-					
+						maybeSend(clientPort,generalClientSocket, receivedPacket);
 						//terminate transfer
 						console.print("Data Transfer Complete");
 						console.println();
@@ -460,11 +485,11 @@ public class TFTPHost
 						{
 							if (input[1].equals("data"))
 							{
-								packetType = 4;
+								packetType = 3;
 							}
 							else if (input[1].equals("ack"))
 							{
-								packetType = 3;
+								packetType = 4;
 							}
 							else
 							{
@@ -488,11 +513,11 @@ public class TFTPHost
 						{
 							if (input[1].equals("data"))
 							{
-								packetType = 4;
+								packetType = 3;
 							}
 							else if (input[1].equals("ack"))
 							{
-								packetType = 3;
+								packetType = 4;
 							}
 							else
 							{
@@ -523,11 +548,11 @@ public class TFTPHost
 						{
 							if (input[1].equals("data"))
 							{
-								packetType = 4;
+								packetType = 3;
 							}
 							else if (input[1].equals("ack"))
 							{
-								packetType = 3;
+								packetType = 4;
 							}
 							else
 							{

@@ -99,6 +99,7 @@ public class InputStack
 	{
 		if (length != 0)
 		{
+			length--;
 			return pseudoStack.removeFirst();
 		}
 		else
