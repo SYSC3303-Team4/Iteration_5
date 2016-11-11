@@ -83,14 +83,28 @@ public class InputStack
 	//peek top entry from stack
 	public Input peek()
 	{
-		return pseudoStack.getFirst();
+		if (length != 0)
+		{
+			return pseudoStack.getFirst();
+		}
+		else
+		{
+			return null;
+		}
 	}
 	
 	
 	//pop top entry from stack
 	public Input pop()
 	{
-		return pseudoStack.removeFirst();
+		if (length != 0)
+		{
+			return pseudoStack.removeFirst();
+		}
+		else
+		{
+			return null;
+		}
 	}
 	
 	
