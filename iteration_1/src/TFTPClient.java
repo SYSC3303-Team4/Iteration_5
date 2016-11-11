@@ -20,6 +20,7 @@
 *						- input method completely redesigned
 *						- UI now handles input parsing
 *						- is now more robust with inputs
+*						- commond line help updated
 *					v1.2.0
 *						- UI implemented
 *						- now should support multiple instances
