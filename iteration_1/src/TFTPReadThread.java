@@ -54,7 +54,6 @@ class TFTPReadThread  extends ServerThread
 	//INIT general variables
 	private DatagramPacket receivePacket;
 	private DatagramPacket sendPacket;
-	private DatagramSocket sendReceiveSocket;
 	private boolean verbose;
 	private static int blockNumber = 1;
 	boolean sendZeroDataPacket = false;
@@ -126,8 +125,9 @@ class TFTPReadThread  extends ServerThread
 			}
 			
 			File file = new File(filename.toString());
-			if(file.canRead() == false){
-				buildError(2,receivePacket,verbose);
+			if(file.exists()== false)
+			{
+				buildError(1,receivePacket,verbose);
 				return;
 			}
 	
