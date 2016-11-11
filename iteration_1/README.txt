@@ -11,7 +11,7 @@
                        
  
 
-TFTP Project - Iteration 2
+TFTP Project - Iteration 3
 SYSC 3303
 Group 4
 
@@ -28,29 +28,24 @@ Sarah Garlough			[100965386]
 TEAM LOGISTICS
 
 	Adam Staples
-		- Debugged the writer
-		- Tested Functionality
+		- Bug Fixes
+		- Timing Diagram
 		
 	Dan Hogan
-		- Update Readme
-		- Debug
-		- Add more exiting conditions
-		- Refactoring
+		- Bug Fixes
+		- Small Features
+		- Readme
 	
 	Jason Van Kerkhoven
-		- Made UI
-		- Patch logic in Host
-		- Integrated UI with Server/Client
-		- Debugged Client and Host
+		- Refactored UI
 
 	Nathaniel Charlebois
-		- Added Server side error handling
-		- Timing Diagrams
-		- Debugger
-		- Refactored Server
+		- Server side re-transmission and timeout protocols 
+		- Client side re-transmission and timeout protocols 
+		- Bug Fixes
 	
 	Sarah Garlough
-		- Client Side Error handling
+		- Host duplicate and lost functionality
 
 
 -----------------------------------------------------------
@@ -71,6 +66,7 @@ CONTENTS:
 	511ByteData.txt
 	512ByteData.txt
 	513ByteData.txt
+	Oxford_Medical_Publications_Manual _of_Surgery.txt
 	UIFramework.java
 	RRQ_Error_Access_Violation.pdf
 	RRW_Error_File_Not_Found.pdf
@@ -124,8 +120,8 @@ ServerThread.java
 TFTPCLient.java
 
 	Makes a read or write request to either a TFTPServer or a
-	TFTPHost. When read, sends a datagram:RRQ/WRQ, then procedes
-	to recieve datagrams:DATA from the server/host. Sends an
+	TFTPHost. When read, sends a datagram:RRQ/WRQ, then proceeds
+	to receive datagrams:DATA from the server/host. Sends an
 	ACK to server after each datagram is received. Writes all
 	incoming data to a file.
 	Client can also make a write request to the server. It sends
@@ -136,7 +132,10 @@ TFTPCLient.java
 
 TFTPHost.java
 
-	Acts as a server, but allows errors to be simulated and propigated.
+	Acts as an intermediate host between the server and clients. If in test 
+	mode all messages will flow through the host were they can be manipulated.
+	The intermediate host has the ability to lose, delay, duplicate or forward 
+	packets normally.
 
 
 TFTPReadThread.java
@@ -186,7 +185,10 @@ ConsoleUI.java
 UIFramework.java
 
 	Defines the basic methods a GUI must provide if we choose to implement different GUI types in the future.
-
+	
+TestBench.java
+	
+	Launches an instance of the server, client and host for quick testing.
 
 ------------------------------------------------------------
 TFTP REFERENCE

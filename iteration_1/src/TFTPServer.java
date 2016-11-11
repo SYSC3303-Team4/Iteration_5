@@ -16,6 +16,7 @@ import javax.swing.JFrame;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import ui.ConsoleUI;
 
@@ -69,13 +70,19 @@ public class TFTPServer implements ActionListener
 			se.printStackTrace();
 			System.exit(1);
 		}
-        fileChooserFrame = new JTextArea(5,40);
-		fileChooser = new JFileChooser();
-		fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		int result = fileChooser.showOpenDialog(fileChooser);
-		if (result == JFileChooser.APPROVE_OPTION) {//file is found
-		    file = fileChooser.getSelectedFile();//get file name
+		while(file == null)
+		{
+			fileChooserFrame = new JTextArea(5,40);
+			fileChooser = new JFileChooser();
+			fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Directories","*");
+			fileChooser.setFileFilter(filter);
+			fileChooser.setDialogTitle("Choose a directory to dump to on the server");
+			fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			int result = fileChooser.showOpenDialog(fileChooser);
+			if (result == JFileChooser.APPROVE_OPTION) {//file is found
+				file = fileChooser.getSelectedFile();//get file name
+			}
 		}
 	}
 	

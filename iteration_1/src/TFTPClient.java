@@ -85,6 +85,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 //import packages
 import ui.* ;
@@ -711,6 +712,9 @@ public class TFTPClient extends JFrame
 						fileChooserFrame = new JTextArea(5,40);
 						fileChooser = new JFileChooser();
 						fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+						FileNameExtensionFilter filter = new FileNameExtensionFilter(".txt files", "txt");
+						fileChooser.setFileFilter(filter);
+						fileChooser.setDialogTitle("Choose a file to push to the server");
 						int result = fileChooser.showOpenDialog(fileChooser);
 						if (result == JFileChooser.APPROVE_OPTION) {//file is found
 						    file = fileChooser.getSelectedFile();//get file name
@@ -765,6 +769,9 @@ public class TFTPClient extends JFrame
 						fileChooserFrame = new JTextArea(5,40);
 						fileChooser = new JFileChooser();
 						fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+						FileNameExtensionFilter filter = new FileNameExtensionFilter(".txt files", "txt");
+						fileChooser.setFileFilter(filter);
+						fileChooser.setDialogTitle("Choose a file to push to the server");
 						int result = fileChooser.showOpenDialog(fileChooser);
 						if (result == JFileChooser.APPROVE_OPTION) {//file is found
 						    file = fileChooser.getSelectedFile();//get file name
