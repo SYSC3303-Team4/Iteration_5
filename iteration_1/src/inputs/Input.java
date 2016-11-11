@@ -92,10 +92,10 @@ public class Input
 				printable = printable + "WRQ packet ";
 				break;
 			case(3):
-				printable = printable + "ACK packet ";
+				printable = printable + "DATA packet ";
 				break;
 			case(4):
-				printable = printable + "DATA packet ";
+				printable = printable + "ACK packet ";
 				break;
 			default:
 				printable = printable + "!BAD PT!";

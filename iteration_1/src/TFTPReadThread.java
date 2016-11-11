@@ -149,6 +149,7 @@ class TFTPReadThread  extends ServerThread
 			while(!isInterrupted()){
 		
 				if(!duplicateACK){
+					if(!retransmit){
 						//Encode the block number into the response block 
 						response[3]=(byte)(blockNumber & 0xFF);
 						response[2]=(byte)((blockNumber >> 8)& 0xFF);
@@ -200,7 +201,7 @@ class TFTPReadThread  extends ServerThread
 						if(isInterrupted()){continue;}
 						sendPacket = new DatagramPacket(dataPrime, dataPrime.length,
 								receivePacket.getAddress(), receivePacket.getPort());
-						
+					}
 						printSendPacket(sendPacket, verbose);
 			
 						// Send the datagram packet to the client via a new socket.
@@ -223,20 +224,22 @@ class TFTPReadThread  extends ServerThread
 				try {
 					sendReceiveSocket.receive(receivePacket);
 					retransmit = false;
-				} catch (IOException e) {
-					if (e instanceof SocketTimeoutException){
+				} catch(SocketTimeoutException e){
 						//Retransmit every timeout
 						//Quite after 5 timeouts
 						timeouts++;
 						if(timeouts == 5){
 							exitGraceFully();
+							return;
 						}
+						console.print("SETTING RETRANSMIT TRUE");
 						retransmit = true;
-					}
-					else{					
+			    }  
+				catch (IOException e) {
+					
 						e.printStackTrace();
 						System.exit(1);
-					}
+				
 
 				} 
 				

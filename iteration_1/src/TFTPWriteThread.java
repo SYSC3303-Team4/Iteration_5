@@ -60,6 +60,7 @@ class TFTPWriteThread extends ServerThread
 	private boolean verbose;
     private String threadNumber;
     File file;
+    private boolean blockFlag=true;
 
     public static final byte[] response = {0, 4, 0, 0};
 
@@ -80,6 +81,13 @@ class TFTPWriteThread extends ServerThread
 			e.printStackTrace();
 			console.print(e.getMessage());
 		}
+		try {
+			sendReceiveSocket.setSoTimeout(TIMEOUT*1000);
+		} catch (SocketException e) {
+			//Handle Timeout Exception
+			e.printStackTrace();
+		}
+        
     }
 
     public void run() {
@@ -127,12 +135,12 @@ class TFTPWriteThread extends ServerThread
 			  --------------------
 			    */
 
-			   if(blockNumber == 0){
+			   if(blockFlag == true){
 				   sendPacket = new DatagramPacket(response, response.length,
 				       receivePacket.getAddress(), receivePacket.getPort());
 	
 				   printSendPacket(sendPacket,verbose);
-	
+				   blockFlag=false;
 			       try {
 				   sendReceiveSocket.send(sendPacket);
 			       } catch (IOException e) {
@@ -164,20 +172,23 @@ class TFTPWriteThread extends ServerThread
 		       // Block until a datagram packet is received from receiveSocket.
 		       try {
 		    	   sendReceiveSocket.receive(receivePacket1);
-		       } catch (IOException e) {
-					if (e instanceof SocketTimeoutException){
-						//Retransmit every timeout
-						//Quite after 5 timeouts
-						timeouts++;
-						if(timeouts == 5){
-							exitGraceFully();
-						}
-						retransmit = true;
+		    	   retransmit=false;
+		       } catch(SocketTimeoutException e){
+					//Retransmit every timeout
+					//Quite after 5 timeouts
+					timeouts++;
+					if(timeouts == 5){
+						exitGraceFully();
+						return;
 					}
-					else{					
+					console.print("SETTING RETRANSMIT TRUE");
+					retransmit = true;
+		       } 
+
+		       catch (IOException e) {
+
 						e.printStackTrace();
 						System.exit(1);
-					}
 		       }
 		       if(!retransmit){
 		       
@@ -219,8 +230,9 @@ class TFTPWriteThread extends ServerThread
 			    	   console.print("Server: Final Data Block Received.");
 			    	   console.print("Server: Sending last ACK");
 			    	   //SET INTERRUPT TO EXIT LOOP
-			    	   exitGraceFully();
+			    	   
 			    	   }
+			    	   interrupt();
 			       }
 	
 			       //Sending the ACK for previous DATA packet in format:
@@ -235,27 +247,26 @@ class TFTPWriteThread extends ServerThread
 				   response[3]=receivePacket1.getData()[3];
 				   blockNumber++;
 	
+		       }
 				   
-				   
-			       sendPacket = new DatagramPacket(response, response.length,
-						     receivePacket.getAddress(), receivePacket.getPort());
-					/* Exit Gracefully if the stop is requested. */
-				   if(isInterrupted()){continue;}
-				   printSendPacket(sendPacket,verbose);
-	
-			       try {
-			    	   sendReceiveSocket.send(sendPacket);
-			       } catch (IOException e) {
-				  e.printStackTrace();
-				  System.exit(1);
-			       }
-					/* Exit Gracefully if the stop is requested. */
-				 if(isInterrupted()){continue;}
-				 if(verbose){
-			       console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
-				 }
-		     }
-	       
+		       sendPacket = new DatagramPacket(response, response.length,
+		    		   receivePacket.getAddress(), receivePacket.getPort());
+		       
+		       /* Exit Gracefully if the stop is requested. */
+		       printSendPacket(sendPacket,verbose);
+
+		       try {
+		    	   sendReceiveSocket.send(sendPacket);
+		       } catch (IOException e) {
+		    	   e.printStackTrace();
+		    	   System.exit(1);
+		       }
+		       /* Exit Gracefully if the stop is requested. */
+		       if(isInterrupted()){continue;}
+		       if(verbose){
+		    	   console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
+		       }
+
 	    }
 	    console.print("Server: thread closing.");
 	    exitGraceFully();

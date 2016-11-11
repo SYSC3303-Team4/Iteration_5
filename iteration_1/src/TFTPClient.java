@@ -110,7 +110,7 @@ public class TFTPClient extends JFrame
 	private boolean retransmitDATA = false;
 	
 	//INIT socket timeout variables
-	protected static final int TIMEOUT = 5; //Seconds
+	protected static final int TIMEOUT = 1; //Seconds
 	protected static final int MAX_TIMEOUTS = 5;
 	protected int timeouts = 0;
 	

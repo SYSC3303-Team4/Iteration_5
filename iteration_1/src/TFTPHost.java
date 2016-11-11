@@ -51,7 +51,10 @@ public class TFTPHost
 	private static final int CLIENT_RECEIVE_PORT = 23;
 	private static final int SERVER_RECEIVE_PORT = 69;
 	private static final int MAX_SIZE = 512+4;
-	private static final boolean LIT = true ; 			
+	private static final boolean LIT = true ; 	
+	
+	private String dataOrAck = "";
+
 
 	
 	//generic constructor
@@ -173,34 +176,39 @@ public class TFTPHost
 	}
 	public void passIt(int mode,int delay,int clientPort,DatagramSocket generalClientSocket )
 	{
-		System.out.println("figureing out how to mess with packet");
 		if(mode==0)//delay
 		{
-			System.out.println("delay Packet");
+			console.print("Delaying Packet");
 			delayPack(delay, clientPort, generalClientSocket);
 		}
 		
 		else if(mode==1)//duplicate
 		{
-			System.out.println("duplicate pakcet");
+			console.print("Duplicate Packet");
 			duplicatePack(clientPort, generalClientSocket);
 		}
 		
-		else if (mode==2)//loose
+		else if (mode==2)//lose
 		{
-			System.out.println("loose packet");
-			loosePack( clientPort, generalClientSocket);
+			console.print("lose try");
+			if(dataOrAck == "ACK"){
+				dataOrAck = "DATA";
+			}
+			else{
+				dataOrAck = "ACK";
+			}
+			losePack( clientPort, generalClientSocket);
 		}
 		
 		else
 		{
-			System.out.println("It fucked up");
+			System.out.println("ERROR: INCORRECT MODE");
 		}
 	}
 	
 	public void delayPack(int delay, int clientPort,DatagramSocket  generalClientSocket)
 	{
-		System.out.println("IN DELAY PACKET, SENDING REGULARALY");
+		System.out.println("IN DELAY PACKET, SENDING REGULARLY");
 		sendDatagram(clientPort, generalClientSocket);
 	}
 	
@@ -210,9 +218,10 @@ public class TFTPHost
 		sendDatagram(clientPort, generalClientSocket);
 	}
 	
-	public void loosePack( int clientPort,DatagramSocket  generalClientSocket)
+	public void losePack( int clientPort,DatagramSocket  generalClientSocket)
 	{
-		
+		console.print("losing Data");
+		dataOrAck="LOST";
 	}
 	
 	public void maybeSend(int clientPort,DatagramSocket generalClientSocket,DatagramPacket receivedPacket)
@@ -232,22 +241,20 @@ public class TFTPHost
 			byteBlockNum[1] = (byte)(bNum & 0xFF);
 			byteBlockNum[0] = (byte)((bNum >> 8)& 0xFF);
 			
+			/*
 			console.print("bytePackType[0]: "+ bytePackType[0]);
 			console.print("bytePackType[1]: "+bytePackType[1]);
 			
 			console.print("receivedPacket.getData()[0]: "+ receivedPacket.getData()[0]);
 			console.print("receivedPacket.getData()[1]: "+receivedPacket.getData()[1]);
+			*/
 			
-			
-			if(bytePackType[1]==receivedPacket.getData()[1] && bytePackType[0] == receivedPacket.getData()[0]){
-				console.print("Now checking blocknums");
-				if(byteBlockNum[1]==receivedPacket.getData()[3] && byteBlockNum[0]==receivedPacket.getData()[2]){
-					//proper packet type and block num, mess with this one right here
-					System.out.println("SWEET BABY JESUS PLEASE WORK");
-					passIt(mode, delay,clientPort, generalClientSocket );
-					//sendDatagram(clientPort, generalClientSocket);
-					inputStack.pop();
-				}
+			if(bytePackType[1]==receivedPacket.getData()[1] && bytePackType[0] == receivedPacket.getData()[0] && byteBlockNum[1]==receivedPacket.getData()[3] && byteBlockNum[0]==receivedPacket.getData()[2]){
+				//proper packet type and block num, mess with this one right here
+				System.out.println("SWEET BABY JESUS PLEASE WORK");
+				passIt(mode, delay,clientPort, generalClientSocket );
+				//sendDatagram(clientPort, generalClientSocket);
+				inputStack.pop();
 
 			}
 			
@@ -271,7 +278,7 @@ public class TFTPHost
 
 		byte RWReq=0;
 		boolean loop=true;
-		int lastDataPacketLength=0;
+		int lastDataPacketLength=516;
 		
 		//sarahs Vars
 		System.out.println("Actually in errorSim");
@@ -316,15 +323,22 @@ public class TFTPHost
 					{
 						lastDataPacketLength = receivedPacket.getLength();
 					}
+					console.print("SENDING DATA TO CLIENT");
 					//send DATA to client
-					maybeSend(clientPort,generalClientSocket, receivedPacket);;
+					dataOrAck = "DATA";
+					maybeSend(clientPort,generalClientSocket, receivedPacket);
+					
 					//receive client ACK
 					receiveDatagram(generalClientSocket);
+					
+					console.print("SENDING ACK TO SERVER");
 					//send ACK to server
+					dataOrAck = "ACK";
 					maybeSend(serverThreadPort,generalServerSocket, receivedPacket);
 					
 					//receive more data and loop if datagram.size==516
 					//final ack sent to server, data transfer complete
+
 					if (lastDataPacketLength < MAX_SIZE)
 					{
 						console.print("Data Transfer Complete");
@@ -343,23 +357,40 @@ public class TFTPHost
 			{
 				while(loop)
 				{
+					console.print("SENDING ACK TO CLIENT");
 					//send ACK to client
+					dataOrAck = "ACK";
 					maybeSend(clientPort,generalClientSocket, receivedPacket);
 					//receive client DATA, save size
-					receiveDatagram(generalClientSocket);
-					if ( (receivedPacket.getData())[1] == 3)
-					{
-						lastDataPacketLength = receivedPacket.getLength();
+					if(dataOrAck == "ACK"){
+						receiveDatagram(generalClientSocket);
+						dataOrAck = "DATA";
+						if ( (receivedPacket.getData())[1] == 3)
+						{
+							lastDataPacketLength = receivedPacket.getLength();
+						}
+					
+					
+					
+					
+						//send DATA to server
+						if(dataOrAck == "DATA"){
+							console.print("SENDING DATA TO SERVER");
+							maybeSend(serverThreadPort,generalServerSocket, receivedPacket);
+							dataOrAck="ACK";
+						} else {
+							console.print("SENDING ACK TO CLIENT");
+							maybeSend(clientPort,generalClientSocket, receivedPacket);
+						}
 					}
-					//send DATA to server
-					maybeSend(serverThreadPort,generalServerSocket, receivedPacket);
-					maybeSend(clientPort,generalClientSocket, receivedPacket);
 					//final DATA sent, receive and fwd final ACK
 					if (lastDataPacketLength < MAX_SIZE)
 					{
 						//receive final server ACK
 						receiveDatagram(generalServerSocket);
-						//fwd ACK to clien
+						dataOrAck = "ACK";
+						//fwd ACK to client
+						console.print("FWD ACK TO CLIENT");
 						maybeSend(clientPort,generalClientSocket, receivedPacket);
 						//terminate transfer
 						console.print("Data Transfer Complete");
@@ -446,7 +477,6 @@ public class TFTPHost
 					//run the console
 					else if (input[0].equals("run"))
 					{
-						System.out.println("Runing Sarahs Shit");
 						errorSimHandle();
 					}
 					//clear console
