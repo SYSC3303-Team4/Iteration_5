@@ -54,7 +54,10 @@ public class TFTPHost
 	private static final int SERVER_RECEIVE_PORT = 69;
 	private static final int MAX_SIZE = 512+4;
 	private static final boolean LIT = true ; 	
-	
+	private static final int CLIENT_SERVER_TIMEOUT = 2;
+	private static final int MAX_DELAY_SEGMENTS = 100;
+
+
 
 
 	
@@ -233,48 +236,61 @@ public class TFTPHost
 	
 	public void delayPack(int delay, int clientPort,DatagramSocket  genSocket)
 	{
-		console.print("IN DELAY PACKET");
-		if(delay<50)//delay less then timeout of client/server
-		{
-			try
-			{
-				console.print("Delaying packet unless other receieved");
-				tryReceive(genSocket, delay);//receieve something random	
-				
-				if(receivedPacket.getPort()==clientPort)
-				{
-					sendDatagram(serverPort, genSocket);
-					needSend=false;
-				}
-				
-				else if(receivedPacket.getPort()==serverPort)
-				{
-					sendDatagram(clientPort, genSocket);
-					needSend=false;
-				}
+		int[] delayArray = new int[MAX_DELAY_SEGMENTS];
+		console.print("IN DELAY PACKET "+delay);
+		for(int k = 0; delay != 0; k++){
+			if(delay < CLIENT_SERVER_TIMEOUT){
+				delayArray[k] = delay;
+				delay = 0;
 			}
-			catch (SocketException see)
-			{
-				console.printError("SOTIMEOUT SET RETURN ERRROR)");
-				return;
+			else	{
+				delayArray[k] = CLIENT_SERVER_TIMEOUT;
+				delay = delay - CLIENT_SERVER_TIMEOUT;
 			}
-			catch (IOException ioe)//timeout, did not recieve data, should delay packet
-			{
-				console.print("Delay Reached, Data sent");
-				sendDatagram(clientPort, genSocket);
-				needSend=false;
-			}
-			
-			
-		}
-		 
-		else//timeout expected geater than timeout of client/server
-		{
-			console.print("NOT IMPLEMENING, SENDING Now");
-			sendDatagram(clientPort, genSocket);
 		}
 		
+		for(int i = 0; i < delayArray.length; i++ )
+		{
+			if(delayArray[i]>0)
+			{
+			
+				try
+					{
+						console.print("Delaying packet unless other received"+ delayArray[i]);
+						
+						tryReceive(genSocket, delayArray[i]);//receive something random	
+						
+						if(receivedPacket.getPort()==clientPort)
+						{
+							sendDatagram(serverPort, genSocket);
+							needSend=false;
+						}
+						
+						else if(receivedPacket.getPort()==serverPort)
+						{
+							sendDatagram(clientPort, genSocket);
+							needSend=false;
+						}
+					}
+					catch (SocketException see)
+					{
+						console.printError("SOTIMEOUT SET RETURN ERRROR: Add coherent comments");
+						return;
+					}
+					catch (IOException ioe)//timeout, did not receive data, should delay packet
+					{
+						if(delayArray[i+1]==0)
+						{
+							console.print("Delay Reached, Data sent");
+							sendDatagram(clientPort, genSocket);
+							needSend=false;
+						}
+					}
+				}
+			}
+		
 		console.print("End of delay pack logic");
+		return;
 	}
 	
 	public void duplicatePack( int delay, int clientPort,DatagramSocket  genSocket)
