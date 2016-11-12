@@ -16,6 +16,7 @@ public abstract class ServerThread extends Thread{
 	protected static final int MAX_TIMEOUTS = 5;
 	protected int timeouts = 0;
 	protected boolean retransmit = false;
+	protected int blockNum = 0;
 	
 	public ServerThread(ThreadGroup group, String name, ConsoleUI console)
 	{
@@ -175,5 +176,123 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 	       	}
     	
     }
+    
+    /*
+  //receive ACK
+  	public boolean receiveACK()
+  	{	
+
+  		//Encode the block number into the response block 
+  		byte[] blockArray = new byte[2];
+  		blockArray[1]=(byte)(blockNum & 0xFF);
+  		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
+  		
+
+  			//receive ACK
+  			receivePacket("ACK");
+  			 if(timeoutFlag)
+  			 {
+  			 	if(System.currentTimeMillis() % 1000 -startTime < TIMEOUT)
+  			 	{
+  			 		timeouts++;
+  					if(timeouts == MAX_TIMEOUTS){
+  						close();
+  						System.exit(0);
+  					}
+  					retransmitDATA=true;
+  			 	}
+  			 	return false;
+  			 }
+  			//analyze ACK for format
+  			 if (verbose)
+  			 {
+  				 console.print("Client: Checking ACK...");
+  			 }
+  			 byte[] data = receivedPacket.getData();
+
+  			 //check ACK for validity
+  			 if(data[0] == 0 && data[1] == 4){
+
+  				 //Check if the blockNumber corresponds to the expected blockNumber
+  				 if(blockArray[1] == data[3] && blockArray[0] == data[2]){
+  					 blockNum++;
+  				 }
+  				 else{
+  					 duplicateACK = true;
+  					 if(System.currentTimeMillis() % 1000 -startTime > TIMEOUT)
+  					 {
+  						 timeouts++;
+  						 if(timeouts == MAX_TIMEOUTS){
+  							 close();
+  							 System.exit(0);
+  						 }
+  						 retransmitDATA=true;
+  					 }
+  				 }
+  			 }
+  			 else{
+  				 //ITERATION 5 ERROR
+  				 //Invalid TFTP code
+  			 }
+  			 return true;
+  	}
+  	
+  //receive ACK
+  	public boolean receiveDATA()
+  	{	
+
+  		//Encode the block number into the response block 
+  		byte[] blockArray = new byte[2];
+  		blockArray[1]=(byte)(blockNum & 0xFF);
+  		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
+
+  		receivePacket("DATA");
+  		if(timeoutFlag)
+  		{
+  			if(System.currentTimeMillis() % 1000 -startTime < TIMEOUT)
+  			{
+  				timeouts++;
+  				if(timeouts == MAX_TIMEOUTS){
+  					close();
+  					System.exit(0);
+  				}
+  				retransmitDATA=true;
+  			}
+  			return false;
+  		}
+  		//analyze ACK for format
+  		if (verbose)
+  		{
+  			console.print("Client: Checking ACK...");
+  		}
+  		byte[] data = receivedPacket.getData();
+
+  		//check if data
+  		if(data[0] == 0 && data[1] == 3){
+
+  			//Check if the blockNumber corresponds to the expected blockNumber
+  			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
+  				blockNum++;
+  			}
+  			else{
+  				duplicateDATA = true;
+  				if(System.currentTimeMillis() % 1000 -startTime > TIMEOUT)
+  				{
+  					timeouts++;
+  					if(timeouts == MAX_TIMEOUTS){
+  						close();
+  						System.exit(0);
+  					}
+  					retransmitACK=true;
+  				}
+  			}
+  		}
+  		else{
+  			//ITERATION 5 ERROR
+  			//Invalid TFTP code
+  		}
+  		return true;
+  	}
+  	*/
 
 }
