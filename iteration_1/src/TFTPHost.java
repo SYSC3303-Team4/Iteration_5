@@ -48,7 +48,7 @@ public class TFTPHost
 	
 	//sarah var
 	DatagramPacket nextGram=null;
-		
+	private boolean needSend=true;
 	//declaring local class constants
 	private static final int CLIENT_RECEIVE_PORT = 23;
 	private static final int SERVER_RECEIVE_PORT = 69;
@@ -161,7 +161,7 @@ public class TFTPHost
 		//wait for incoming data
 		console.print("Waiting for data...");
 		inputSocket.receive(incommingPacket);
-
+		
 		
 		//deconstruct packet and print contents
 		console.print("Packet successfully received");
@@ -170,17 +170,15 @@ public class TFTPHost
 			printDatagram(incommingPacket);
 		}
 		
-		
-		if(incommingPacket.getPort()==clientPort)
+		//rest delay
+		try
 		{
-			sendDatagram(serverPort, genSocket);
+			inputSocket.setSoTimeout(0);
 		}
-		
-		else if(incommingPacket.getPort()==serverPort)
+		catch (SocketException ioe)
 		{
-			sendDatagram(clientPort, genSocket);
+			console.printError("Cannot set socket timeout");
 		}
-
 	}
 	
 	//send packet to server and wait for server response
@@ -241,16 +239,30 @@ public class TFTPHost
 			try
 			{
 				console.print("Delaying packet unless other receieved");
-				tryReceive(genSocket, delay);//receieve something random
+				tryReceive(genSocket, delay);//receieve something random	
 				
-				//should never get here
-				console.printError("Should never be here");
+				if(receivedPacket.getPort()==clientPort)
+				{
+					sendDatagram(serverPort, genSocket);
+					needSend=false;
+				}
+				
+				else if(receivedPacket.getPort()==serverPort)
+				{
+					sendDatagram(clientPort, genSocket);
+					needSend=false;
+				}
+			}
+			catch (SocketException see)
+			{
+				console.printError("SOTIMEOUT SET RETURN ERRROR)");
 				return;
 			}
-			catch (IOException ioe)//got Data
+			catch (IOException ioe)//timeout, did not recieve data, should delay packet
 			{
 				console.print("Delay Reached, Data sent");
 				sendDatagram(clientPort, genSocket);
+				needSend=false;
 			}
 			
 			
@@ -330,7 +342,6 @@ public class TFTPHost
 	public void errorSimHandle()
 	{
 		console.print("inErrorSim");
-		boolean needSend=true;
 		int sendToPort=SERVER_RECEIVE_PORT;
 		int serverPort=0;
 		//wait for original RRQ/WRQ from client
@@ -364,7 +375,15 @@ public class TFTPHost
 				
 				else
 				{
-					console.print("EPIC ERROR");
+					console.print("Weird State");
+					try
+					{
+						genSocket.setSoTimeout(0);
+					}
+					catch (SocketException ioe)
+					{
+						console.printError("Cannot set socket timeout");
+					}
 				}
 			}
 			
