@@ -65,7 +65,7 @@ class TFTPWriteThread extends ServerThread
 
     public TFTPWriteThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket receivePacketInfo,String thread, Boolean verboseMode,File file) {
     	super(group,thread,transcript);
-        receivePacket = receivePacketInfo;  
+    	requestPacket = receivePacketInfo;  
         threadNumber = thread;
         verbose = verboseMode;
         this.file = file;
@@ -92,25 +92,25 @@ class TFTPWriteThread extends ServerThread
 		   ByteArrayOutputStream filename = new ByteArrayOutputStream();
 		   ByteArrayOutputStream mode = new ByteArrayOutputStream();
 		   boolean change = false; 
-		   for(int i = 2; i<receivePacket.getData().length;i++){
-			   if(receivePacket.getData()[i]>=32){
+		   for(int i = 2; i<requestPacket.getData().length;i++){
+			   if(requestPacket.getData()[i]>=32){
 				   if(change == false){
-					   filename.write(receivePacket.getData()[i]);
+					   filename.write(requestPacket.getData()[i]);
 				   }
 				   else{
-					   mode.write(receivePacket.getData()[i]);
+					   mode.write(requestPacket.getData()[i]);
 				   }
 			   }
-			   if(receivePacket.getData()[i]!=0){
-				   if(receivePacket.getData()[i+1] == 0){
+			   if(requestPacket.getData()[i]!=0){
+				   if(requestPacket.getData()[i+1] == 0){
 					   change = true;
 					   i++;
 				   }
 				}
 		   }
-		   printReceivedPacket(receivePacket, verbose);
+		   printReceivedPacket(requestPacket, verbose);
 		    /* Exit Gracefully if the stop is requested. */
-	       if(isInterrupted()){exitGraceFully();return;}
+	       if(stopRequested){exitGraceFully();return;}
 	       if(verbose){
 	    	   console.print("Request parsed for:");
 	    	   console.print("	Filename: " + new String(filename.toByteArray(),
@@ -127,7 +127,7 @@ class TFTPWriteThread extends ServerThread
 		    */
 	       //NEVER RESENDS ACK 0
 		   sendPacket = new DatagramPacket(response, response.length,
-			       receivePacket.getAddress(), receivePacket.getPort());
+				   requestPacket.getAddress(), requestPacket.getPort());
 
 		   printSendPacket(sendPacket,verbose);
 		   
@@ -137,14 +137,14 @@ class TFTPWriteThread extends ServerThread
 	    	   e.printStackTrace();
 	    	   System.exit(1);
 	       }
-	       long startTime = System.currentTimeMillis();
+	       startTime = System.currentTimeMillis();
 	       /* Exit Gracefully if the stop is requested. */
-	       if(isInterrupted()){exitGraceFully();}
+	       if(stopRequested){exitGraceFully();return;}
 	       if(verbose){
 	    	   console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
 	       }
 
-	       while(!isInterrupted()){
+	       while(!stopRequested){
 	    	   //Wait for next DATA datagram in format:
 		       /*
 			  2 bytes    2 bytes       n bytes
@@ -153,23 +153,23 @@ class TFTPWriteThread extends ServerThread
 			  ---------------------------------
 			*/
 			   byte[] rawData = new byte[516];
-			   receivePacket1 = new DatagramPacket(rawData, rawData.length);
+			   receivePacket = new DatagramPacket(rawData, rawData.length);
 			   
 			    /* Exit Gracefully if the stop is requested. */
-			   if(isInterrupted()){continue;}
+			   if(stopRequested){continue;}
 			   
 		       console.print("Server: Waiting for packet.");
 		       // Block until a datagram packet is received from receiveSocket.
 		       while(!receiveDATA()){}
 
-		       if(!retransmitDATA){
+		       if(!retransmitACK){
 		       
-		    	   printReceivedPacket(receivePacket1,verbose);
-			       byte[] data = new byte[receivePacket1.getLength()-4];
+		    	   printReceivedPacket(receivePacket,verbose);
+			       byte[] data = new byte[receivePacket.getLength()-4];
 	
 			       //Parse data from DATA packet
-			       for(int i = 4; i < receivePacket1.getLength();i++){
-			    	   data[i-4] = receivePacket1.getData()[i];
+			       for(int i = 4; i < receivePacket.getLength();i++){
+			    	   data[i-4] = receivePacket.getData()[i];
 			       }
 			       
 	
@@ -180,6 +180,7 @@ class TFTPWriteThread extends ServerThread
 			       TFTPWriter writer = new TFTPWriter();
 			       if(fileName.exists() && fileFlag == false) { 
 			    	   buildError(6,receivePacket,verbose);
+
 			    	   return;
 					}
 			       fileFlag = true;
@@ -188,12 +189,13 @@ class TFTPWriteThread extends ServerThread
 						writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
 					} catch (AccessDeniedException e1) {
 						buildError(2,receivePacket,verbose);
-						e1.printStackTrace();
+						//e1.printStackTrace();
 						return;
 					} 
 					catch(IOException e2){
 						buildError(3,receivePacket,verbose);
-						e2.printStackTrace();
+						//e2.printStackTrace();
+
 						return;
 					}
 	
@@ -201,10 +203,8 @@ class TFTPWriteThread extends ServerThread
 			    	   if(verbose){
 			    	   console.print("Server: Final Data Block Received.");
 			    	   console.print("Server: Sending last ACK");
-			    	   //SET INTERRUPT TO EXIT LOOP
-			    	   
 			    	   }
-			    	   interrupt();
+			    	    requestStop();
 			       }
 	
 			       //Sending the ACK for previous DATA packet in format:
@@ -215,14 +215,13 @@ class TFTPWriteThread extends ServerThread
 				  --------------------
 				*/
 	
-				   response[2]=receivePacket1.getData()[2];
-				   response[3]=receivePacket1.getData()[3];
-				   blockNum++;
+				   response[2]=receivePacket.getData()[2];
+				   response[3]=receivePacket.getData()[3];
 	
 		       }
 				   
 		       sendPacket = new DatagramPacket(response, response.length,
-		    		   receivePacket.getAddress(), receivePacket.getPort());
+		    		   requestPacket.getAddress(), requestPacket.getPort());
 		       
 		       /* Exit Gracefully if the stop is requested. */
 		       printSendPacket(sendPacket,verbose);
@@ -234,7 +233,7 @@ class TFTPWriteThread extends ServerThread
 		    	   System.exit(1);
 		       }
 		       /* Exit Gracefully if the stop is requested. */
-		       if(isInterrupted()){continue;}
+		       if(stopRequested){continue;}
 		       if(verbose){
 		    	   console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
 		       }

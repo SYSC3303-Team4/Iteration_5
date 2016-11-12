@@ -52,10 +52,6 @@ import ui.ConsoleUI;
 class TFTPReadThread  extends ServerThread
 {
 	//INIT general variables
-	private DatagramPacket receivePacket;
-	private DatagramPacket sendPacket;
-	private boolean verbose;
-	private static int blockNumber = 1;
 	boolean sendZeroDataPacket = false;
 	boolean duplicateACK = false;
 	private String threadNumber;
@@ -72,7 +68,6 @@ class TFTPReadThread  extends ServerThread
 		threadNumber  = thread;
 		verbose = verboseMode;
 		serverDump = path;
-
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) {
@@ -100,7 +95,7 @@ class TFTPReadThread  extends ServerThread
 		ByteArrayOutputStream mode = new ByteArrayOutputStream();
 		boolean change = false; 
 		for(int i = 2; i<receivePacket.getData().length;i++){
-			if(isInterrupted()){exitGraceFully();}
+			if(isInterrupted()){exitGraceFully();return;}
 			if(receivePacket.getData()[i]>=32){
 				if(change == false){
 					filename.write(receivePacket.getData()[i]);
@@ -149,62 +144,61 @@ class TFTPReadThread  extends ServerThread
 		}
 
 
-		while(!isInterrupted()){
+		while(!stopRequested()){
 
-			if(!duplicateACK){
-				if(!retransmitACK){
-					//Encode the block number into the response block 
-					response[3]=(byte)(blockNumber & 0xFF);
-					response[2]=(byte)((blockNumber >> 8)& 0xFF);
-
-
-					//Building datagram		
+			if(!retransmitDATA){
+				//Encode the block number into the response block 
+				response[3]=(byte)(blockNum & 0xFF);
+				response[2]=(byte)((blockNum >> 8)& 0xFF);
 
 
-					byte[] data = reader.pop();
-					//Check if the server needs to send a data Packet with 0 bytes
-					if(data!=null){
-						if(data.length==512 && reader.peek()==null){
-							sendZeroDataPacket = true;
-						}
+				//Building datagram		
+
+
+				byte[] data = reader.pop();
+				//Check if the server needs to send a data Packet with 0 bytes
+				if(data!=null){
+					if(data.length==512 && reader.peek()==null){
+						sendZeroDataPacket = true;
 					}
+				}
 
-					/* If there's no more data to be read exit. */
-					if(data == null){
-						if(sendZeroDataPacket == true){
-							sendNoData(receivePacket,verbose, blockNumber,sendReceiveSocket);
-							//Waiting to receive final ACK
-							byte[] finalACK = new byte[4];
-							DatagramPacket finalACKPacket = new DatagramPacket(finalACK, finalACK.length);
-							try {
-								sendReceiveSocket.receive(finalACKPacket);
-							} catch (IOException e) {
-								e.printStackTrace();
-								System.exit(1);
-							} 
+				/* If there's no more data to be read exit. */
+				if(data == null){
+					if(sendZeroDataPacket == true){
+						sendNoData(receivePacket,verbose, blockNum,sendReceiveSocket);
+						//Waiting to receive final ACK
+						byte[] finalACK = new byte[4];
+						DatagramPacket finalACKPacket = new DatagramPacket(finalACK, finalACK.length);
+						try {
+							sendReceiveSocket.receive(finalACKPacket);
+						} catch (IOException e) {
+							e.printStackTrace();
+							System.exit(1);
+						} 
 
-							printReceivedPacket(finalACKPacket, verbose);
-						}
-						console.print("Read Request has completed.");
-						exitGraceFully();
-						return;
-					}	
-					//Builds the datagram in format
-					/*
+						printReceivedPacket(finalACKPacket, verbose);
+					}
+					console.print("Read Request has completed.");
+					exitGraceFully();
+					return;
+				}	
+				//Builds the datagram in format
+				/*
 						2 bytes    2 bytes       n bytes 
 						---------------------------------
 					 DATA  | 03    |   Block #  |    Data    |
 						---------------------------------
-					 */
+				 */
 
-					byte dataPrime[] = Arrays.copyOf(response, response.length + data.length); 
-					System.arraycopy(data, 0, dataPrime, response.length, data.length);
+				byte dataPrime[] = Arrays.copyOf(response, response.length + data.length); 
+				System.arraycopy(data, 0, dataPrime, response.length, data.length);
 
-					/* Exit Gracefully if the stop is requested. */
-					if(isInterrupted()){continue;}
-					sendPacket = new DatagramPacket(dataPrime, dataPrime.length,
-							receivePacket.getAddress(), receivePacket.getPort());
-				}
+				/* Exit Gracefully if the stop is requested. */
+				if(stopRequested()){continue;}
+				sendPacket = new DatagramPacket(dataPrime, dataPrime.length,
+						receivePacket.getAddress(), receivePacket.getPort());
+			}
 				printSendPacket(sendPacket, verbose);
 
 				// Send the datagram packet to the client via a new socket.
@@ -214,17 +208,16 @@ class TFTPReadThread  extends ServerThread
 					e.printStackTrace();
 					System.exit(1); 
 				}
-
+				startTime = System.currentTimeMillis();
 				/* Exit Gracefully if the stop is requested. */
-				if(isInterrupted()){continue;}
+				if(stopRequested()){continue;}
 				if(verbose){
 					console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
 				}
-			}
-			duplicateACK = false;
 
 			
 			while(!receiveACK()){}
+			printReceivedPacket(receivePacket, verbose);
 			/*
 			//Waiting to receive ACK
 			try {
@@ -282,6 +275,12 @@ class TFTPReadThread  extends ServerThread
 		}
 		console.print("Server: thread closing.");
 		exitGraceFully();
+	}
+
+
+	private boolean stopRequested() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

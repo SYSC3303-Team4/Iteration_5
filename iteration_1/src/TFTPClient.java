@@ -88,7 +88,7 @@ import javax.swing.*;
 //import packages
 import ui.* ;
 
-@SuppressWarnings("serial")
+
 public class TFTPClient extends JFrame
 {
 	//declaring local instance variables
@@ -111,7 +111,7 @@ public class TFTPClient extends JFrame
 	private boolean retransmitDATA = false;
 	
 	//INIT socket timeout variables
-	protected static final int TIMEOUT = 1; //Seconds
+	protected static final int TIMEOUT = 2; //Seconds
 	protected static final int MAX_TIMEOUTS = 5;
 	protected int timeouts = 0;
 	
@@ -128,6 +128,7 @@ public class TFTPClient extends JFrame
 	
 	private long startTime;
 	private boolean timeoutFlag = false;
+	private boolean errorFlag = false;
 	
 	
 	
@@ -426,7 +427,7 @@ public class TFTPClient extends JFrame
 			}
 			duplicateACK=false;
 			//wait for ACK
-			while(!receiveACK()){}
+			while(!receiveACK()){if(errorFlag){return;}}
 		}
 		
 		//reset port
@@ -439,11 +440,11 @@ public class TFTPClient extends JFrame
 	//send a single packet
 	private void sendPacket()
 	{
-		startTime=System.currentTimeMillis() % 1000;
+		startTime=System.currentTimeMillis();
 		//print packet info IF in verbose
+		console.print("Client: Sending packet...");
 		if(verbose)
 		{
-			console.print("Client: Sending packet...");
 			printDatagram(sentPacket);
 		}
 		//send packet
@@ -471,21 +472,23 @@ public class TFTPClient extends JFrame
 		receivePacket("DATA");
 		if(timeoutFlag)
 		{
-			if(System.currentTimeMillis() % 1000 -startTime < TIMEOUT)
+			if(System.currentTimeMillis() -startTime < TIMEOUT)
 			{
 				timeouts++;
 				if(timeouts == MAX_TIMEOUTS){
 					close();
 					System.exit(0);
 				}
+				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
 				retransmitDATA=true;
+				return true;
 			}
 			return false;
 		}
 		//analyze ACK for format
 		if (verbose)
 		{
-			console.print("Client: Checking ACK...");
+			console.print("Client: Checking DATA...");
 		}
 		byte[] data = receivedPacket.getData();
 
@@ -495,10 +498,12 @@ public class TFTPClient extends JFrame
 			//Check if the blockNumber corresponds to the expected blockNumber
 			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
 				blockNum++;
+				timeouts=0;
 			}
 			else{
 				duplicateDATA = true;
-				if(System.currentTimeMillis() % 1000 -startTime > TIMEOUT)
+				console.print("Received duplicate DATA");
+				if(System.currentTimeMillis() -startTime > TIMEOUT)
 				{
 					timeouts++;
 					if(timeouts == MAX_TIMEOUTS){
@@ -506,14 +511,16 @@ public class TFTPClient extends JFrame
 						System.exit(0);
 					}
 					retransmitACK=true;
+					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
 				}
 			}
+			return true;
 		}
 		else{
 			//ITERATION 5 ERROR
 			//Invalid TFTP code
 		}
-		return true;
+		return false;
 	}
 	
 	//receive ACK
@@ -524,55 +531,61 @@ public class TFTPClient extends JFrame
 		byte[] blockArray = new byte[2];
 		blockArray[1]=(byte)(blockNum & 0xFF);
 		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
-		
 
-			//receive ACK
-			receivePacket("ACK");
-			 if(timeoutFlag)
-			 {
-			 	if(System.currentTimeMillis() % 1000 -startTime < TIMEOUT)
-			 	{
-			 		timeouts++;
+
+		//receive ACK
+		receivePacket("ACK");
+		if(errorFlag)
+		{
+			return false;
+		}
+		if(timeoutFlag)
+		{
+			if(System.currentTimeMillis() -startTime < TIMEOUT)
+			{
+				timeouts++;
+				if(timeouts == MAX_TIMEOUTS){
+					close();
+					System.exit(0);
+				}
+				retransmitDATA=true;
+				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
+				return true;
+			}
+			return false;
+		}
+		//analyze ACK for format
+		if (verbose)
+		{
+			console.print("Client: Checking ACK...");
+		}
+		byte[] data = receivedPacket.getData();
+
+		//check ACK for validity
+		if(data[0] == 0 && data[1] == 4){
+
+			//Check if the blockNumber corresponds to the expected blockNumber
+			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
+				blockNum++;
+				timeouts=0;
+			}
+			else{
+				duplicateACK = true;
+				console.print("Received duplicate ACK");
+				if(System.currentTimeMillis() -startTime > TIMEOUT)
+				{
+					timeouts++;
 					if(timeouts == MAX_TIMEOUTS){
 						close();
 						System.exit(0);
 					}
 					retransmitDATA=true;
-			 	}
-			 	return false;
-			 }
-			//analyze ACK for format
-			 if (verbose)
-			 {
-				 console.print("Client: Checking ACK...");
-			 }
-			 byte[] data = receivedPacket.getData();
-
-			 //check ACK for validity
-			 if(data[0] == 0 && data[1] == 4){
-
-				 //Check if the blockNumber corresponds to the expected blockNumber
-				 if(blockArray[1] == data[3] && blockArray[0] == data[2]){
-					 blockNum++;
-				 }
-				 else{
-					 duplicateACK = true;
-					 if(System.currentTimeMillis() % 1000 -startTime > TIMEOUT)
-					 {
-						 timeouts++;
-						 if(timeouts == MAX_TIMEOUTS){
-							 close();
-							 System.exit(0);
-						 }
-						 retransmitDATA=true;
-					 }
-				 }
-			 }
-			 else{
-				 //ITERATION 5 ERROR
-				 //Invalid TFTP code
-			 }
-			 return true;
+					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 	
 	
@@ -597,7 +610,7 @@ public class TFTPClient extends JFrame
 			blockNumByte[1]=(byte)(blockNum & 0xFF);
 			blockNumByte[0]=(byte)((blockNum >> 8)& 0xFF);
 			//receive data
-			while(!receiveDATA()){}
+			while(!receiveDATA()){if(errorFlag){return;}}
 			if(!retransmitACK && !duplicateDATA){
 				
 				outPort = receivedPacket.getPort();
@@ -691,21 +704,25 @@ public class TFTPClient extends JFrame
 		    	case 1:
 		    			console.print("File not found, please select again");
 		    			//start(this);
+		    			errorFlag=true;
 		    			break;
 		    	//improper rights for R/W
 		    	case 2:
 		    			console.print("You do not have the rights for this, please select again");
 		    			//start(this);
+		    			errorFlag=true;
 		    			break;
 		    	//drive full
 		    	case 3:
 		    			console.print("Location full, please select a new location to write to");
 		    			//start(this);
+		    			errorFlag=true;
 		    			break;
 		    	//file already exists
 		    	case 6:
 		    			console.print("The file already exists, please select a new file");
 		    			//start(this);
+		    			errorFlag=true;
 		    			break;
 		    	//unknown error
 		    	default:
@@ -766,11 +783,12 @@ public class TFTPClient extends JFrame
 		console.println();
 		
 		/** TODO DELETE THIS*/
-		testMode(true);
+		testMode(false);
 		verbose=true;
 		//main input loop
 		while(runFlag)
 		{
+			errorFlag=false;
 			//get PARSED user input
 			input = console.getParsedInput(true);
 			

@@ -33,7 +33,7 @@ public class TFTPWriter
 {
 	private File file;
 	
-	public void write(byte[] data, String path) throws  IOException, AccessDeniedException, FileAlreadyExistsException 
+	public void write(byte[] data, String path) throws  AccessDeniedException,FileAlreadyExistsException,IOException 
 	{
 		
 		
