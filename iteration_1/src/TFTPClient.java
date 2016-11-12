@@ -90,7 +90,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 //import packages
 import ui.* ;
 
-@SuppressWarnings("serial")
+
 public class TFTPClient extends JFrame
 {
 	//declaring local instance variables
@@ -106,9 +106,16 @@ public class TFTPClient extends JFrame
 	private File file;
 	private JFileChooser fileChooser;
 	private ConsoleUI console;
-	private int blockNum = 1;
+	private int blockNum;
 	private boolean duplicateACK = false;
-
+	private boolean duplicateDATA = false;
+	private boolean retransmitACK = false;
+	private boolean retransmitDATA = false;
+	
+	//INIT socket timeout variables
+	protected static final int TIMEOUT = 2; //Seconds
+	protected static final int MAX_TIMEOUTS = 5;
+	protected int timeouts = 0;
 	
 	//declaring local class constants
 	private static final int IN_PORT_HOST = 23;
@@ -120,6 +127,10 @@ public class TFTPClient extends JFrame
 	private static final byte[] OPCODE_WRQ =  {0,2};
 	private static final byte[] OPCODE_DATA = {0,3};
 	private static final byte[] OPCODE_ACK = {0,4};
+	
+	private long startTime;
+	private boolean timeoutFlag = false;
+	private boolean errorFlag = false;
 	
 	
 	
@@ -136,6 +147,11 @@ public class TFTPClient extends JFrame
 		{
 			se.printStackTrace();
 			System.exit(1);
+		}
+		try {
+			generalSocket.setSoTimeout(TIMEOUT*1000);
+		} catch (SocketException e) {
+			console.print("Couldn't set timeout.");
 		}
 		//initialize echo --> off
 		verbose = false;
@@ -213,7 +229,7 @@ public class TFTPClient extends JFrame
 		blockNumArr[1]=(byte)(blockNum & 0xFF);
 		blockNumArr[0]=(byte)((blockNum >> 8)& 0xFF);
 	    
-		if(verbose)
+		if(verbose)    
 		{
 			console.print("Client: Prepping DATA packet #" + blockNum);
 		}
@@ -356,8 +372,9 @@ public class TFTPClient extends JFrame
 	//send datagram, recieve ACKs
 	public void sendWRQ(String file, String mode)
 	{
+		blockNum = 0;
 		//initial
-
+		
 		int oldPort = outPort; 
 		int lastDATAPacketLength = 0;
 		
@@ -378,14 +395,24 @@ public class TFTPClient extends JFrame
 		//send RRQ/RRW
 		sendPacket();
 		//wait for ACK
-		receiveACK();
+		if(!receiveACK())
+		{
+			console.print("ERROR: No 0 ACK received");
+			return;
+		}
 		//change port to wherever ACK came from 
 		outPort = receivedPacket.getPort();
 		
 		//send DATA
 		while ( !(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4)
 		{
-			if(duplicateACK){
+			if(retransmitDATA)
+			{
+				sendPacket();//resend
+				retransmitDATA = false;
+			}
+			if(!duplicateACK){ 
+				
 				//send DATA
 				if(reader.isEmpty())
 				{
@@ -397,11 +424,12 @@ public class TFTPClient extends JFrame
 				}
 				lastDATAPacketLength = sentPacket.getLength();
 				sendPacket();
-				blockNum++;
-			}
+				//blockNum++;
 			
+			}
+			duplicateACK=false;
 			//wait for ACK
-			receiveACK();
+			while(!receiveACK()){if(errorFlag){return;}}
 		}
 		
 		//reset port
@@ -414,10 +442,11 @@ public class TFTPClient extends JFrame
 	//send a single packet
 	private void sendPacket()
 	{
+		startTime=System.currentTimeMillis();
 		//print packet info IF in verbose
+		console.print("Client: Sending packet...");
 		if(verbose)
 		{
-			console.print("Client: Sending packet...");
 			printDatagram(sentPacket);
 		}
 		//send packet
@@ -433,48 +462,139 @@ public class TFTPClient extends JFrame
 		console.print("Client: Packet Sent");
 	}
 	
-	
 	//receive ACK
-	public void receiveACK()
+	public boolean receiveDATA()
 	{	
 
 		//Encode the block number into the response block 
 		byte[] blockArray = new byte[2];
 		blockArray[1]=(byte)(blockNum & 0xFF);
 		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
-		
 
-			//receive ACK
-			receivePacket("ACK");
-			
-			//analyze ACK for format
-			if (verbose)
+		receivePacket("DATA");
+		if(timeoutFlag)
+		{
+			if(System.currentTimeMillis() -startTime < TIMEOUT)
 			{
-				console.print("Client: Checking ACK...");
+				timeouts++;
+				if(timeouts == MAX_TIMEOUTS){
+					close();
+					System.exit(0);
+				}
+				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
+				retransmitDATA=true;
+				return true;
 			}
-			byte[] data = receivedPacket.getData();
-			
-			//check ACK for validity
-			if(data[0] == 0 && data[1] == 4){
-				//Check if the blockNumber corresponds to the expected blockNumber
-				if(blockArray[1] == data[3] && blockArray[0] == data[2]){
-					blockNum++;
-				}
-				else{
-					duplicateACK = true;
-				}
+			return false;
+		}
+		//analyze ACK for format
+		if (verbose)
+		{
+			console.print("Client: Checking DATA...");
+		}
+		byte[] data = receivedPacket.getData();
+
+		//check if data
+		if(data[0] == 0 && data[1] == 3){
+
+			//Check if the blockNumber corresponds to the expected blockNumber
+			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
+				blockNum++;
+				timeouts=0;
 			}
 			else{
-				//ITERATION 5 ERROR
-				//Invalid TFTP code
+				duplicateDATA = true;
+				console.print("Received duplicate DATA");
+				if(System.currentTimeMillis() -startTime > TIMEOUT)
+				{
+					timeouts++;
+					if(timeouts == MAX_TIMEOUTS){
+						close();
+						System.exit(0);
+					}
+					retransmitACK=true;
+					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
+				}
 			}
-		
+			return true;
+		}
+		else{
+			//ITERATION 5 ERROR
+			//Invalid TFTP code
+		}
+		return false;
+	}
+	
+	//receive ACK
+	public boolean receiveACK()
+	{	
+
+		//Encode the block number into the response block 
+		byte[] blockArray = new byte[2];
+		blockArray[1]=(byte)(blockNum & 0xFF);
+		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
+
+
+		//receive ACK
+		receivePacket("ACK");
+		if(errorFlag)
+		{
+			return false;
+		}
+		if(timeoutFlag)
+		{
+			if(System.currentTimeMillis() -startTime < TIMEOUT)
+			{
+				timeouts++;
+				if(timeouts == MAX_TIMEOUTS){
+					close();
+					System.exit(0);
+				}
+				retransmitDATA=true;
+				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
+				return true;
+			}
+			return false;
+		}
+		//analyze ACK for format
+		if (verbose)
+		{
+			console.print("Client: Checking ACK...");
+		}
+		byte[] data = receivedPacket.getData();
+
+		//check ACK for validity
+		if(data[0] == 0 && data[1] == 4){
+
+			//Check if the blockNumber corresponds to the expected blockNumber
+			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
+				blockNum++;
+				timeouts=0;
+			}
+			else{
+				duplicateACK = true;
+				console.print("Received duplicate ACK");
+				if(System.currentTimeMillis() -startTime > TIMEOUT)
+				{
+					timeouts++;
+					if(timeouts == MAX_TIMEOUTS){
+						close();
+						System.exit(0);
+					}
+					retransmitDATA=true;
+					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 	
 	
 	//receive data and save
 	public void sendRRQ(String file, String mode)
 	{
+		blockNum=1;
 		int oldPort = outPort;
 		
 		//send read request
@@ -488,54 +608,57 @@ public class TFTPClient extends JFrame
 		
 		while(loop)
 		{
+			byte[] blockNumByte = new byte[2];
+			blockNumByte[1]=(byte)(blockNum & 0xFF);
+			blockNumByte[0]=(byte)((blockNum >> 8)& 0xFF);
 			//receive data
-			receivePacket("DATA");
-			outPort = receivedPacket.getPort();
-			
-			//Process data
-			rawData = new byte[receivedPacket.getLength()] ;
-			rawData = receivedPacket.getData();
-			procData = new byte[receivedPacket.getLength() - DATA_OFFSET];
-			byte[] blockNum = new byte[2];
-			console.print("Received Packet Length: "+receivedPacket.getLength());
-			int reLen = receivedPacket.getLength();
-			console.print("reLen Length: "+reLen);
-			for(int i=0; i<reLen-DATA_OFFSET; i++)
-			{
-				procData[i] = rawData[i+DATA_OFFSET];
+			while(!receiveDATA()){if(errorFlag){return;}}
+			if(!retransmitACK && !duplicateDATA){
+				
+				outPort = receivedPacket.getPort();
+				
+				//Process data
+				rawData = new byte[receivedPacket.getLength()] ;
+				rawData = receivedPacket.getData();
+				procData = new byte[receivedPacket.getLength() - DATA_OFFSET];
+	
+				int reLen = receivedPacket.getLength();
+				for(int i=0; i<reLen-DATA_OFFSET; i++)
+				{
+					procData[i] = rawData[i+DATA_OFFSET];
+				}
+				
+				//save data
+				try
+				{
+					writer.write(procData,"Received"+file);
+				}
+				catch(FileNotFoundException e)
+				{
+					e.printStackTrace();
+					System.exit(1);
+				}
+				catch(IOException e)
+				{
+					e.printStackTrace();
+					System.exit(1);
+				}
+				
+				//check to see if this is final packet
+				if (receivedPacket.getLength() < MAX_SIZE+4)	
+				{
+					loop = false;
+				}
+				
+				//get block num
+				blockNumByte[0] = rawData[2];
+				blockNumByte[1] = rawData[3];
+				generateACK(blockNumByte);
 			}
-			
-			//save data
-			try
-			{
-				writer.write(procData,"Received"+file);
-			}
-			catch(FileNotFoundException e)
-			{
-				e.printStackTrace();
-				System.exit(1);
-			}
-			catch(IOException e)
-			{
-				e.printStackTrace();
-				System.exit(1);
-			}
-			
-			//check to see if this is final packet
-			console.print("ProcData Length: "+procData.length);
-			console.print("Received Packet Length: "+receivedPacket.getLength());
-			if (receivedPacket.getLength() < MAX_SIZE+4)	
-			{
-				loop = false;
-			}
-			
-			//get block num
-			blockNum[0] = rawData[2];
-			blockNum[1] = rawData[3];
-			
 			//send out ACK and prep for more data
-			generateACK(blockNum);
 			sendPacket();
+			retransmitACK = false;
+			duplicateDATA = false;
 		}
 		
 		console.print("----------------------RRQ COMPLETE----------------------");
@@ -561,8 +684,10 @@ public class TFTPClient extends JFrame
 		}
 		catch(IOException e)
 		{
-			e.printStackTrace();
-			System.exit(1);
+			console.print("Timed out on receive");
+			if(e instanceof SocketTimeoutException){
+				timeoutFlag=true;
+			}
 		}
 		if (verbose)
 		{
@@ -581,21 +706,25 @@ public class TFTPClient extends JFrame
 		    	case 1:
 		    			console.print("File not found, please select again");
 		    			//start(this);
+		    			errorFlag=true;
 		    			break;
 		    	//improper rights for R/W
 		    	case 2:
 		    			console.print("You do not have the rights for this, please select again");
 		    			//start(this);
+		    			errorFlag=true;
 		    			break;
 		    	//drive full
 		    	case 3:
 		    			console.print("Location full, please select a new location to write to");
 		    			//start(this);
+		    			errorFlag=true;
 		    			break;
 		    	//file already exists
 		    	case 6:
 		    			console.print("The file already exists, please select a new file");
 		    			//start(this);
+		    			errorFlag=true;
 		    			break;
 		    	//unknown error
 		    	default:
@@ -655,9 +784,13 @@ public class TFTPClient extends JFrame
 		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		console.println();
 		
+		/** TODO DELETE THIS*/
+		testMode(false);
+		verbose=true;
 		//main input loop
 		while(runFlag)
 		{
+			errorFlag=false;
 			//get PARSED user input
 			input = console.getParsedInput(true);
 			
@@ -717,10 +850,16 @@ public class TFTPClient extends JFrame
 						fileChooser.setDialogTitle("Choose a file to push to the server");
 						int result = fileChooser.showOpenDialog(fileChooser);
 						if (result == JFileChooser.APPROVE_OPTION) {//file is found
-						    file = fileChooser.getSelectedFile();//get file name
+							file = fileChooser.getSelectedFile();//get file name
+							if(file.exists())
+							{
+								sendWRQ(file.getName(), DEFAULT_MODE);//enter WRQ protocol
+							}
+							else
+							{
+								console.print("File doesn't exist.");
+							}
 						}
-						//enter WRQ protocol
-						sendWRQ(file.getName(), DEFAULT_MODE);
 					}
 					//BAD (WOLF) INPUT
 					else
@@ -775,14 +914,29 @@ public class TFTPClient extends JFrame
 						int result = fileChooser.showOpenDialog(fileChooser);
 						if (result == JFileChooser.APPROVE_OPTION) {//file is found
 						    file = fileChooser.getSelectedFile();//get file name
+						    if(file.exists())
+							{
+						    	sendWRQ(file.getName(), input[1]);//enter WRQ protocol
+							}
+							else
+							{
+								console.print("File doesn't exist.");
+							}
 						}
 						//enter WRQ protocol
-						sendWRQ(file.getName(), input[1]);
 					}
 					//pull in default mode
 					else if (input[0].equals("pull"))
 					{
-						sendRRQ(input[1], DEFAULT_MODE);
+						File file = new File("Received"+input[1]);
+						if(file.exists())
+						{
+							console.print("File already exist.");
+						}
+						else
+						{
+							sendRRQ(input[1], DEFAULT_MODE);
+						}
 					}
 					//BAD (WOLF) INPUT
 					else

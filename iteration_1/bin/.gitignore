@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /.DS_Store
 /Completed Iteration_1 UML.docx
 /ServerThread.class
@@ -16,3 +17,8 @@
 /TestBench.class
 /UCM.vsd
 /ui/
+=======
+/TestBench.class
+/Test_Cases.txt
+/inputs/
+>>>>>>> refs/heads/tingsmustchangesomtime

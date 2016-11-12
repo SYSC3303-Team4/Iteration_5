@@ -33,14 +33,14 @@ public class TFTPWriter
 {
 	private File file;
 	
-	public void write(byte[] data, String path) throws  IOException, AccessDeniedException, FileAlreadyExistsException 
+	public void write(byte[] data, String path) throws  AccessDeniedException,SecurityException,IOException 
 	{
 		
 		
 		file = new File(path);
 		
 		//prep to write to file
-		FileOutputStream output = new FileOutputStream(file,true);//set to false if dont always want to write to end of file
+		FileOutputStream output = new FileOutputStream(file,false);//set to false if dont always want to write to end of file
 		//write data to file starting at offset
 		
 		output.write(data);

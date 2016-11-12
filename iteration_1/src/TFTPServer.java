@@ -91,7 +91,8 @@ public class TFTPServer implements ActionListener
 	{
 		// out.append("Initializing Server...\n");
 		//Find whether you want to run in verbose mode or not
-
+		/** TODO delete this*/
+		verbose=true;
 
 		byte[] data,
 		response = new byte[4];
@@ -173,7 +174,7 @@ public class TFTPServer implements ActionListener
 			// Create a response.
 			if (req==Request.READ) { // for Read it's 0301
 				threadNum++;
-				Thread readRequest =  new TFTPReadThread(initializedThreads,console, receivePacket, "Thread "+threadNum, verbose);
+				Thread readRequest =  new TFTPReadThread(initializedThreads,console, receivePacket, "Thread "+threadNum, verbose,file);
 				readRequest.start();
 				response = readResp;
 			} else if (req==Request.WRITE) { // for Write it's 0400
@@ -218,6 +219,8 @@ public class TFTPServer implements ActionListener
 		console.actionPerformed(e);
 		String[] input = console.getParsedInput(false);
 		
+		/** TODO DELETE THIS*/
+		verbose=true;
 		//process input, handle inputs based on param number
 		if(input != null)
 		{

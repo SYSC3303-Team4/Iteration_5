@@ -109,6 +109,34 @@ CONTENTS:
 
 ------------------------------------------------------------
 OPERATING INSTRUCTIONS
+=======
+SET UP INSTRUCTIONS:
+	
+	1.	Load all java files into Eclipse workspace/project
+	2.	Build project
+	
+	RRQ Instructions
+	1. 	Run testBench.java(Runs TFTPClient, TFTPHost, TFTPServer)	
+	3. 	Choose the Server's file dump directory from popup filechooser
+	4.  Select desired parameters in TFTPClient, TFTPHost, TFTPServer
+		4.1	
+	5.	Run Client.java*
+	6.  Enter help on the client to see instructions
+	7.  Enter RRQ FileName Mode, with filename being the file you wish to read.
+	8.	View Output in server and client
+	9.  Use the x on the top of UI window to exit
+	
+	WRQ Instructions
+	1. 	Run Host
+	2.	Run Server.java
+	3. 	Choose file dump directory from popup filechooser
+	4.  Enter true(Verbose) or false(Quiet) into console
+	5.	Run Client.java*
+	6.  Enter help on the client to see instructions
+	7.  Enter WRQ Mode
+	8.	A File Explorer will appear to select the directory you would like to write to on the server.
+	9.	View Output in server and client
+	10.  Use the x on the top of UI window to exit
 
 	Instances of TFTPClient, TFTPHost, and TFTPServer class are designed to work with the standard UI produced 
 	for this project, ConsoleUI.
@@ -210,7 +238,7 @@ OPERATING INSTRUCTIONS
 		'2 PT BN'		: Functions exactly the same as 'lose PT BN' 
 		
 		
-	TFTPHost:
+	TFTPServer:
 	----------------------------------------------------
 		The list of all accepted commands** to the host are given as:
 		**Please note that words in all caps (ie B, PT, BN, DL) are to denote verb

@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 
 import ui.ConsoleUI;
@@ -11,6 +12,20 @@ public abstract class ServerThread extends Thread{
 	protected boolean stopRequested = false;
 	protected DatagramSocket sendReceiveSocket;
 	protected ConsoleUI console;
+	//INIT socket timeout variables
+	protected static final int TIMEOUT = 2; //Seconds
+	protected static final int MAX_TIMEOUTS = 5;
+	protected int timeouts = 0;
+	protected boolean retransmit = false;
+	protected int blockNum = 1;
+	protected boolean timeoutFlag = false;
+	protected DatagramPacket sendPacket;
+	protected DatagramPacket receivePacket;
+	protected boolean retransmitDATA;
+	protected boolean retransmitACK;
+	protected long startTime;
+	protected boolean verbose;
+	protected DatagramPacket requestPacket;
 	
 	public ServerThread(ThreadGroup group, String name, ConsoleUI console)
 	{
@@ -29,7 +44,6 @@ public abstract class ServerThread extends Thread{
 		{
 			sendReceiveSocket.close();
 		}
-		console.print("Server: Exiting Gracefully");
 	}
 	
 	protected void printReceivedPacket(DatagramPacket receivedPacket, boolean verbose){
@@ -100,6 +114,7 @@ DATA  | 03    |   Block #  |    Data    |
       		e.printStackTrace();
       		System.exit(1);
       	}
+      	long startTime = System.currentTimeMillis();
       	/* Exit Gracefully if the stop is requested. */
       	if(stopRequested){exitGraceFully();}
       	if(verbose){
@@ -171,5 +186,172 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 	       	}
     	
     }
+    
+   
+  //receive ACK
+  	public boolean receiveACK()
+  	{	
+  		timeoutFlag=false;
+  		//Encode the block number into the response block 
+  		byte[] blockArray = new byte[2];
+  		blockArray[1]=(byte)(blockNum & 0xFF);
+  		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
+  		console.print("Server: Waiting to receive packet");
+
+
+  		//receive ACK
+  		try {
+  			//receiveDATA();
+  			sendReceiveSocket.receive(receivePacket);
+  			retransmit=false;
+  		} catch(SocketTimeoutException e){
+  			//Retransmit every timeout
+  			//Quite after 5 timeouts
+  			timeoutFlag=true;
+  			if(System.currentTimeMillis() -startTime > TIMEOUT)
+  			{
+  				timeouts++;
+  				if(timeouts == MAX_TIMEOUTS){
+  					exitGraceFully();
+  					System.exit(0);
+  				}
+  				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
+  				retransmitDATA = true;
+  				return true;
+  			}
+  			return false;
+
+
+  		} catch (IOException e) {
+  			// TODO Auto-generated catch block
+  			e.printStackTrace();
+  			return false;
+  		} 
+  		//analyze ACK for format
+  		if (verbose)
+  		{
+  			console.print("Client: Checking ACK...");
+  		}
+  		byte[] data = receivePacket.getData();
+
+  		//check ACK for validity
+  		if(data[0] == 0 && data[1] == 4){
+
+  			//Check if the blockNumber corresponds to the expected blockNumber
+  			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
+  				blockNum++;
+  				timeouts=0;
+  			}
+  			else{
+  				if (verbose)
+  		  		{
+  		  			console.print("Received Duplicate.");
+  		  		}
+  				if(System.currentTimeMillis() -startTime > TIMEOUT)
+  				{
+  					timeouts++;
+  					if(timeouts == MAX_TIMEOUTS){
+  						exitGraceFully();
+  						System.exit(0);
+  					}
+  					retransmitDATA=true;
+  					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
+  					return true;
+  				}
+  				return false;
+  			}
+  		}
+  		else{
+  			//ITERATION 5 ERROR
+  			//Invalid TFTP code
+  		}
+  		return true;
+  	}
+
+  //receive ACK
+  	public boolean receiveDATA()
+  	{	
+  		timeoutFlag=false;
+  		//Encode the block number into the response block 
+  		byte[] blockArray = new byte[2];
+  		blockArray[1]=(byte)(blockNum & 0xFF);
+  		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
+  		console.print("Server: Waiting to receive packet");
+  		try {
+  			//receiveDATA();
+  			sendReceiveSocket.receive(receivePacket);
+  			retransmit=false;
+  		} catch(SocketTimeoutException e){
+  			//Retransmit every timeout
+  			//Quite after 5 timeouts
+
+  			if(System.currentTimeMillis() -startTime > TIMEOUT)
+  			{
+  				timeouts++;
+  				timeoutFlag=true;
+  				if(timeouts == MAX_TIMEOUTS){
+  					exitGraceFully();
+  					System.exit(0);
+  				}
+  				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
+  				retransmitACK = true;
+  				return true;
+  			}
+  			return false;
+
+  		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+  		//analyze ACK for format
+  		if (verbose)
+  		{
+  			console.print("Server: Checking DATA...");
+  		}
+  		byte[] data = receivePacket.getData();
+
+  		//check if data
+  		if(data[0] == 0 && data[1] == 3){
+
+  			//Check if the blockNumber corresponds to the expected blockNumber
+  			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
+  				blockNum++;
+  				timeouts=0;
+  			}
+  			else{
+  				if (verbose)
+  		  		{
+  		  			console.print("Received Duplicate.");
+  		  		}
+  				if(System.currentTimeMillis() -startTime > TIMEOUT)
+  				{
+  					timeouts++;
+  					if(timeouts == MAX_TIMEOUTS){
+  						//close();
+  						System.exit(0);
+  					}
+  					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
+  					retransmitACK=true;
+  					return true;
+  				}
+  				return false;
+  			}
+  		}
+  		else{
+  			return false;
+  		}
+  		return true;
+  	}
+  	protected void requestStop()
+  	{
+  		stopRequested=true;
+  	}
+  	
+  	@Override 
+  	public void interrupt()
+  	{
+  		super.interrupt();
+  		requestStop();
+  	}
 
 }
