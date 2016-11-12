@@ -38,14 +38,15 @@ public class TFTPHost
 	private DatagramPacket sentPacket;
 	private DatagramPacket receivedPacket;
 	private DatagramSocket inSocket;
-	private DatagramSocket generalClientSocket;
-	private DatagramSocket generalServerSocket;
+	private DatagramSocket genSocket;
 	private int clientPort;
-	private int serverThreadPort;
 	private boolean verbose;
 	private ConsoleUI console;
-	private boolean runFlag;
 	private InputStack inputStack = new InputStack();
+	
+	
+	//sarah var
+	DatagramPacket nextGram=null;
 		
 	//declaring local class constants
 	private static final int CLIENT_RECEIVE_PORT = 23;
@@ -53,7 +54,6 @@ public class TFTPHost
 	private static final int MAX_SIZE = 512+4;
 	private static final boolean LIT = true ; 	
 	
-	private String dataOrAck = "";
 
 
 	
@@ -64,8 +64,7 @@ public class TFTPHost
 		try
 		{
 			inSocket = new DatagramSocket(CLIENT_RECEIVE_PORT);
-			generalServerSocket = new DatagramSocket();
-			generalClientSocket = new DatagramSocket();
+			genSocket=new DatagramSocket();
 		}
 		//enter if socket creation results in failure
 		catch (SocketException se)
@@ -85,7 +84,7 @@ public class TFTPHost
 	
 	//basic accessors and mutators
 	public DatagramSocket getInSocket()
-	{
+	{    
 		return inSocket;
 	}
 	public void setClientPort(int n)
@@ -146,6 +145,36 @@ public class TFTPHost
 		printDatagram(receivedPacket);
 	}
 	
+	public DatagramPacket tryReceive(DatagramSocket inputSocket,int timeOut) throws IOException
+	{
+		byte[] arrayholder = new byte[MAX_SIZE];
+		DatagramPacket incommingPacket = new DatagramPacket(arrayholder, arrayholder.length);
+		
+		//set delay
+		try
+		{
+			inputSocket.setSoTimeout(timeOut);
+		}
+		catch (SocketException ioe)
+		{
+			console.printError("Cannot set socket timeout");
+		}
+		
+		//wait for incoming data
+		console.print("Waiting for data...");
+		inputSocket.receive(incommingPacket);
+
+		
+		//deconstruct packet and print contents
+		console.print("Packet successfully received");
+		if (verbose)
+		{
+			printDatagram(incommingPacket);
+		}
+		
+		return incommingPacket;
+
+	}
 	
 	//send packet to server and wait for server response
 	/**
@@ -174,30 +203,24 @@ public class TFTPHost
 		console.print("Packet successfully sent");
 		
 	}
-	public void passIt(int mode,int delay,int clientPort,DatagramSocket generalClientSocket )
+	public void passIt(int mode,int delay,int clientPort,DatagramSocket genSocket )
 	{
 		if(mode==0)//delay
 		{
 			console.print("Delaying Packet");
-			delayPack(delay, clientPort, generalClientSocket);
+			delayPack(delay, clientPort, genSocket);
 		}
 		
 		else if(mode==1)//duplicate
 		{
 			console.print("Duplicate Packet");
-			duplicatePack(clientPort, generalClientSocket);
+			duplicatePack(clientPort, genSocket);
 		}
 		
 		else if (mode==2)//lose
 		{
 			console.print("lose try");
-			if(dataOrAck == "ACK"){
-				dataOrAck = "DATA";
-			}
-			else{
-				dataOrAck = "ACK";
-			}
-			losePack( clientPort, generalClientSocket);
+			losePack( clientPort, genSocket);
 		}
 		
 		else
@@ -206,25 +229,47 @@ public class TFTPHost
 		}
 	}
 	
-	public void delayPack(int delay, int clientPort,DatagramSocket  generalClientSocket)
+	public void delayPack(int delay, int clientPort,DatagramSocket  genSocket)
 	{
-		System.out.println("IN DELAY PACKET, SENDING REGULARLY");
-		sendDatagram(clientPort, generalClientSocket);
+		console.print("IN DELAY PACKET, SENDING REGULARLY");
+		if(delay<50)//delay less then timeout of client/server
+		{
+			try
+			{
+				nextGram=tryReceive(genSocket, delay);//receieve something random
+				
+				//should never get here
+				console.printError("Client Responds to Duplicate");
+				return;
+			}
+			catch (IOException ioe)//got Data
+			{
+				console.print("Delay Reached, Data sent");
+				sendDatagram(clientPort, genSocket);
+			}
+			
+		}
+		
+		else//timeout expected geater than timeout of client/server
+		{
+			console.print("NOT IMPLEMENING, SENDING Now");
+			sendDatagram(clientPort, genSocket);
+		}
 	}
 	
-	public void duplicatePack( int clientPort,DatagramSocket  generalClientSocket)
+	public void duplicatePack( int clientPort,DatagramSocket  genSocket)
 	{
-		sendDatagram(clientPort, generalClientSocket);
-		sendDatagram(clientPort, generalClientSocket);
+		console.print("IN Duplicate PACKET 1");
+		sendDatagram(clientPort, genSocket);	
 	}
 	
-	public void losePack( int clientPort,DatagramSocket  generalClientSocket)
+	
+	public void losePack( int clientPort,DatagramSocket  genSocket)
 	{
-		console.print("losing Data");
-		dataOrAck="LOST";
+		console.print("Data Lost");
 	}
 	
-	public void maybeSend(int clientPort,DatagramSocket generalClientSocket,DatagramPacket receivedPacket)
+	public void maybeSend(int clientPort,DatagramSocket genSocket,DatagramPacket receivedPacket)
 	{    
 		if(inputStack.peek()!=null)	
 		{
@@ -251,17 +296,17 @@ public class TFTPHost
 			
 			if(bytePackType[1]==receivedPacket.getData()[1] && bytePackType[0] == receivedPacket.getData()[0] && byteBlockNum[1]==receivedPacket.getData()[3] && byteBlockNum[0]==receivedPacket.getData()[2]){
 				//proper packet type and block num, mess with this one right here
-				System.out.println("SWEET BABY JESUS PLEASE WORK");
-				passIt(mode, delay,clientPort, generalClientSocket );
-				//sendDatagram(clientPort, generalClientSocket);
+				console.print("Block Mess Match");
+				passIt(mode, delay,clientPort, genSocket);
+				//sendDatagram(clientPort, genSocket);
 				inputStack.pop();
-
+ 
 			}
 			
 			else
 			{
 				System.out.println("No part Match");
-				sendDatagram(clientPort, generalClientSocket);
+				sendDatagram(clientPort, genSocket);
 				
 			}
 		}
@@ -269,143 +314,58 @@ public class TFTPHost
 		else
 		{
 			System.out.println("empty stack");
-			sendDatagram(clientPort, generalClientSocket);
+			sendDatagram(clientPort, genSocket);
 		}
 	}
-	
 	public void errorSimHandle()
 	{
-
-		byte RWReq=0;
-		boolean loop=true;
-		int lastDataPacketLength=516;
-		
-		//sarahs Vars
-		System.out.println("Actually in errorSim");
-		while(true)
+		console.print("inErrorSim");
+		boolean needSend=true;
+		int sendToPort=SERVER_RECEIVE_PORT;
+		int serverPort=0;
+		//wait for original RRQ/WRQ from client
+		receiveDatagram(inSocket);
+		console.print("First Packet Recieved");
+		//save port 
+		clientPort = receivedPacket.getPort();
+	
+		while (true)
 		{
-			
-			//wait for original RRQ/WRQ from client
-			receiveDatagram(inSocket);
-			//save port 
-			clientPort = receivedPacket.getPort();
-		
-			//determine if this is a valid RRQ/WRQ
-			byte[] data = new byte[2];
-			data = receivedPacket.getData();
-			//valid
-			if (data[0] == 0 && (data[1] == 1 || data[1] == 2) )
+					
+			if(!needSend)
 			{
-				RWReq = data[1];
-			}
-			//something awful has happened
-			else
-			{
-				console.print("Something awful happend");
-				System.exit(0);
-			}
-			
-			//send RRQ/WRQ to server
-			maybeSend(SERVER_RECEIVE_PORT,generalServerSocket, receivedPacket);
-			
-			//receive 1st packet
-			receiveDatagram(generalServerSocket);
-			serverThreadPort = receivedPacket.getPort();
-			
-			
-			//do the rest if RRQ
-			if(RWReq == 1)
-			{
-				while(loop)
+				receiveDatagram(genSocket);
+				if(serverPort==0)
 				{
-					//save packet size if of type DATA
-					if ( (receivedPacket.getData())[1] == 3)
-					{
-						lastDataPacketLength = receivedPacket.getLength();
-					}
-					console.print("SENDING DATA TO CLIENT");
-					//send DATA to client
-					dataOrAck = "DATA";
-					maybeSend(clientPort,generalClientSocket, receivedPacket);
-					
-					//receive client ACK
-					receiveDatagram(generalClientSocket);
-					
-					console.print("SENDING ACK TO SERVER");
-					//send ACK to server
-					dataOrAck = "ACK";
-					maybeSend(serverThreadPort,generalServerSocket, receivedPacket);
-					
-					//receive more data and loop if datagram.size==516
-					//final ack sent to server, data transfer complete
-
-					if (lastDataPacketLength < MAX_SIZE)
-					{
-						console.print("Data Transfer Complete");
-						console.println();
-						loop = false;
-					}
-					//more data left, receive and loop back
-					else
-					{
-						receiveDatagram(generalServerSocket);
-					}
+					serverPort=receivedPacket.getPort();
+				}
+				
+				if(receivedPacket.getPort()==clientPort)
+				{
+					sendToPort=serverPort;
+					needSend=true;
+				}
+				
+				else if(receivedPacket.getPort()==serverPort)
+				{
+					sendToPort=clientPort;
+					needSend=true;
+				}
+				
+				else
+				{
+					console.print("EPIC ERROR");
 				}
 			}
-			//do the rest if WRQ
-			else
+			
+			
+			else if(needSend)
 			{
-				while(loop)
-				{
-					console.print("SENDING ACK TO CLIENT");
-					//send ACK to client
-					dataOrAck = "ACK";
-					maybeSend(clientPort,generalClientSocket, receivedPacket);
-					//receive client DATA, save size
-					if(dataOrAck == "ACK"){
-						receiveDatagram(generalClientSocket);
-						dataOrAck = "DATA";
-						if ( (receivedPacket.getData())[1] == 3)
-						{
-							lastDataPacketLength = receivedPacket.getLength();
-						}
-					
-					
-					
-					
-						//send DATA to server
-						if(dataOrAck == "DATA"){
-							console.print("SENDING DATA TO SERVER");
-							maybeSend(serverThreadPort,generalServerSocket, receivedPacket);
-							dataOrAck="ACK";
-						} else {
-							console.print("SENDING ACK TO CLIENT");
-							maybeSend(clientPort,generalClientSocket, receivedPacket);
-						}
-					}
-					//final DATA sent, receive and fwd final ACK
-					if (lastDataPacketLength < MAX_SIZE)
-					{
-						//receive final server ACK
-						receiveDatagram(generalServerSocket);
-						dataOrAck = "ACK";
-						//fwd ACK to client
-						console.print("FWD ACK TO CLIENT");
-						maybeSend(clientPort,generalClientSocket, receivedPacket);
-						//terminate transfer
-						console.print("Data Transfer Complete");
-						console.println();
-						loop = false;
-					}
-					//there are still DATA packets to pass, transfer not compelte 
-					else
-					{
-						//receive server ACK
-						receiveDatagram(generalServerSocket);
-					}
-				}
+				maybeSend(sendToPort,genSocket, receivedPacket);
+				needSend=false;
 			}
 		}
+		
 	}
 	
 	public void mainPassingLoop()
