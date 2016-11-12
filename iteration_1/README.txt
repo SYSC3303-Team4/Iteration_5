@@ -21,7 +21,7 @@ Jason Van Kerkhoven		[100974276]
 Nathaniel Charlebois		[100964496]
 Sarah Garlough			[100965386]
 
-11/10/2016
+12/10/2016
 
 
 -----------------------------------------------------------
@@ -32,6 +32,7 @@ TEAM LOGISTICS
 		- Timing Diagram
 		- Corrected Old Timing Diagrams
 		- UML Artesian
+		- Testing the file transfers with and without errors
 		
 	Dan Hogan
 		- Bug Fixes
@@ -39,6 +40,7 @@ TEAM LOGISTICS
 		- Small Features
 		- Added delay error into TFTPHost
 		- Readme
+		- Testing the file transfers with and without errors
 	
 	Jason Van Kerkhoven
 		- Refactored UI
@@ -55,8 +57,9 @@ TEAM LOGISTICS
 	
 	Sarah Garlough
 		- Bug Fixes
-		- Implimented lost and duplicate packets in TFTPHost
+		- Implimented lost, duplicate, and delay packets in TFTPHost
 		- Debugging for Host UI
+		- TFTPHost refactoring
 
 
 -----------------------------------------------------------
@@ -87,6 +90,7 @@ CONTENTS:
 		512ByteData.txt
 		513ByteData.txt
 		Oxford_Medical_Publications_Manual_of_Surgery.txt
+		Don'tstopBelievin.txt
 	
 	Timing Diagrams:
 		RRQ_Error_Access_Violation.pdf
