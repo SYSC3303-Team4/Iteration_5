@@ -845,10 +845,16 @@ public class TFTPClient extends JFrame
 						fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
 						int result = fileChooser.showOpenDialog(fileChooser);
 						if (result == JFileChooser.APPROVE_OPTION) {//file is found
-						    file = fileChooser.getSelectedFile();//get file name
+							file = fileChooser.getSelectedFile();//get file name
+							if(file.exists())
+							{
+								sendWRQ(file.getName(), DEFAULT_MODE);//enter WRQ protocol
+							}
+							else
+							{
+								console.print("File doesn't exist.");
+							}
 						}
-						//enter WRQ protocol
-						sendWRQ(file.getName(), DEFAULT_MODE);
 					}
 					//BAD (WOLF) INPUT
 					else
@@ -900,14 +906,29 @@ public class TFTPClient extends JFrame
 						int result = fileChooser.showOpenDialog(fileChooser);
 						if (result == JFileChooser.APPROVE_OPTION) {//file is found
 						    file = fileChooser.getSelectedFile();//get file name
+						    if(file.exists())
+							{
+						    	sendWRQ(file.getName(), input[1]);//enter WRQ protocol
+							}
+							else
+							{
+								console.print("File doesn't exist.");
+							}
 						}
 						//enter WRQ protocol
-						sendWRQ(file.getName(), input[1]);
 					}
 					//pull in default mode
 					else if (input[0].equals("pull"))
 					{
-						sendRRQ(input[1], DEFAULT_MODE);
+						File file = new File("Received"+input[1]);
+						if(file.exists())
+						{
+							console.print("File already exist.");
+						}
+						else
+						{
+							sendRRQ(input[1], DEFAULT_MODE);
+						}
 					}
 					//BAD (WOLF) INPUT
 					else

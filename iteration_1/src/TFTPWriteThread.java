@@ -58,8 +58,6 @@ class TFTPWriteThread extends ServerThread
     private boolean blockFlag=true;
 
     public static final byte[] response = {0, 4, 0, 0};
-
-	private boolean fileFlag = false;
     
     
 
@@ -178,24 +176,30 @@ class TFTPWriteThread extends ServerThread
 			       
 			       
 			       TFTPWriter writer = new TFTPWriter();
-			       if(fileName.exists() && fileFlag == false) { 
+			       if(fileName.exists()) { 
 			    	   buildError(6,receivePacket,verbose);
-
 			    	   return;
 					}
-			       fileFlag = true;
+			       if(!fileName.canWrite())
+			       {
+			    	   buildError(2,receivePacket,verbose);
+			    	   return;
+			       }
 					
 			       try {
 						writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
-					} catch (AccessDeniedException e1) {
+					} catch (SecurityException e1) {
 						buildError(2,receivePacket,verbose);
-						//e1.printStackTrace();
+						e1.printStackTrace();
 						return;
 					} 
-					catch(IOException e2){
+			       catch(FileNotFoundException e2)
+			       {
+			    	   buildError(1,receivePacket,verbose);
+			    	   return;
+			       }
+			       catch(IOException e2){
 						buildError(3,receivePacket,verbose);
-						//e2.printStackTrace();
-
 						return;
 					}
 	

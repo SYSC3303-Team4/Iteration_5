@@ -123,23 +123,35 @@ class TFTPReadThread  extends ServerThread
 
 		String absolutePath = serverDump.getAbsolutePath();
 		File file = new File(absolutePath + "/" +filename.toString());
-		if(file.exists()== false)
+		if(!file.exists())
 		{
 			buildError(1,receivePacket,verbose);
 			return;
 		}
 
+		if(!file.canRead())
+		{
+			buildError(2,receivePacket,verbose);
+			return;
+		}
 		TFTPReader reader = new TFTPReader();
 		try {
 			reader.readAndSplit(file.toString());
 
 		} catch (FileNotFoundException e1) {
-			buildError(1,receivePacket,verbose);
-			e1.printStackTrace();
+			if(!file.exists())
+			{
+				buildError(1,receivePacket,verbose);
+			}
+			else
+			{
+				buildError(2,receivePacket,verbose);
+			}
+			//e1.printStackTrace();
 			return;
 		} catch (IOException e) {
 			buildError(2,receivePacket,verbose);
-			e.printStackTrace();
+			//e.printStackTrace();
 			return;
 		}
 
