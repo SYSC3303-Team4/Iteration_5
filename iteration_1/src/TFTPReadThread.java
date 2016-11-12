@@ -152,7 +152,7 @@ class TFTPReadThread  extends ServerThread
 		while(!isInterrupted()){
 
 			if(!duplicateACK){
-				if(!retransmit){
+				if(!retransmitACK){
 					//Encode the block number into the response block 
 					response[3]=(byte)(blockNumber & 0xFF);
 					response[2]=(byte)((blockNumber >> 8)& 0xFF);
@@ -223,6 +223,9 @@ class TFTPReadThread  extends ServerThread
 			}
 			duplicateACK = false;
 
+			
+			while(!receiveACK()){}
+			/*
 			//Waiting to receive ACK
 			try {
 				sendReceiveSocket.receive(receivePacket);
@@ -244,10 +247,13 @@ class TFTPReadThread  extends ServerThread
 				System.exit(1);
 
 
-			} 
-
+			}
+			
+			 */
+			/*
 			if(!retransmit){
 				printReceivedPacket(receivePacket, verbose);
+				*/
 				//Check for ACK in format  
 				/*
 					2 bytes    2 bytes
@@ -255,7 +261,7 @@ class TFTPReadThread  extends ServerThread
 				 ACK   | 04    |   Block #  |
 					--------------------
 				 */
-
+			/*
 				if(receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 4){
 					//Check if the blockNumber corresponds to the expected blockNumber
 					if(response[3] == receivePacket.getData()[3] && response[2] == receivePacket.getData()[2]){
@@ -269,7 +275,9 @@ class TFTPReadThread  extends ServerThread
 					//ITERATION 5 ERROR
 					//Invalid TFTP code
 				}
-			}
+				
+				
+			}*/
 
 		}
 		console.print("Server: thread closing.");

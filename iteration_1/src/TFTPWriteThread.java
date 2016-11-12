@@ -53,10 +53,6 @@ class TFTPWriteThread extends ServerThread
     /**
      * The text area where this thread's output will be displayed.
      */
-    private DatagramPacket sendPacket;
-    private DatagramPacket receivePacket;
-    private DatagramPacket receivePacket1;
-	private boolean verbose;
     private String threadNumber;
     File file;
     private boolean blockFlag=true;
@@ -164,34 +160,9 @@ class TFTPWriteThread extends ServerThread
 			   
 		       console.print("Server: Waiting for packet.");
 		       // Block until a datagram packet is received from receiveSocket.
-		       try {
-		    	   //receiveDATA();
-		    	   sendReceiveSocket.receive(receivePacket1);
-		    	   retransmit=false;
-		       } catch(SocketTimeoutException e){
-					//Retransmit every timeout
-					//Quite after 5 timeouts
-					
-					 if(System.currentTimeMillis() % 1000 -startTime > TIMEOUT)
-					 {
-						 timeouts++;
-						 if(timeouts == MAX_TIMEOUTS){
-							 exitGraceFully();
-							 return;
-						 }
-						 console.print("SETTING RETRANSMIT TRUE");
-						 retransmit = true;
-					 }
-					
-					
-		       } 
+		       while(!receiveDATA()){}
 
-		       catch (IOException e) {
-
-						e.printStackTrace();
-						System.exit(1);
-		       }
-		       if(!retransmit){
+		       if(!retransmitDATA){
 		       
 		    	   printReceivedPacket(receivePacket1,verbose);
 			       byte[] data = new byte[receivePacket1.getLength()-4];

@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 
 import ui.ConsoleUI;
@@ -17,6 +18,16 @@ public abstract class ServerThread extends Thread{
 	protected int timeouts = 0;
 	protected boolean retransmit = false;
 	protected int blockNum = 0;
+	protected boolean timeoutFlag = false;
+	protected DatagramPacket sendPacket;
+	protected DatagramPacket receivePacket;
+	protected boolean retransmitDATA;
+	protected boolean duplicateDATA;
+	protected boolean duplicateACK;
+	protected boolean retransmitACK;
+	protected long startTime;
+	protected boolean verbose;
+	protected DatagramPacket receivePacket1;
 	
 	public ServerThread(ThreadGroup group, String name, ConsoleUI console)
 	{
@@ -177,7 +188,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     	
     }
     
-    /*
+   
   //receive ACK
   	public boolean receiveACK()
   	{	
@@ -189,14 +200,37 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		
 
   			//receive ACK
-  			receivePacket("ACK");
+  			try {
+  	  			//receiveDATA();
+  	  			sendReceiveSocket.receive(receivePacket1);
+  	  			retransmit=false;
+  	  		} catch(SocketTimeoutException e){
+  	  			//Retransmit every timeout
+  	  			//Quite after 5 timeouts
+
+  	  			if(System.currentTimeMillis() % 1000 -startTime > TIMEOUT)
+  	  			{
+  	  				timeouts++;
+  	  				if(timeouts == MAX_TIMEOUTS){
+  	  					exitGraceFully();
+  	  					System.exit(0);
+  	  				}
+  	  				console.print("SETTING RETRANSMIT TRUE");
+  	  				retransmitACK = true;
+  	  			}
+
+
+  	  		} catch (IOException e) {
+  				// TODO Auto-generated catch block
+  				e.printStackTrace();
+  			} 
   			 if(timeoutFlag)
   			 {
   			 	if(System.currentTimeMillis() % 1000 -startTime < TIMEOUT)
   			 	{
   			 		timeouts++;
   					if(timeouts == MAX_TIMEOUTS){
-  						close();
+  						exitGraceFully();
   						System.exit(0);
   					}
   					retransmitDATA=true;
@@ -208,7 +242,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			 {
   				 console.print("Client: Checking ACK...");
   			 }
-  			 byte[] data = receivedPacket.getData();
+  			 byte[] data = receivePacket.getData();
 
   			 //check ACK for validity
   			 if(data[0] == 0 && data[1] == 4){
@@ -223,11 +257,13 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   					 {
   						 timeouts++;
   						 if(timeouts == MAX_TIMEOUTS){
-  							 close();
+  							exitGraceFully();
   							 System.exit(0);
   						 }
   						 retransmitDATA=true;
+  						 return true;
   					 }
+  					 return false;
   				 }
   			 }
   			 else{
@@ -246,14 +282,37 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		blockArray[1]=(byte)(blockNum & 0xFF);
   		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
 
-  		receivePacket("DATA");
-  		if(timeoutFlag)
-  		{
-  			if(System.currentTimeMillis() % 1000 -startTime < TIMEOUT)
+  		try {
+  			//receiveDATA();
+  			sendReceiveSocket.receive(receivePacket1);
+  			retransmit=false;
+  		} catch(SocketTimeoutException e){
+  			//Retransmit every timeout
+  			//Quite after 5 timeouts
+
+  			if(System.currentTimeMillis() % 1000 -startTime > TIMEOUT)
   			{
   				timeouts++;
   				if(timeouts == MAX_TIMEOUTS){
-  					close();
+  					exitGraceFully();
+  					System.exit(0);
+  				}
+  				console.print("SETTING RETRANSMIT TRUE");
+  				retransmit = true;
+  			}
+
+
+  		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+  		if(timeoutFlag)
+  		{
+  			if(System.currentTimeMillis() % 1000 - startTime < TIMEOUT)
+  			{
+  				timeouts++;
+  				if(timeouts == MAX_TIMEOUTS){
+  					//close();
   					System.exit(0);
   				}
   				retransmitDATA=true;
@@ -263,9 +322,9 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		//analyze ACK for format
   		if (verbose)
   		{
-  			console.print("Client: Checking ACK...");
+  			console.print("Server: Checking ACK...");
   		}
-  		byte[] data = receivedPacket.getData();
+  		byte[] data = receivePacket.getData();
 
   		//check if data
   		if(data[0] == 0 && data[1] == 3){
@@ -275,16 +334,17 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				blockNum++;
   			}
   			else{
-  				duplicateDATA = true;
   				if(System.currentTimeMillis() % 1000 -startTime > TIMEOUT)
   				{
   					timeouts++;
   					if(timeouts == MAX_TIMEOUTS){
-  						close();
+  						//close();
   						System.exit(0);
   					}
   					retransmitACK=true;
+  					return true;
   				}
+  				return false;
   			}
   		}
   		else{
@@ -293,6 +353,5 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		}
   		return true;
   	}
-  	*/
 
 }
