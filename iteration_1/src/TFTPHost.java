@@ -40,6 +40,7 @@ public class TFTPHost
 	private DatagramSocket inSocket;
 	private DatagramSocket genSocket;
 	private int clientPort;
+	private int serverPort;
 	private boolean verbose;
 	private ConsoleUI console;
 	private InputStack inputStack = new InputStack();
@@ -135,17 +136,14 @@ public class TFTPHost
 		}
 		catch (IOException e)
 		{
-			System.out.print("Incoming socket timed out\n" + e);
-			e.printStackTrace();
-			System.exit(1);
+			console.print("Incoming socket timed out");
 		}
 		
+		
 		//deconstruct packet and print contents
-		console.print("Packet successfully received");
-		printDatagram(receivedPacket);
 	}
 	
-	public DatagramPacket tryReceive(DatagramSocket inputSocket,int timeOut) throws IOException
+	public void tryReceive(DatagramSocket inputSocket,int timeOut) throws IOException
 	{
 		byte[] arrayholder = new byte[MAX_SIZE];
 		DatagramPacket incommingPacket = new DatagramPacket(arrayholder, arrayholder.length);
@@ -172,14 +170,20 @@ public class TFTPHost
 			printDatagram(incommingPacket);
 		}
 		
-		return incommingPacket;
+		
+		if(incommingPacket.getPort()==clientPort)
+		{
+			sendDatagram(serverPort, genSocket);
+		}
+		
+		else if(incommingPacket.getPort()==serverPort)
+		{
+			sendDatagram(clientPort, genSocket);
+		}
 
 	}
 	
 	//send packet to server and wait for server response
-	/**
-	 * 
-	 */
 	public void sendDatagram(int outPort, DatagramSocket socket)
 	{
 		//prep packet to send
@@ -214,7 +218,7 @@ public class TFTPHost
 		else if(mode==1)//duplicate
 		{
 			console.print("Duplicate Packet");
-			duplicatePack(clientPort, genSocket);
+			duplicatePack(delay, clientPort, genSocket);
 		}
 		
 		else if (mode==2)//lose
@@ -231,15 +235,16 @@ public class TFTPHost
 	
 	public void delayPack(int delay, int clientPort,DatagramSocket  genSocket)
 	{
-		console.print("IN DELAY PACKET, SENDING REGULARLY");
+		console.print("IN DELAY PACKET");
 		if(delay<50)//delay less then timeout of client/server
 		{
 			try
 			{
-				nextGram=tryReceive(genSocket, delay);//receieve something random
+				console.print("Delaying packet unless other receieved");
+				tryReceive(genSocket, delay);//receieve something random
 				
 				//should never get here
-				console.printError("Client Responds to Duplicate");
+				console.printError("Should never be here");
 				return;
 			}
 			catch (IOException ioe)//got Data
@@ -248,16 +253,19 @@ public class TFTPHost
 				sendDatagram(clientPort, genSocket);
 			}
 			
+			
 		}
-		
+		 
 		else//timeout expected geater than timeout of client/server
 		{
 			console.print("NOT IMPLEMENING, SENDING Now");
 			sendDatagram(clientPort, genSocket);
 		}
+		
+		console.print("End of delay pack logic");
 	}
 	
-	public void duplicatePack( int clientPort,DatagramSocket  genSocket)
+	public void duplicatePack( int delay, int clientPort,DatagramSocket  genSocket)
 	{
 		console.print("IN Duplicate PACKET 1");
 		sendDatagram(clientPort, genSocket);	
@@ -273,6 +281,7 @@ public class TFTPHost
 	{    
 		if(inputStack.peek()!=null)	
 		{
+			console.print("looking for proper block");
 			byte byteBlockNum[]=new byte[2];
 			int bNum=inputStack.peek().getBlockNum();
 			int mode=inputStack.peek().getMode();
@@ -294,7 +303,8 @@ public class TFTPHost
 			console.print("receivedPacket.getData()[1]: "+receivedPacket.getData()[1]);
 			*/
 			
-			if(bytePackType[1]==receivedPacket.getData()[1] && bytePackType[0] == receivedPacket.getData()[0] && byteBlockNum[1]==receivedPacket.getData()[3] && byteBlockNum[0]==receivedPacket.getData()[2]){
+			if(bytePackType[1]==receivedPacket.getData()[1] && bytePackType[0] == receivedPacket.getData()[0] && byteBlockNum[1]==receivedPacket.getData()[3] && byteBlockNum[0]==receivedPacket.getData()[2])
+			{
 				//proper packet type and block num, mess with this one right here
 				console.print("Block Mess Match");
 				passIt(mode, delay,clientPort, genSocket);
@@ -305,7 +315,7 @@ public class TFTPHost
 			
 			else
 			{
-				System.out.println("No part Match");
+				console.print("Not Proper block, sending normally");
 				sendDatagram(clientPort, genSocket);
 				
 			}
