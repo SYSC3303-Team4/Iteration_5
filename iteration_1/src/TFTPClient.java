@@ -685,11 +685,9 @@ public class TFTPClient extends JFrame
 		catch(IOException e)
 		{
 			console.print("Timed out on receive");
-			if(e instanceof SocketTimeoutException){
-				timeoutFlag=true;
-			}
+			timeoutFlag=true;
 		}
-		if (verbose)
+		if (verbose && !timeoutFlag)
 		{
 			console.print("Client: " + type + " packet received");
 			printDatagram(receivedPacket);
@@ -785,7 +783,7 @@ public class TFTPClient extends JFrame
 		console.println();
 		
 		/** TODO DELETE THIS*/
-		testMode(false);
+		testMode(true);
 		verbose=true;
 		//main input loop
 		while(runFlag)
