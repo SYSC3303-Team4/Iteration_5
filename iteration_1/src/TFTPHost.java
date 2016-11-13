@@ -482,6 +482,18 @@ public class TFTPHost
 		//wait for original RRQ/WRQ from client
 		receiveDatagram(inSocket);
 		console.print("First Packet Recieved");
+		
+		
+		//sort InputStack accordingly
+		if ( (receivedPacket.getData())[1] == 1 )
+		{
+			inputStack.sortRRQ();
+		}
+		else if ( (receivedPacket.getData())[1] == 2 )
+		{
+			inputStack.sortWRQ();
+		}
+		
 		//save port 
 		clientPort = receivedPacket.getPort();
 	
