@@ -549,6 +549,7 @@ public class TFTPHost
 		console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 		console.print("'test'                                    - runs a test for the console");
 		console.print("'errors'                               - display a summary of all errors to be simulated");
+		console.print("'run'                                   - finalize the number of errors to simulate & start host");
 		console.println();
 		console.print("'delay PT BN DL'              - set a delay for packet type PT, block number BN for DL blocks");
 		console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
@@ -584,6 +585,7 @@ public class TFTPHost
 						console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 						console.print("'test'                                    - runs a test for the console");
 						console.print("'errors'                               - display a summary of all errors to be simulated");
+						console.print("'run'                                   - finalize the number of errors to simulate & start host");
 						console.println();
 						console.print("'delay PT BN DL'              - set a delay for packet type PT, block number BN for DL blocks");
 						console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
