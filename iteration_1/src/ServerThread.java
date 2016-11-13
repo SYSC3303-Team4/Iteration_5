@@ -257,7 +257,8 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   					timeouts++;
   					if(timeouts == MAX_TIMEOUTS){
   						exitGraceFully();
-  						System.exit(0);
+  						errorFlag=true;
+  	  					return false;
   					}
   					retransmitDATA=true;
   					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
@@ -336,7 +337,8 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   					timeouts++;
   					if(timeouts == MAX_TIMEOUTS){
   						//close();
-  						System.exit(0);
+  						errorFlag=true;
+  	  					return false;
   					}
   					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
   					retransmitACK=true;

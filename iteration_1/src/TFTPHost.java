@@ -326,13 +326,13 @@ public class TFTPHost
 		return;
 	}
 	
-	public void duplicatePack( int clientPort,DatagramSocket  genSocket)
+	public void duplicatePack( int cPort,DatagramSocket  genSocket)
 	{
 		DatagramPacket storedAck = null;
 		
 		//send datagram to clientPort
 		
-		sendDatagram(clientPort, genSocket);
+		sendDatagram(cPort, genSocket);
 		needSend=false;
 		//wait for ACK
 		try
@@ -352,13 +352,21 @@ public class TFTPHost
 		}
 		
 		receivedPacket=lastReceivedPacket;
-		sendDatagram(clientPort, genSocket);
+		if(receivedPacket.getPort()==clientPort)
+		{
+			sendDatagram(serverPort, genSocket);
+		}
+		
+		else if(receivedPacket.getPort()==serverPort)
+		{
+			sendDatagram(clientPort, genSocket);
+		}
 		needSend=false;
 		//wait for (lack of) responsee
 		try
 		{
 			receive(genSocket, 50);
-			sendDatagram(clientPort, genSocket);
+			sendDatagram(cPort, genSocket);
 			needSend=false;
 			return;
 		}

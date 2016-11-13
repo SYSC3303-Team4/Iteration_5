@@ -429,6 +429,7 @@ public class TFTPClient extends JFrame
 			
 			}
 			duplicateACK=false;
+			timeoutFlag = false;
 			//wait for ACK
 			while(!receiveACK()){if(errorFlag){return;}}
 		}
@@ -664,6 +665,7 @@ public class TFTPClient extends JFrame
 			sendPacket();
 			retransmitACK = false;
 			duplicateDATA = false;
+			timeoutFlag = false;
 		}
 		
 		console.print("----------------------RRQ COMPLETE----------------------");
