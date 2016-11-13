@@ -204,14 +204,14 @@ OPERATING INSTRUCTIONS
 	
 	Examples of setting up duplication, lose, and delay errors are given below:
 	
-		|---------------------------------------|-------------------|-------------------|
-		|	written desciption of error			|	str-based input	|	int-based input	|
-		|---------------------------------------|-------------------|-------------------|
-		|	delay DATA packet 3 for 5 seconds	|	delay data 3 5	|	0 3 3 5			|
-		|	duplicate ACK packet 1				|	dup ack 1		|	1 4 1			|
-		|	lose DATA packet 2					|	lose data 2		|	2 3 2			|
-		|	delay ACK packet 2 for 10 seconds	|	delay ack 2 10	|	0 4 2 10		|
-		|---------------------------------------|-------------------|-------------------|
+		|---------------------------------------|-----------------------|---------------|
+		|	written desciption of error	|str-based input	|int-based input|
+		|---------------------------------------|-----------------------|---------------|
+		|	delay DATA packet 3 for 5 sec	|	delay data 3 5	|	0 3 3 5	|
+		|	duplicate ACK packet 1		|	dup ack 1	|	1 4 1	|
+		|	lose DATA packet 2		|	lose data 2	|	2 3 2	|
+		|	delay ACK packet 2 for 10 sec	|	delay ack 2 10	|	0 4 2 10|
+		|---------------------------------------|-----------------------|---------------|
 	
 	To view all of the errors to be simulated in the host, use the command 'errors', which will print the list of all errors programmed
 	into the simulator.
