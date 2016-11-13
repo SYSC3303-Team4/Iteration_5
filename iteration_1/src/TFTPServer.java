@@ -55,11 +55,10 @@ public class TFTPServer implements ActionListener
 
 	public TFTPServer(String title)
 	{
-
 		//make and run the UI
 		console = new ConsoleUI(title, this);
 		console.run();
-
+		
 		try {
 			// Construct a datagram socket and bind it to port 69
 			// on the local host machine. This socket will be used to
@@ -103,6 +102,20 @@ public class TFTPServer implements ActionListener
 		int len, j=0, k=0;
 		int threadNum = 0;
 		ThreadGroup initializedThreads = new ThreadGroup("ServerThread");
+		
+		//print starting text
+		console.print("TFTPServer running");
+		console.print("type 'help' for command list");
+		console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
+		console.print("'help'                                   - print all commands and how to use them");
+		console.print("'clear'                                  - clear screen");
+		console.print("'close'                                 - exit client, close ports, be graceful");
+		console.print("'verbose BOOL'                - toggle verbose mode as true or false");
+		console.print("'test'                                    - runs a test for the console");
+		console.print("'cd'                                      - set the directory you want server read/write from");
+		console.print("'path'                                  - print the path the server will use");
+		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		console.println();
 		
 		//main input loop
 		while(runFlag) 
@@ -236,6 +249,8 @@ public class TFTPServer implements ActionListener
 						console.print("'close'                                 - exit client, close ports, be graceful");
 						console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 						console.print("'test'                                    - runs a test for the console");
+						console.print("'cd'                                      - set the directory you want server read/write from");
+						console.print("'path'                                    - print the path the server will use");
 						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 						console.println();
 					}
@@ -243,6 +258,32 @@ public class TFTPServer implements ActionListener
 					else if (input[0].equals("clear"))
 					{
 						this.console.clear();
+					}
+					//print active directory
+					else if (input[0].equals("path"))
+					{
+						console.print("Path set to: " + file.toString());
+					}
+					//change active directory
+					else if (input[0].equals("cd"))
+					{
+						//get new path
+						fileChooserFrame = new JTextArea(5,40);
+						fileChooser = new JFileChooser();
+						fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+						FileNameExtensionFilter filter = new FileNameExtensionFilter("Directories","*");
+						fileChooser.setFileFilter(filter);
+						fileChooser.setDialogTitle("Choose a directory to dump to on the server");
+						fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+						int result = fileChooser.showOpenDialog(fileChooser);
+						if (result == JFileChooser.APPROVE_OPTION) {//file is found
+							file = fileChooser.getSelectedFile();//get file name
+							
+						if(verbose)
+						{
+							console.print("Path set to:"  + file.toString());
+						}
+					}
 					}
 					//close
 					else if(input[0].equals("close"))

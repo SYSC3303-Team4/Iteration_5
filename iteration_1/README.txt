@@ -251,6 +251,8 @@ SET UP INSTRUCTIONS:
 				  	  false, type 'verbose false'.			  
 		'test'			: Run a simple test of UI functionally. Note that while this test is running,
 					  the UI will lose all functionality until the test is fully complete.
+		'cd'			: Change the working directory for server
+		'path'			: Print the working directory for the server
 				
 				
 				
