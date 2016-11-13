@@ -160,7 +160,7 @@ class TFTPWriteThread extends ServerThread
 			   
 		       console.print("Server: Waiting for packet.");
 		       // Block until a datagram packet is received from receiveSocket.
-		       while(!receiveDATA()){}
+		       while(!receiveDATA()){if(errorFlag){return;}}
 
 		       if(!retransmitACK){
 		       
