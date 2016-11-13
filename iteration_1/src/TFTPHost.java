@@ -131,14 +131,17 @@ public class TFTPHost
 		receivedPacket = new DatagramPacket(arrayholder, arrayholder.length);
 		lastReceivedPacket=receivedPacket;
 		//wait for incoming data
-		console.print("Waiting for data...");
+		if(verbose)
+		{
+			console.print("Waiting for data...");
+		}
 		try
 		{
 			inputSocket.receive(receivedPacket);
 		}
 		catch (IOException e)
 		{
-			console.print("Incoming socket timed out");
+			console.printError("Incoming socket timed out");
 		}
 		
 		
@@ -221,13 +224,18 @@ public class TFTPHost
 	public void sendDatagram(int outPort, DatagramSocket socket)
 	{
 		//prep packet to send
-		console.print("Sending packet...");
+		if(verbose)
+		{	
+			console.print("Sending packet...");
+		}
 		sentPacket = receivedPacket;
 		sentPacket.setPort(outPort );
 		
 		//print contents
-		printDatagram(sentPacket);
-		
+		if(verbose)
+		{
+			printDatagram(sentPacket);
+		}
 		//send packet
 		try
 		{
@@ -245,32 +253,44 @@ public class TFTPHost
 	{
 		if(mode==0)//delay
 		{
-			console.print("Delaying Packet");
+			if(verbose)
+			{
+				console.print("Delaying Packet");
+			}
 			delayPack(delay, clientPort, genSocket);
 		}
 		
 		else if(mode==1)//duplicate
 		{
-			console.print("Duplicate Packet");
+			if(verbose)
+			{
+				console.print("Duplicate Packet");
+			}
 			duplicatePack(clientPort, genSocket);
 		}
 		
 		else if (mode==2)//lose
 		{
-			console.print("lose try");
+			if(verbose)
+			{
+				console.print("lose try");
+			}
 			losePack( clientPort, genSocket);
 		}
 		
 		else
 		{
-			System.out.println("ERROR: INCORRECT MODE");
+			console.printError("INCORRECT MODE");
 		}
 	}
 	
 	public void delayPack(int delay, int clientPort,DatagramSocket  genSocket)
 	{
 		int[] delayArray = new int[MAX_DELAY_SEGMENTS];
-		console.print("IN DELAY PACKET "+delay);
+		if(verbose)
+		{
+			console.print("IN DELAY PACKET "+delay);
+		}
 		for(int k = 0; delay != 0; k++){
 			if(delay < CLIENT_SERVER_TIMEOUT){
 				delayArray[k] = delay;
@@ -289,8 +309,10 @@ public class TFTPHost
 			
 				try
 					{
-						console.print("Delaying packet unless other received"+ delayArray[i]);
-						
+						if(verbose)
+						{
+							console.print("Delaying packet unless other received"+ delayArray[i]);
+						}
 						tryReceive(genSocket, delayArray[i]);//receive something random	
 						
 						if(receivedPacket.getPort()==clientPort)
@@ -314,7 +336,10 @@ public class TFTPHost
 					{
 						if(delayArray[i+1]==0)
 						{
-							console.print("Delay Reached, Data sent");
+							if(verbose)
+							{
+								console.print("Delay Reached, Data sent");
+							}
 							sendDatagram(clientPort, genSocket);
 							needSend=false;
 						}
@@ -322,7 +347,10 @@ public class TFTPHost
 				}
 			}
 		
-		console.print("End of delay pack logic");
+		if(verbose)
+		{
+			console.print("End of delay pack logic");
+		}
 		return;
 	}
 	
@@ -383,14 +411,20 @@ public class TFTPHost
 	
 	public void losePack( int clientPort,DatagramSocket  genSocket)
 	{
-		console.print("Data Lost");
+		if(verbose)
+		{
+			console.print("Data Lost");
+		}
 	}
 	
 	public void maybeSend(int clientPort,DatagramSocket genSocket,DatagramPacket receivedPacket)
 	{    
 		if(inputStack.peek()!=null)	
 		{
-			console.print("looking for proper block");
+			if(verbose)
+			{
+				console.print("looking for proper block");
+			}
 			byte byteBlockNum[]=new byte[2];
 			int bNum=inputStack.peek().getBlockNum();
 			int mode=inputStack.peek().getMode();
@@ -415,7 +449,10 @@ public class TFTPHost
 			if(bytePackType[1]==receivedPacket.getData()[1] && bytePackType[0] == receivedPacket.getData()[0] && byteBlockNum[1]==receivedPacket.getData()[3] && byteBlockNum[0]==receivedPacket.getData()[2])
 			{
 				//proper packet type and block num, mess with this one right here
-				console.print("Block Mess Match");
+				if(verbose)
+				{
+					console.print("Block Match");
+				}
 				passIt(mode, delay,clientPort, genSocket);
 				//sendDatagram(clientPort, genSocket);
 				inputStack.pop();
@@ -424,7 +461,10 @@ public class TFTPHost
 			
 			else
 			{
-				console.print("Not Proper block, sending normally");
+				if(verbose)
+				{
+					console.print("Not Proper block, sending normally");
+				}
 				sendDatagram(clientPort, genSocket);
 				
 			}
@@ -432,13 +472,11 @@ public class TFTPHost
 	
 		else
 		{
-			System.out.println("empty stack");
 			sendDatagram(clientPort, genSocket);
 		}
 	}
 	public void errorSimHandle()
 	{
-		console.print("inErrorSim");
 		int sendToPort=SERVER_RECEIVE_PORT;
 		int serverPort=0;
 		//wait for original RRQ/WRQ from client
@@ -472,7 +510,6 @@ public class TFTPHost
 				
 				else
 				{
-					console.print("Weird State");
 					try
 					{
 						genSocket.setSoTimeout(0);
@@ -521,6 +558,9 @@ public class TFTPHost
 		console.print("'1 PT BN '                         - duplicate packety type PT, block number BN");
 		console.print("'2 PT BN'                          - lose packet type PT, block number BN");
 		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		console.print("You must enter run once all desired errors are entered in order to start the Simulator."); 
+		console.print("Error Simulator is not ready for data if run is not entered");
+		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		console.println();
 		
 		//main input loop
@@ -552,6 +592,10 @@ public class TFTPHost
 						console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
 						console.print("'1 PT BN '                         - duplicate packety type PT, block number BN");
 						console.print("'2 PT BN'                          - lose packet type PT, block number BN");
+						console.print("You must enter Run in order to start the Simulator. Error Simulator is not ready for data if Run is not entered");
+						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+						console.print("You must enter run once all desired errors are entered in order to start the Simulator."); 
+						console.print("Error Simulator is not ready for data if run is not entered");
 						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 						console.println();
 					}

@@ -235,6 +235,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		if (verbose)
   		{
   			console.print("Client: Checking ACK...");
+  			printReceivedPacket(receivePacket, verbose);
   		}
   		byte[] data = receivePacket.getData();
 
@@ -282,7 +283,6 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		byte[] blockArray = new byte[2];
   		blockArray[1]=(byte)(blockNum & 0xFF);
   		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
-  		console.print("Server: Waiting to receive packet");
   		try {
   			//receiveDATA();
   			sendReceiveSocket.receive(receivePacket);
@@ -330,7 +330,8 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			else{
   				if (verbose)
   		  		{
-  		  			console.print("Received Duplicate.");
+  		  			console.print("Received Duplicate Packet: ");
+  		  			printReceivedPacket(receivePacket, verbose);
   		  		}
   				if(System.currentTimeMillis() -startTime > TIMEOUT)
   				{
