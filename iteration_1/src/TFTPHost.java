@@ -53,7 +53,7 @@ public class TFTPHost
 	private static final int SERVER_RECEIVE_PORT = 69;
 	private static final int MAX_SIZE = 512+4;
 	private static final boolean LIT = true ; 	
-	private static final int CLIENT_SERVER_TIMEOUT = 2;
+	private static final int CLIENT_SERVER_TIMEOUT = 5;
 	private static final int MAX_DELAY_SEGMENTS = 100;
 
 
@@ -173,6 +173,7 @@ public class TFTPHost
 			printDatagram(incommingPacket);
 		}
 		
+		receivedPacket=incommingPacket;
 		return incommingPacket;
 	}
 	
@@ -332,7 +333,7 @@ public class TFTPHost
 		//send datagram to clientPort
 		
 		sendDatagram(clientPort, genSocket);
-
+		needSend=false;
 		//wait for ACK
 		try
 		{
@@ -352,15 +353,13 @@ public class TFTPHost
 		
 		receivedPacket=lastReceivedPacket;
 		sendDatagram(clientPort, genSocket);
-		
-		//wait for (lack of) responce
+		needSend=false;
+		//wait for (lack of) responsee
 		try
 		{
 			receive(genSocket, 50);
-			
-			//should never get here
-			console.printError("Client Responds to Duplicate");
-			
+			sendDatagram(clientPort, genSocket);
+			needSend=false;
 			return;
 		}
 		catch (IOException ioe)
