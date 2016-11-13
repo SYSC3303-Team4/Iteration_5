@@ -474,7 +474,7 @@ public class TFTPClient extends JFrame
 		receivePacket("DATA");
 		if(timeoutFlag)
 		{
-			if(System.currentTimeMillis() -startTime < TIMEOUT)
+			if(System.currentTimeMillis() -startTime > TIMEOUT)
 			{
 				timeouts++;
 				if(timeouts == MAX_TIMEOUTS){
@@ -543,7 +543,7 @@ public class TFTPClient extends JFrame
 		}
 		if(timeoutFlag)
 		{
-			if(System.currentTimeMillis() -startTime < TIMEOUT)
+			if(System.currentTimeMillis() -startTime > TIMEOUT)
 			{
 				timeouts++;
 				if(timeouts == MAX_TIMEOUTS){
