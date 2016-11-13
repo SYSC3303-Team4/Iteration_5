@@ -164,7 +164,7 @@ public class TFTPHost
 		//wait for incoming data
 		console.print("Waiting for data...");
 		inputSocket.receive(incommingPacket);
-
+		receivedPacket=incommingPacket;
 		
 		//deconstruct packet and print contents
 		console.print("Packet successfully received");
@@ -173,8 +173,8 @@ public class TFTPHost
 			printDatagram(incommingPacket);
 		}
 		
-		receivedPacket=incommingPacket;
 		return incommingPacket;
+
 	}
 	
 	public void tryReceive(DatagramSocket inputSocket,int timeOut) throws IOException

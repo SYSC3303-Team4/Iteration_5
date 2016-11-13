@@ -217,6 +217,7 @@ public class TFTPClient extends JFrame
 	{
 		//close sockets
 		generalSocket.close();
+		console.print("Client: Ending Request");
 	}
 	
 	

@@ -245,6 +245,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
   				blockNum++;
   				timeouts=0;
+  				retransmitDATA=false;
   			}
   			else{
   				if (verbose)
@@ -323,6 +324,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
   				blockNum++;
   				timeouts=0;
+  				retransmitACK=false;
   			}
   			else{
   				if (verbose)
