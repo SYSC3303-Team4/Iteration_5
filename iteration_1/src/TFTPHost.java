@@ -35,6 +35,7 @@ public class TFTPHost
 	//declaring local instance variables
 	private DatagramPacket sentPacket;
 	private DatagramPacket receivedPacket;
+	private DatagramPacket lastReceivedPacket;
 	private DatagramSocket inSocket;
 	private DatagramSocket genSocket;
 	private int clientPort;
@@ -43,7 +44,7 @@ public class TFTPHost
 	private ConsoleUI console;
 	private InputStack inputStack = new InputStack();
 	
-	
+	    
 	//sarah var
 	DatagramPacket nextGram=null;
 	private boolean needSend=true;
@@ -128,7 +129,7 @@ public class TFTPHost
 		//construct an empty datagram packet for receiving purposes
 		byte[] arrayholder = new byte[MAX_SIZE];
 		receivedPacket = new DatagramPacket(arrayholder, arrayholder.length);
-		
+		lastReceivedPacket=receivedPacket;
 		//wait for incoming data
 		console.print("Waiting for data...");
 		try
@@ -142,6 +143,37 @@ public class TFTPHost
 		
 		
 		//deconstruct packet and print contents
+	}
+	
+	public DatagramPacket receive(DatagramSocket inputSocket, int timeOut) throws IOException
+	{
+		//construct an empty datagram packet for receiving purposes
+		byte[] arrayholder = new byte[MAX_SIZE];
+		DatagramPacket incommingPacket = new DatagramPacket(arrayholder, arrayholder.length);
+		
+		//set delay
+		try
+		{
+			inputSocket.setSoTimeout(timeOut);
+		}
+		catch (SocketException ioe)
+		{
+			console.printError("Cannot set socket timeout");
+		}
+		
+		//wait for incoming data
+		console.print("Waiting for data...");
+		inputSocket.receive(incommingPacket);
+
+		
+		//deconstruct packet and print contents
+		console.print("Packet successfully received");
+		if (verbose)
+		{
+			printDatagram(incommingPacket);
+		}
+		
+		return incommingPacket;
 	}
 	
 	public void tryReceive(DatagramSocket inputSocket,int timeOut) throws IOException
@@ -182,6 +214,8 @@ public class TFTPHost
 		}
 	}
 	
+	
+	
 	//send packet to server and wait for server response
 	public void sendDatagram(int outPort, DatagramSocket socket)
 	{
@@ -217,7 +251,7 @@ public class TFTPHost
 		else if(mode==1)//duplicate
 		{
 			console.print("Duplicate Packet");
-			duplicatePack(delay, clientPort, genSocket);
+			duplicatePack(clientPort, genSocket);
 		}
 		
 		else if (mode==2)//lose
@@ -291,10 +325,52 @@ public class TFTPHost
 		return;
 	}
 	
-	public void duplicatePack( int delay, int clientPort,DatagramSocket  genSocket)
+	public void duplicatePack( int clientPort,DatagramSocket  genSocket)
 	{
-		console.print("IN Duplicate PACKET 1");
-		sendDatagram(clientPort, genSocket);	
+		DatagramPacket storedAck = null;
+		
+		//send datagram to clientPort
+		
+		sendDatagram(clientPort, genSocket);
+
+		//wait for ACK
+		try
+		{
+			storedAck = receive(genSocket, 0);
+		}
+		catch(IOException timeout)
+		{
+			console.printError("HOST TIMEOUT WAITING FOR CLIENT TO TRANSMIT");
+			return;
+		}
+		
+		//send duplicate
+		if (verbose)
+		{
+			console.print("Sending duplicate to client...");
+		}
+		
+		receivedPacket=lastReceivedPacket;
+		sendDatagram(clientPort, genSocket);
+		
+		//wait for (lack of) responce
+		try
+		{
+			receive(genSocket, 50);
+			
+			//should never get here
+			console.printError("Client Responds to Duplicate");
+			
+			return;
+		}
+		catch (IOException ioe)
+		{
+			if (verbose)
+			{
+				console.print("No response from client with duplicate!");
+			}
+			lastReceivedPacket = storedAck; 
+		}
 	}
 	
 	
