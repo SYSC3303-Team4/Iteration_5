@@ -411,7 +411,7 @@ public class TFTPClient extends JFrame
 				sendPacket();//resend
 				retransmitDATA = false;
 			}
-			if(!duplicateACK){ 
+			else if(!duplicateACK){ 
 				
 				//send DATA
 				if(reader.isEmpty())
@@ -479,7 +479,8 @@ public class TFTPClient extends JFrame
 				timeouts++;
 				if(timeouts == MAX_TIMEOUTS){
 					close();
-					System.exit(0);
+					errorFlag=true;
+					return false;
 				}
 				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
 				retransmitDATA=true;
@@ -510,7 +511,8 @@ public class TFTPClient extends JFrame
 					timeouts++;
 					if(timeouts == MAX_TIMEOUTS){
 						close();
-						System.exit(0);
+						errorFlag=true;
+						return false;
 					}
 					retransmitACK=true;
 					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
@@ -548,7 +550,8 @@ public class TFTPClient extends JFrame
 				timeouts++;
 				if(timeouts == MAX_TIMEOUTS){
 					close();
-					System.exit(0);
+					errorFlag=true;
+					return false;
 				}
 				retransmitDATA=true;
 				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
@@ -579,7 +582,8 @@ public class TFTPClient extends JFrame
 					timeouts++;
 					if(timeouts == MAX_TIMEOUTS){
 						close();
-						System.exit(0);
+						errorFlag=true;
+						return false;
 					}
 					retransmitDATA=true;
 					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
