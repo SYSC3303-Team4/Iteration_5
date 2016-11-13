@@ -54,7 +54,7 @@ public class TFTPHost
 	private static final int MAX_SIZE = 512+4;
 	private static final boolean LIT = true ; 	
 	private static final int CLIENT_SERVER_TIMEOUT = 5;
-	private static final int MAX_DELAY_SEGMENTS = 100;
+	private static final int MAX_DELAY_SEGMENTS = 10000;
 
 
 
@@ -394,7 +394,7 @@ public class TFTPHost
 			byte byteBlockNum[]=new byte[2];
 			int bNum=inputStack.peek().getBlockNum();
 			int mode=inputStack.peek().getMode();
-			int delay=inputStack.peek().getDelay();
+			int delay=(inputStack.peek().getDelay())*1000;
 			int packType=inputStack.peek().getPacketType();
 			byte bytePackType[] = new byte[2];
 			
