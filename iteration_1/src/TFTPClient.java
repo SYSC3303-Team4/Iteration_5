@@ -485,7 +485,7 @@ public class TFTPClient extends JFrame
 					return false;
 				}
 				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
-				retransmitDATA=true;
+				retransmitACK=true;
 				return true;
 			}
 			return false;
@@ -602,7 +602,7 @@ public class TFTPClient extends JFrame
 	{
 		blockNum=1;
 		int oldPort = outPort;
-		
+		boolean receivedData1 = false;
 		//send read request
 		generateRWRQ(file, mode, OPCODE_RRQ);
 		sendPacket();
@@ -619,21 +619,22 @@ public class TFTPClient extends JFrame
 			blockNumByte[0]=(byte)((blockNum >> 8)& 0xFF);
 			//receive data
 			while(!receiveDATA()){if(errorFlag){return;}}
+			if(retransmitACK && !receivedData1){console.print("Never Received first data. Please try again");return;}
 			if(!retransmitACK && !duplicateDATA){
-				
+
 				outPort = receivedPacket.getPort();
-				
+
 				//Process data
 				rawData = new byte[receivedPacket.getLength()] ;
 				rawData = receivedPacket.getData();
 				procData = new byte[receivedPacket.getLength() - DATA_OFFSET];
-	
+
 				int reLen = receivedPacket.getLength();
 				for(int i=0; i<reLen-DATA_OFFSET; i++)
 				{
 					procData[i] = rawData[i+DATA_OFFSET];
 				}
-				
+
 				//save data
 				try
 				{
@@ -649,13 +650,13 @@ public class TFTPClient extends JFrame
 					e.printStackTrace();
 					System.exit(1);
 				}
-				
+
 				//check to see if this is final packet
 				if (receivedPacket.getLength() < MAX_SIZE+4)	
 				{
 					loop = false;
 				}
-				
+
 				//get block num
 				blockNumByte[0] = rawData[2];
 				blockNumByte[1] = rawData[3];
@@ -663,6 +664,7 @@ public class TFTPClient extends JFrame
 			}
 			//send out ACK and prep for more data
 			sendPacket();
+			receivedData1 = true;
 			retransmitACK = false;
 			duplicateDATA = false;
 			timeoutFlag = false;
