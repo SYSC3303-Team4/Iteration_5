@@ -59,6 +59,8 @@ class TFTPWriteThread extends ServerThread
 
     public static final byte[] response = {0, 4, 0, 0};
     
+    private boolean initialFileCheck = false;
+    
     
 
     public TFTPWriteThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket receivePacketInfo,String thread, Boolean verboseMode,File file) {
@@ -176,18 +178,25 @@ class TFTPWriteThread extends ServerThread
 			       
 			       
 			       TFTPWriter writer = new TFTPWriter();
-			       if(fileName.exists()) { 
-			    	   buildError(6,receivePacket,verbose);
-			    	   return;
-					}
+			       
+			       if(initialFileCheck){
+				       if(fileName.exists()) { 
+				    	   buildError(6,receivePacket,verbose);
+				    	   return;
+						}
+			       }
+
+			       /*
 			       if(!fileName.canWrite())
 			       {
 			    	   buildError(2,receivePacket,verbose);
 			    	   return;
 			       }
+			       */
 					
 			       try {
 						writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
+						initialFileCheck = false;
 					} catch (SecurityException e1) {
 						buildError(2,receivePacket,verbose);
 						e1.printStackTrace();
