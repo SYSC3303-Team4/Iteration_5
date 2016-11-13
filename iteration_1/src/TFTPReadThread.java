@@ -228,7 +228,7 @@ class TFTPReadThread  extends ServerThread
 				}
 
 			
-			while(!receiveACK()){}
+			while(!receiveACK()){if(errorFlag){return;}}
 			printReceivedPacket(receivePacket, verbose);
 			/*
 			//Waiting to receive ACK

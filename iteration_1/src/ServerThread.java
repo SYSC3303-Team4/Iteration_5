@@ -26,6 +26,7 @@ public abstract class ServerThread extends Thread{
 	protected long startTime;
 	protected boolean verbose;
 	protected DatagramPacket requestPacket;
+	protected boolean errorFlag=false;
 	
 	public ServerThread(ThreadGroup group, String name, ConsoleUI console)
 	{
@@ -44,6 +45,7 @@ public abstract class ServerThread extends Thread{
 		{
 			sendReceiveSocket.close();
 		}
+		console.print("Server: Closing thread.");
 	}
 	
 	protected void printReceivedPacket(DatagramPacket receivedPacket, boolean verbose){
@@ -213,7 +215,9 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				timeouts++;
   				if(timeouts == MAX_TIMEOUTS){
   					exitGraceFully();
-  					System.exit(0);
+  					requestStop();
+  					errorFlag=true;
+  					return false;
   				}
   				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
   				retransmitDATA = true;
@@ -291,7 +295,9 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				timeoutFlag=true;
   				if(timeouts == MAX_TIMEOUTS){
   					exitGraceFully();
-  					System.exit(0);
+  					requestStop();
+  					errorFlag=true;
+  					return false;
   				}
   				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
   				retransmitACK = true;
