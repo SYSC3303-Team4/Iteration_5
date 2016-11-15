@@ -2,8 +2,8 @@
 *Class:             InputStack.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    10/11/2016                                              
-*Version:           1.0.0                                                      
+*Date of Update:    15/11/2016                                              
+*Version:           2.0.0                                                      
 *                                                                                   
 *Purpose:           Sorted stack of input strings. Sorted in terms of block num
 * 
@@ -12,6 +12,7 @@
 *						- sorting now occurs after entire stack is created
 *						- sorting based on RRQ or WRQ
 *						- clear method
+*						- bug associated with block-number-tie for WRQ patched
 *					v1.0.1
 *						- added human readable thing
 *					v1.0.0
@@ -92,7 +93,7 @@ public class InputStack
 					*/
 					if (inputInList.getPacketType() == 3 && nextInput.getPacketType() == 4)
 					{
-
+						Collections.swap(pseudoStack, i, i+1);
 					}
 				}
 				else
@@ -112,10 +113,10 @@ public class InputStack
 	
 	
 	//push to stack with sort (tie conditions not guaranteed)
-	public void push(int mode, int packetType, int blockNum, int delay)
+	public void push(int mode, int packetType, int blockNum, int extraInt, String extraStr)
 	{
 		//create Input
-		Input newInput = new Input(mode, packetType, blockNum, delay);
+		Input newInput = new Input(mode, packetType, blockNum, extraInt, extraStr);
 		
 		//nothing in stack, add to front
 		if (length == 0)

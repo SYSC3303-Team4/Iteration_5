@@ -2,15 +2,18 @@
 *Class:             TFTPHost.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    17/09/2016                                              
+*Date of Update:    15/11/2016                                              
 *Version:           1.0.0                                                      
 *                                                                                    
 *Purpose:           Receives packet from Client, sends packet to Server and waits
-					for Server response. Sends Server response back to Client. Repeats
-					this process indefinitely. Designed to allow for the simulation of errors and lost packets in future.
+*					for Server response. Sends Server response back to Client. Repeats
+*					this process indefinitely. Designed to allow for the simulation of errors and lost packets in future.
 * 
 * 
-*Update Log:        v2.0.0
+*Update Log:        v2.1.0
+*						- added new inputs for error types
+*						- updated help menues to reflect new errors
+*					v2.0.0
 *						- input methods added (non-isr)
 *						- input now saves to InputStack
 *						- help menu added
@@ -566,10 +569,22 @@ public class TFTPHost
 		console.print("'delay PT BN DL'              - set a delay for packet type PT, block number BN for DL blocks");
 		console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
 		console.print("'lose PT BN'                      - lose packet type PT, block number BN");
+		console.print("'mode PT STRING'                  - set the mode on either a RRQ or WRQ to STRING");			
+		console.print("'add BN BY'                 - add BY bytes of garbage data to data packet BN");				
+		console.print("'opcode PT BN OP'            - change packet type PT, number BN's opcode to OP");			
+		console.print("'tid PT BN TID'               - change packet PT block number BN's destination port to TID");
+		console.print("'blocknum PT BN B2'			- change packet PT, block number BN's block number to B2");
+		/*
 		console.println();
 		console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
 		console.print("'1 PT BN '                         - duplicate packety type PT, block number BN");
 		console.print("'2 PT BN'                          - lose packet type PT, block number BN");
+		console.print("'3 PT STRING'                  - set the mode on either a RRQ or WRQ to STRING");	
+		console.print("'4 BN BY'                 - add BY bytes of garbage data to data packet BN");			
+		console.print("'5 PT BN OP'            - change packet type PT, number BN's opcode to OP");		
+		console.print("'6 PT BN TID'               - change packet PT block number BN's destination port to TID");
+		console.print("'7 PT BN B2'			- change packet PT, block number BN's block number to B2");
+		*/
 		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		console.print("You must enter run once all desired errors are entered in order to start the Simulator."); 
 		console.print("Error Simulator is not ready for data if run is not entered");
@@ -602,11 +617,22 @@ public class TFTPHost
 						console.print("'delay PT BN DL'              - set a delay for packet type PT, block number BN for DL blocks");
 						console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
 						console.print("'lose PT BN'                      - lose packet type PT, block number BN");
+						console.print("'mode PT STRING'                  - set the mode on either a RRQ or WRQ to STRING");			//TODO
+						console.print("'add BN BY'                 - add BY bytes of garbage data to data packet BN");				//TODO
+						console.print("'opcode PT BN OP'            - change packet type PT, number BN's opcode to OP");			//TODO
+						console.print("'tid PT BN TID'               - change packet PT block number BN's destination port to TID");//TODO
+						console.print("'blocknum PT BN B2'			- change packet PT, block number BN's block number to B2");		//TODO
+						/*
 						console.println();
 						console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
 						console.print("'1 PT BN '                         - duplicate packety type PT, block number BN");
 						console.print("'2 PT BN'                          - lose packet type PT, block number BN");
-						console.print("You must enter Run in order to start the Simulator. Error Simulator is not ready for data if Run is not entered");
+						console.print("'3 PT STRING'                  - set the mode on either a RRQ or WRQ to STRING");			//TODO
+						console.print("'4 BN BY'                 - add BY bytes of garbage data to data packet BN");				//TODO
+						console.print("'5 PT BN OP'            - change packet type PT, number BN's opcode to OP");					//TODO
+						console.print("'6 PT BN TID'               - change packet PT block number BN's destination port to TID");	//TODO
+						console.print("'7 PT BN B2'			- change packet PT, block number BN's block number to B2");				//TODO
+						 */						
 						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 						console.print("You must enter run once all desired errors are entered in order to start the Simulator."); 
 						console.print("Error Simulator is not ready for data if run is not entered");
@@ -689,7 +715,7 @@ public class TFTPHost
 							blockNum = Integer.parseInt(input[2]);
 							
 							//add to inputStack
-							inputStack.push(1, packetType, blockNum, 0);
+							inputStack.push(1, packetType, blockNum, 0, null);
 						}
 						catch (NumberFormatException nfe)
 						{
@@ -717,7 +743,7 @@ public class TFTPHost
 							blockNum = Integer.parseInt(input[2]);
 							
 							//add to inputStack
-							inputStack.push(2, packetType, blockNum, 0);
+							inputStack.push(2, packetType, blockNum, 0, null);
 						}
 						catch (NumberFormatException nfe)
 						{
@@ -753,7 +779,7 @@ public class TFTPHost
 							delay = Integer.parseInt(input[3]);
 							
 							//add to inputStack
-							inputStack.push(0, packetType, blockNum, delay);
+							inputStack.push(0, packetType, blockNum, delay, null);
 						}
 						catch (NumberFormatException nfe)
 						{
