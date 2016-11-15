@@ -2,7 +2,7 @@
 *Class:             Console.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    08/11/2016                                              
+*Date of Update:    15/11/2016                                              
 *Version:           1.1.1                                                      
 *                                                                                   
 *Purpose:           Generic console for basic output/inputs
@@ -320,6 +320,11 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		this.print("Test Complete");
 		this.println();
 		
+		//error message test
+		this.printError("something went wrong");
+		this.printError("404 - message not found");
+		this.printError("engineer.exe has stopped caring");
+		
 		//input with waiting test
 		this.print("Running Input Test...");
 		input = this.getInput();
@@ -399,7 +404,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 	}
 	
 	
-	/*
+	
 	//for testing
 	public static void main (String[] args) 
 	{	
@@ -407,5 +412,5 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		console.run();
 		console.testAll();
 	}
-	*/
+	
 }

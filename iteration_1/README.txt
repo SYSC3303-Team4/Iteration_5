@@ -1,11 +1,11 @@
 *********************************************************
-*	______ _____  ___ ______  ___  ___ _____ 	*
-*	| ___ \  ___|/ _ \|  _  \ |  \/  ||  ___|	*
-*	| |_/ / |__ / /_\ \ | | | | .  . || |__  	*
-*	|    /|  __||  _  | | | | | |\/| ||  __| 	*
-*	| |\ \| |___| | | | |/ /  | |  | || |___ 	*
-*	\_| \_\____/\_| |_/___/   \_|  |_/\____/ 	*
-*							*
+*	______ _____  ___ ______  ___  ___ _____ 	        *
+*	| ___ \  ___|/ _ \|  _  \ |  \/  ||  ___|           *
+*	| |_/ / |__ / /_\ \ | | | | .  . || |__             *
+*	|    /|  __||  _  | | | | | |\/| ||  __|            *
+*	| |\ \| |___| | | | |/ /  | |  | || |___            *
+*	\_| \_\____/\_| |_/___/   \_|  |_/\____/            *
+*                                                       *
 *********************************************************
 
                        
@@ -15,11 +15,11 @@ TFTP Project - Iteration 3
 SYSC 3303
 Group 4
 
-Adam Staples			[100978589]
-Dan Hogan			[100929795]
-Jason Van Kerkhoven		[100974276]
-Nathaniel Charlebois		[100964496]
-Sarah Garlough			[100965386]
+Adam Staples            [100978589]
+Dan Hogan               [100929795]
+Jason Van Kerkhoven     [100974276]
+Nathaniel Charlebois    [100964496]
+Sarah Garlough          [100965386]
 
 12/10/2016
 
@@ -205,12 +205,12 @@ OPERATING INSTRUCTIONS
 	Examples of setting up duplication, lose, and delay errors are given below:
 	
 		|---------------------------------------|-----------------------|---------------|
-		|	written desciption of error	|str-based input	|int-based input|
+		|	written desciption of error         |str-based input        |int-based input|
 		|---------------------------------------|-----------------------|---------------|
-		|	delay DATA packet 3 for 5 sec	|	delay data 3 5	|	0 3 3 5	|
-		|	duplicate ACK packet 1		|	dup ack 1	|	1 4 1	|
-		|	lose DATA packet 2		|	lose data 2	|	2 3 2	|
-		|	delay ACK packet 2 for 10 sec	|	delay ack 2 10	|	0 4 2 10|
+		|	delay DATA packet 3 for 5 sec       |   delay data 3 5      |    0 3 3 5    |
+		|	duplicate ACK packet 1              |   dup ack 1           |    1 4 1      |
+		|	lose DATA packet 2                  |   lose data 2         |    2 3 2      |
+		|	delay ACK packet 2 for 10 sec       |   delay ack 2 10      |    0 4 2 10   |
 		|---------------------------------------|-----------------------|---------------|
 	
 	To view all of the errors to be simulated in the host, use the command 'errors', which will print the list of all errors programmed

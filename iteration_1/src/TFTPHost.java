@@ -2,15 +2,25 @@
 *Class:             TFTPHost.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    17/09/2016                                              
-*Version:           1.0.0                                                      
+*Date of Update:    15/11/2016                                              
+*Version:           2.1.0                                                      
 *                                                                                    
 *Purpose:           Receives packet from Client, sends packet to Server and waits
-					for Server response. Sends Server response back to Client. Repeats
-					this process indefinitely. Designed to allow for the simulation of errors and lost packets in future.
+*					for Server response. Sends Server response back to Client. Repeats
+*					this process indefinitely. Designed to allow for the simulation of errors and lost packets in future.
+*
+*					Note that due to similarity, most inputs with 3 verbs could be combined into one large input that handles
+*					all 3 verb inputs. However, in order to check that user noun input is valid, they are in separate if statements.
 * 
 * 
-*Update Log:        v2.0.0
+*Update Log:        v2.1.0
+*						- added new inputs for error types
+*						- reset method added for InputStack
+*						- updated help menus to reflect new errors
+*						- code smell reduced by implementing and using table of constants for packet types/error types
+*						- additional checking on input (ie user cant ask to corrupt transmition mode on non RRQ/WRQ anymore)
+*						- method introduced to handle conversions from user string input for packet type to int packet type
+*					v2.0.0
 *						- input methods added (non-isr)
 *						- input now saves to InputStack
 *						- help menu added
@@ -32,6 +42,23 @@ import inputs.*;
 
 public class TFTPHost 
 {
+	//declaring class-wise constants
+	//error modes
+	public final int ERR_DELAY 		= 0;	//delay a packet
+	public final int ERR_DUPLICATE 	= 1;	//duplicate a packet
+	public final int ERR_LOSE 		= 2;	//lose a packet
+	public final int ERR_MODE		= 3;	//alter the mode of RRQ or WRQ to invalid
+	public final int ERR_ADD_DATA	= 4;	//make data in packet over limit of 512
+	public final int ERR_OPCODE		= 5;	//alter a packet opcode to an in greater than 5
+	public final int ERR_TID			= 6;	//alter a packets destination port
+	public final int ERR_BLOCKNUM	= 7;	//incorrectly change block number
+	//packet type
+	public final int PACKET_RRQ		= 1;	//RRQ Packet
+	public final int PACKET_WRQ		= 2;	//WRQ Packet
+	public final int PACKET_DATA		= 3;	//DATA Packet
+	public final int PACKET_ACK		= 4;	//ACK Packet
+	public final int PACKET_ERR		= 5;	//ERROR Packet
+		
 	//declaring local instance variables
 	private DatagramPacket sentPacket;
 	private DatagramPacket receivedPacket;
@@ -475,6 +502,18 @@ public class TFTPHost
 			sendDatagram(clientPort, genSocket);
 		}
 	}
+	
+	
+	/**
+	 * TODO
+	 * Implement handling of Error Types:
+	 * 						- alter the mode of RRQ or WRQ to invalid			ERR_MODE
+	 *						- make data in packet over limit of 512				ERR_ADD_DATA
+	 *						- alter a packet opcode to an in greater than 5		ERR_OPCODE
+	 * 						- alter a packets destination port					ERR_TID
+	 * 						- incorrectly change block number					ERR_BLOCKNUM
+	 * Please remove this when implemented
+	 */
 	public void errorSimHandle()
 	{
 		int sendToPort=SERVER_RECEIVE_PORT;
@@ -550,7 +589,7 @@ public class TFTPHost
 		//declaring local variables
 		boolean runFlag = true;
 		String input[] = null;
-		int packetType, blockNum, delay;
+		int packetType, blockNum, extraInt;		//temp variables that are never guarenteed to hold their value
 		
 		//print starting text
 		console.print("type 'help' for command list");
@@ -561,17 +600,30 @@ public class TFTPHost
 		console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 		console.print("'test'                                    - runs a test for the console");
 		console.print("'errors'                               - display a summary of all errors to be simulated");
+		console.print("'reset'                                 - reset the errors to be simulated");
 		console.print("'run'                                   - finalize the number of errors to simulate & start host");
 		console.println();
-		console.print("'delay PT BN DL'              - set a delay for packet type PT, block number BN for DL blocks");
+		console.print("'delay PT BN DL'             - set a delay for packet type PT, block number BN for DL sec");
 		console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
-		console.print("'lose PT BN'                      - lose packet type PT, block number BN");
+		console.print("'lose PT BN'                      - lose packet type PT, block number BN");						
+		console.print("'mode PT STRING'          - set the mode on either a RRQ or WRQ to STRING");					
+		console.print("'add PT BN BY'                 - add BY bytes of garbage data to PT packet BN");
+		console.print("'opcode PT BN OP'         - change packet type PT, number BN's opcode to OP");				
+		console.print("'tid PT BN TID'                 - change packet PT block number BN's destination port to TID");
+		console.print("'blocknum PT BN B2'     - change packet PT, block number BN's block number to B2");	
+		/*
 		console.println();
 		console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
 		console.print("'1 PT BN '                         - duplicate packety type PT, block number BN");
 		console.print("'2 PT BN'                          - lose packet type PT, block number BN");
+		console.print("'3 PT STRING'                  - set the mode on either a RRQ or WRQ to STRING");	
+		console.print("'4 BN BY'                 - add BY bytes of garbage data to data packet BN");			
+		console.print("'5 PT BN OP'            - change packet type PT, number BN's opcode to OP");		
+		console.print("'6 PT BN TID'               - change packet PT block number BN's destination port to TID");
+		console.print("'7 PT BN B2'			- change packet PT, block number BN's block number to B2");
+		*/
 		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-		console.print("You must enter run once all desired errors are entered in order to start the Simulator."); 
+		console.print("You MUST enter run once all desired errors are entered in order to start the Simulator."); 
 		console.print("Error Simulator is not ready for data if run is not entered");
 		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		console.println();
@@ -589,7 +641,6 @@ public class TFTPHost
 					//print commands
 					if (input[0].equals("help"))
 					{
-						console.print("type 'help' for command list");
 						console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
 						console.print("'help'                                   - print all commands and how to use them");
 						console.print("'clear'                                  - clear screen");
@@ -597,19 +648,28 @@ public class TFTPHost
 						console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 						console.print("'test'                                    - runs a test for the console");
 						console.print("'errors'                               - display a summary of all errors to be simulated");
+						console.print("'reset'                                 - reset the errors to be simulated");
 						console.print("'run'                                   - finalize the number of errors to simulate & start host");
 						console.println();
-						console.print("'delay PT BN DL'              - set a delay for packet type PT, block number BN for DL blocks");
+						console.print("'delay PT BN DL'             - set a delay for packet type PT, block number BN for DL sec");
 						console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
-						console.print("'lose PT BN'                      - lose packet type PT, block number BN");
+						console.print("'lose PT BN'                      - lose packet type PT, block number BN");						
+						console.print("'mode PT STRING'          - set the mode on either a RRQ or WRQ to STRING");					
+						console.print("'add PT BN BY'                 - add BY bytes of garbage data to PT packet BN");
+						console.print("'opcode PT BN OP'         - change packet type PT, number BN's opcode to OP");				
+						console.print("'tid PT BN TID'                 - change packet PT block number BN's destination port to TID");
+						console.print("'blocknum PT BN B2'     - change packet PT, block number BN's block number to B2");			
+						/*
 						console.println();
 						console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
 						console.print("'1 PT BN '                         - duplicate packety type PT, block number BN");
 						console.print("'2 PT BN'                          - lose packet type PT, block number BN");
-						console.print("You must enter Run in order to start the Simulator. Error Simulator is not ready for data if Run is not entered");
-						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-						console.print("You must enter run once all desired errors are entered in order to start the Simulator."); 
-						console.print("Error Simulator is not ready for data if run is not entered");
+						console.print("'3 PT STRING'                  - set the mode on either a RRQ or WRQ to STRING");		
+						console.print("'4 BN BY'                 - add BY bytes of garbage data to data packet BN");			
+						console.print("'5 PT BN OP'            - change packet type PT, number BN's opcode to OP");	
+						console.print("'6 PT BN TID'               - change packet PT block number BN's destination port to TID");	
+						console.print("'7 PT BN B2'			- change packet PT, block number BN's block number to B2");			
+						 */						
 						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 						console.println();
 					}
@@ -627,6 +687,14 @@ public class TFTPHost
 					else if (input[0].equals("clear"))
 					{
 						console.clear();
+					}
+					else if (input[0].equals("reset"))
+					{
+						inputStack.clear();
+						if(verbose)
+						{
+							console.print("Errors to Simulate: " + inputStack.length());
+						}
 					}
 					//close console with grace
 					else if (input[0].equals("close"))
@@ -655,6 +723,7 @@ public class TFTPHost
 						if (input[1].equals("true"))
 						{
 							verbose = true;
+							console.print("Verbose set true");
 						}
 						else if (input[1].equals("false"))
 						{
@@ -689,7 +758,7 @@ public class TFTPHost
 							blockNum = Integer.parseInt(input[2]);
 							
 							//add to inputStack
-							inputStack.push(1, packetType, blockNum, 0);
+							inputStack.push(1, packetType, blockNum, 0, null);
 						}
 						catch (NumberFormatException nfe)
 						{
@@ -717,11 +786,28 @@ public class TFTPHost
 							blockNum = Integer.parseInt(input[2]);
 							
 							//add to inputStack
-							inputStack.push(2, packetType, blockNum, 0);
+							inputStack.push(2, packetType, blockNum, 0, null);
 						}
 						catch (NumberFormatException nfe)
 						{
 							console.printError("Error 2 - NAN");
+						}
+					}
+					//change the mode on the original RRQ or WRQ
+					else if (input[0].equals("mode") || input[0].equals("" + this.ERR_MODE))
+					{
+						//confirm verb1 is correct (either RRQ or WRQ)
+						if(input[1].equals("rrq") || input[1].equals("" + this.PACKET_RRQ))
+						{
+							inputStack.push(ERR_MODE, PACKET_RRQ, 0, 0, input[2]);
+						}
+						else if (input[1].equals("wrq") || input[1].equals("" + this.PACKET_WRQ))
+						{
+							inputStack.push(ERR_MODE, PACKET_WRQ, 0, 0, input[2]);
+						}
+						else
+						{
+							console.print(" Verb1 unknown input: Packet-type MUST be rrq or wrq");
 						}
 					}
 					else
@@ -737,23 +823,83 @@ public class TFTPHost
 						//convert verbs from string to int
 						try
 						{
-							if (input[1].equals("data"))
-							{
-								packetType = 3;
-							}
-							else if (input[1].equals("ack"))
-							{
-								packetType = 4;
-							}
-							else
-							{
-								packetType = Integer.parseInt(input[1]);
-							}
+							packetType = PTStringToInt(input[1]);
 							blockNum = Integer.parseInt(input[2]);
-							delay = Integer.parseInt(input[3]);
-							
+							extraInt = Integer.parseInt(input[3]);
 							//add to inputStack
-							inputStack.push(0, packetType, blockNum, delay);
+							inputStack.push(0, packetType, blockNum, extraInt, null);
+						}
+						catch (NumberFormatException nfe)
+						{
+							console.printError("Error 2 - NAN");
+						}
+					}
+					//add extra garbage data onto a DATA packet type
+					else if (input[0].equals("add") || input[0].equals("" + this.ERR_ADD_DATA))
+					{
+						if(input[1].equals("data") || input[1].equals(this.PACKET_DATA))
+						{
+							try
+							{
+								//convert strings to ints
+								blockNum = Integer.parseInt(input[1]);
+								extraInt = Integer.parseInt(input[2]);
+							
+								inputStack.push(ERR_ADD_DATA, PACKET_DATA, blockNum, extraInt, null);
+							}
+							catch (NumberFormatException nfe)
+							{
+								console.printError("Error 2 - NAN");
+							}
+						}
+						else
+						{
+							console.print("Input error - packet type must be data");
+						}
+					}
+					//create error in opcode by corrupting it to unknown opcode
+					else if (input[0].equals("opcode") || input[0].equals("" + this.ERR_OPCODE))
+					{
+						//convert verbs from strings --> ints
+						try
+						{
+							packetType = PTStringToInt(input[1]);
+							blockNum = Integer.parseInt(input[2]);
+							extraInt = Integer.parseInt(input[3]);
+							//add to inputStack
+							inputStack.push(ERR_OPCODE, packetType, blockNum, extraInt, null);
+						}
+						catch (NumberFormatException nfe)
+						{
+							console.printError("Error 2 - NAN");
+						}
+					}
+					//mess up port destination on a packet
+					else if (input[0].equals("tid") || input[0].equals("" + this.ERR_TID))
+					{
+						try
+						{
+							packetType = PTStringToInt(input[1]);
+							blockNum = Integer.parseInt(input[2]);
+							extraInt = Integer.parseInt(input[3]);
+							//add to inputStack
+							inputStack.push(ERR_TID, packetType, blockNum, extraInt, null);
+						}
+						catch (NumberFormatException nfe)
+						{
+							console.printError("Error 2 - NAN");
+						}
+					}
+					//mess up port destination on a packet
+					else if (input[0].equals("blocknum") || input[0].equals("" + this.ERR_BLOCKNUM))
+					{
+						try
+						{
+							packetType = PTStringToInt(input[1]);
+							blockNum = Integer.parseInt(input[2]);
+							extraInt = Integer.parseInt(input[3]);
+							//add to inputStack
+							inputStack.push(ERR_BLOCKNUM, packetType, blockNum, extraInt, null);
 						}
 						catch (NumberFormatException nfe)
 						{
@@ -771,6 +917,36 @@ public class TFTPHost
 					console.print("! Unknown Input !");
 					break;
 			}
+		}
+	}
+	
+	
+	//return numerical packet type based on string input for packet type
+	private int PTStringToInt(String input) throws NumberFormatException
+	{
+		if (input.equals("rrq"))
+		{
+			return this.PACKET_RRQ;
+		}
+		else if (input.equals("wrq"))
+		{
+			return this.PACKET_WRQ;
+		}
+		else if (input.equals("data"))
+		{
+			return this.PACKET_DATA;
+		}
+		else if (input.equals("ack"))
+		{
+			return this.PACKET_ACK;
+		}
+		else if (input.equals("error"))
+		{
+			return this.PACKET_ERR;
+		}
+		else
+		{
+			return Integer.parseInt(input);
 		}
 	}
 	
