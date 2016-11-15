@@ -51,6 +51,7 @@ public class InputStack
 	public void clear()
 	{
 		pseudoStack.clear();
+		length = 0;
 	}
 	
 	
