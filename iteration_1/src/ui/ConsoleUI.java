@@ -75,6 +75,9 @@ import javax.swing.*;
 
 public class ConsoleUI extends JPanel implements UIFramework, ActionListener, KeyListener, Runnable
 {
+	//declaring local class constants
+	private static final int BUFFER_SIZE = 25;
+	
 	//declaring local instance variables
 	private String ID;
 	private JTextField inputLine;
@@ -93,7 +96,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 		ID = name;
 		inputReady = false;
 		input = null;
-		inputBuffer = new CappedBuffer(25);
+		inputBuffer = new CappedBuffer(BUFFER_SIZE);
 		
 		//create text fields inputs
 		inputLine = new JTextField(45);
@@ -295,9 +298,9 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	//enter key pressed
 	public synchronized void actionPerformed(ActionEvent e) 
 	{		
-		//get input, save to input field and inputBuffer
-		inputLine.selectAll();
+		//get input, save to input field and inputBuffer, clear input line
 		input =  inputLine.getText();
+		inputLine.setText("");
 		inputBuffer.push(input);
 		
 		//print input in proper format
@@ -315,17 +318,34 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	//up or down key pressed
 	public void keyPressed(KeyEvent e) 
 	{
+		//declaring local method variables
 	    int keyCode = e.getKeyCode();
+	    String bufferReturn = null;
+	    
+	    //keycode handler
 	    switch( keyCode ) 
 	    { 
 	    	//up arrow pressed (go back) (#goBackToRiverBuilding #never4get)
 	        case (KeyEvent.VK_UP):
-	        	inputLine.setText(inputBuffer.getOlder());
+	        	bufferReturn = inputBuffer.getOlder();
+	        	if (bufferReturn != null)
+	        	{
+	        		inputLine.setText(bufferReturn);
+	        	}
 	        	break;
 	        
 	        //down arrow pressed (go forward)
 	        case (KeyEvent.VK_DOWN):
-	        	inputLine.setText(inputBuffer.getNewer());
+	        	bufferReturn = inputBuffer.getNewer();
+	        	if (bufferReturn != null)
+	        	{
+	        		inputLine.setText(bufferReturn);
+	        	}
+	        	break;
+	        	
+	        //tab key pressed
+	        case (KeyEvent.VK_TAB):
+	        	
 	        	break;
 	     }
 	}

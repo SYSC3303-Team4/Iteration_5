@@ -507,11 +507,13 @@ public class TFTPHost
 	/**
 	 * TODO
 	 * Implement handling of Error Types:
-	 * 						- alter the mode of RRQ or WRQ to invalid			ERR_MODE
-	 *						- make data in packet over limit of 512				ERR_ADD_DATA
-	 *						- alter a packet opcode to an in greater than 5		ERR_OPCODE
-	 * 						- alter a packets destination port					ERR_TID
-	 * 						- incorrectly change block number					ERR_BLOCKNUM
+	 * 
+	 * 		- alter the mode of RRQ or WRQ to invalid			ERR_MODE
+	 *		- make data in packet over limit of 512				ERR_ADD_DATA	[I've made a TrashFactory class to help]
+	 *		- alter a packet opcode to an in greater than 5		ERR_OPCODE
+	 * 		- alter a packets destination port					ERR_TID
+	 * 		- incorrectly change block number					ERR_BLOCKNUM
+	 * 
 	 * Please remove this when implemented
 	 */
 	public void errorSimHandle()

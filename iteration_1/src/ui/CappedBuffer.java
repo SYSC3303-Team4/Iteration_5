@@ -3,13 +3,15 @@
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
 *Date of Update:    16/11/2016                                              
-*Version:           1.0.0                                                      
+*Version:           1.1.0                                                      
 *                                                                                   
 *Purpose:           Holds n amount of Strings. Navigation through this buffer is built in internally.
 * 
 * 
 *Update Log:		v1.1.0
 *						- looping through buffer removed
+*						- position jumping to 1st entry instead of 0th entry patched
+*						- pos reset added upon push (dont know how I forgot that in v1.0.0)
 *					v1.0.0
 *						- code for navigating through buffer added
 *						- buffer loop logic implemented
@@ -35,7 +37,7 @@ public class CappedBuffer
 	{
 		//initialize everything
 		this.maxSize = maxSize;
-		pos = 0;
+		pos = -1;
 		data = new LinkedList<String>();
 	}
 	
@@ -54,6 +56,9 @@ public class CappedBuffer
 		{
 			data.addFirst(newString);
 		}
+		
+		//reset position to default
+		pos = -1;
 	}
 	
 	
@@ -79,7 +84,7 @@ public class CappedBuffer
 		}
 		else
 		{
-			return "";
+			return null;
 		}
 	}
 	
@@ -87,7 +92,7 @@ public class CappedBuffer
 	//return newer entry
 	public String getNewer()
 	{
-		if(data.size() > 0)
+		if(data.size() > 0 && pos > -1)
 		{
 			//position is not at stacktop
 			if (pos > 0)
@@ -98,7 +103,7 @@ public class CappedBuffer
 		}
 		else
 		{
-			return "";
+			return null;
 		}
 	}
 	
