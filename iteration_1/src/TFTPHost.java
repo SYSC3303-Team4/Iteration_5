@@ -842,8 +842,8 @@ public class TFTPHost
 							try
 							{
 								//convert strings to ints
-								blockNum = Integer.parseInt(input[1]);
-								extraInt = Integer.parseInt(input[2]);
+								blockNum = Integer.parseInt(input[2]);
+								extraInt = Integer.parseInt(input[3]);
 							
 								inputStack.push(ERR_ADD_DATA, PACKET_DATA, blockNum, extraInt, null);
 							}
@@ -945,7 +945,7 @@ public class TFTPHost
 			return this.PACKET_ERR;
 		}
 		else
-		{
+		{;
 			return Integer.parseInt(input);
 		}
 	}

@@ -2,13 +2,18 @@
 *Class:             Console.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    15/11/2016                                              
-*Version:           1.1.1                                                      
+*Date of Update:    16/11/2016                                              
+*Version:           1.2.0                                                      
 *                                                                                   
 *Purpose:           Generic console for basic output/inputs
 * 
 * 
-*Update Log:		v1.1.1
+*Update Log:		v1.2.0
+*						- console clears inputLine after each input rather than select all text
+*						- keypress based ISRs added
+*						- Able to use keys to scroll through previous inputs
+*						- last 25 inputs stored for future access
+*					v1.1.1
 *						- new constructor added for ISR based inputs
 *					v1.1.0
 *						- getInput(bool x) method added to support older implementation of method as
@@ -68,14 +73,14 @@ import java.awt.event.*;
 import javax.swing.*;
 
 
-
-public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Runnable
+public class ConsoleUI extends JPanel implements UIFramework, ActionListener, KeyListener, Runnable
 {
 	//declaring local instance variables
 	private String ID;
 	private JTextField inputLine;
 	private JTextArea outputArea;
 	private String input;
+	private CappedBuffer inputBuffer;
 	private boolean inputReady;
 	
 	
@@ -88,10 +93,12 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		ID = name;
 		inputReady = false;
 		input = null;
+		inputBuffer = new CappedBuffer(25);
 		
 		//create text fields inputs
 		inputLine = new JTextField(45);
 		inputLine.addActionListener(this);
+		inputLine.addKeyListener(this);
 		
 		//set text fields for output
 		outputArea = new JTextArea(35,45);
@@ -120,10 +127,12 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		ID = name;
 		inputReady = false;
 		input = null;
+		inputBuffer = new CappedBuffer(25);
 		
 		//create text fields inputs
 		inputLine = new JTextField(45);
 		inputLine.addActionListener(listener);
+		inputLine.addKeyListener(this);
 		
 		//set text fields for output
 		outputArea = new JTextArea(35,45);
@@ -286,10 +295,11 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 	//enter key pressed
 	public synchronized void actionPerformed(ActionEvent e) 
 	{		
-		//get input, save to input field
+		//get input, save to input field and inputBuffer
 		inputLine.selectAll();
 		input =  inputLine.getText();
-				
+		inputBuffer.push(input);
+		
 		//print input in proper format
 		outputArea.append(" >" + input + "\n");
 		//magic code to make sure stuff appears
@@ -299,6 +309,34 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		inputReady = true;
 		notifyAll();
 	}
+	
+	
+	@Override
+	//up or down key pressed
+	public void keyPressed(KeyEvent e) 
+	{
+	    int keyCode = e.getKeyCode();
+	    switch( keyCode ) 
+	    { 
+	    	//up arrow pressed (go back) (#goBackToRiverBuilding #never4get)
+	        case (KeyEvent.VK_UP):
+	        	inputLine.setText(inputBuffer.getOlder());
+	        	break;
+	        
+	        //down arrow pressed (go forward)
+	        case (KeyEvent.VK_DOWN):
+	        	inputLine.setText(inputBuffer.getNewer());
+	        	break;
+	     }
+	}
+	
+	
+	@Override
+	public void keyReleased(KeyEvent arg0) {}
+	
+	
+	@Override
+	public void keyTyped(KeyEvent arg0) {}
 	
 	
 	//tester for console
@@ -412,5 +450,4 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ru
 		console.run();
 		console.testAll();
 	}
-	
 }
