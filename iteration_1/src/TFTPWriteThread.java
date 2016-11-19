@@ -108,6 +108,15 @@ class TFTPWriteThread extends ServerThread
 				   }
 				}
 		   }
+		   String modeString = new String(mode.toByteArray(), 
+				   	0,mode.toByteArray().length);
+		   
+		   //Check for Valid MODE
+		   if(!(modeString.equalsIgnoreCase("netascii")) || !(modeString.equalsIgnoreCase("octet"))){
+			   buildError(4,receivePacket,verbose);
+	    	   return; 
+		   }
+		   
 		   printReceivedPacket(requestPacket, verbose);
 		    /* Exit Gracefully if the stop is requested. */
 	       if(stopRequested){exitGraceFully();return;}

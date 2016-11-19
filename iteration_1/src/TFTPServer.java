@@ -69,6 +69,13 @@ public class TFTPServer implements ActionListener
 			se.printStackTrace();
 			System.exit(1);
 		}
+		try{
+			sendSocket = new DatagramSocket();
+		} catch (SocketException se){
+			console.print("SOCKET BIND ERROR");
+			se.printStackTrace();
+			System.exit(1);
+		}
 		while(file == null)
 		{
 			fileChooserFrame = new JTextArea(5,40);
