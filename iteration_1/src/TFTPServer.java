@@ -195,8 +195,31 @@ public class TFTPServer implements ActionListener
 				Thread writeRequest =  new TFTPWriteThread(initializedThreads,console, receivePacket,"Thread "+threadNum, verbose,file);
 				writeRequest.start();
 				response = writeResp;
-			} else { // it was invalid, just quit
-				throw new Exception("Not yet implemented");
+			} else { // it was invalid, send 
+	    		int errorCode = 4;
+	    		console.print("Illegal TFTP operation");
+	    		String errorMsg = "Illegal TFTP operation.";
+	    		byte[] dataError = new byte[errorMsg.length() + 5];
+	        	data[0] = 0;
+	        	data[1] = 5;
+	        	data[2] = 0;
+	        	data[3] = (byte)errorCode;
+	        	for(int c = 0; c<errorMsg.length();c++){
+	        		data[4+c] = errorMsg.getBytes()[c];
+	        	}
+	        	data[data.length-1] = 0;
+	        	
+	    	    DatagramPacket sendPacket = new DatagramPacket(data, data.length,
+	    				     receivePacket.getAddress(), receivePacket.getPort());
+	    	    console.print("Sending: Illegal TFTP operation Error Packet");
+
+	    	       	try {
+	    	       		sendSocket.send(sendPacket);
+	    	       	} catch (IOException e) {
+	    	       		e.printStackTrace();
+	    	       		System.exit(1);
+	    	       	}
+				
 			} 
 		}
 	System.exit(0);

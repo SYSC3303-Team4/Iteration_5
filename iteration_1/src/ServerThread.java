@@ -152,6 +152,16 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 	    		console.print("Server: Disk full or allocation exceeded, sending error packet");
 	    		errorMsg = "Disk full or allocation exceeded.";
 	    		break;
+	    	case 4:
+	    		errorCode = 4;
+	    		console.print("Illegal TFTP operation");
+	    		errorMsg = "Illegal TFTP operation.";
+	    		break;
+	    	case 5:
+	    		errorCode = 5;
+	    		console.print("Unknown Transfer ID");
+	    		errorMsg = "Unknown Transfer ID.";
+	    		break;
 	    	case 6: 
 	    		errorCode = 6;
 	    		console.print("Server: File already exists, sending error packet");
