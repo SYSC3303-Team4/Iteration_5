@@ -506,7 +506,7 @@ public class TFTPHost
 	
 	/**
 	 * TODO
-	 * Implement handling of Error Types:
+	 * Implement handling of Error Types:	
 	 * 
 	 * 		- alter the mode of RRQ or WRQ to invalid			ERR_MODE
 	 *		- make data in packet over limit of 512				ERR_ADD_DATA	[I've made a TrashFactory class to help]
