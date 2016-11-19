@@ -132,7 +132,7 @@ DATA  | 03    |   Block #  |    Data    |
 ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     ----------------------------------------
     */
-    protected void buildError(int errorCode,DatagramPacket receivePacket, boolean verbose){
+    protected void buildError(int errorCode,DatagramPacket receivePacket, boolean verbose, String errorInfo){
     	int errorSizeFactor = 5;
     	
     	String errorMsg = new String("Unknown Error.");
@@ -140,32 +140,32 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 	    	case 1:
 	    		errorCode = 1;
 	    		console.print("Server: File not found, sending error packet");
-	    		errorMsg = "File not found.";
+	    		errorMsg = "File not found: " + errorInfo;
 	    		break;
 	    	case 2: 
 	    		errorCode = 2;
 	    		console.print("Server: Access violation, sending error packet");
-	    		errorMsg = "Access violation.";
+	    		errorMsg = "Access violation: " + errorInfo;
 	    		break;
 	    	case 3: 
 	    		errorCode = 3;
 	    		console.print("Server: Disk full or allocation exceeded, sending error packet");
-	    		errorMsg = "Disk full or allocation exceeded.";
+	    		errorMsg = "Disk full or allocation exceeded: " + errorInfo;
 	    		break;
 	    	case 4:
 	    		errorCode = 4;
 	    		console.print("Illegal TFTP operation");
-	    		errorMsg = "Illegal TFTP operation.";
+	    		errorMsg = "Illegal TFTP operation: " + errorInfo;
 	    		break;
 	    	case 5:
 	    		errorCode = 5;
 	    		console.print("Unknown Transfer ID");
-	    		errorMsg = "Unknown Transfer ID.";
+	    		errorMsg = "Unknown Transfer ID: " + errorInfo;
 	    		break;
 	    	case 6: 
 	    		errorCode = 6;
 	    		console.print("Server: File already exists, sending error packet");
-	    		errorMsg = "File already exists.";
+	    		errorMsg = "File already exists: " + errorInfo;
 	    		break;
     	}
     	

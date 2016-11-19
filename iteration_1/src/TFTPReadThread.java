@@ -125,13 +125,13 @@ class TFTPReadThread  extends ServerThread
 		File file = new File(absolutePath + "/" +filename.toString());
 		if(!file.exists())
 		{
-			buildError(1,receivePacket,verbose);
+			buildError(1,receivePacket,verbose,"");
 			return;
 		}
 
 		if(!file.canRead())
 		{
-			buildError(2,receivePacket,verbose);
+			buildError(2,receivePacket,verbose,"");
 			return;
 		}
 		TFTPReader reader = new TFTPReader();
@@ -141,16 +141,16 @@ class TFTPReadThread  extends ServerThread
 		} catch (FileNotFoundException e1) {
 			if(!file.exists())
 			{
-				buildError(1,receivePacket,verbose);
+				buildError(1,receivePacket,verbose,"");
 			}
 			else
 			{
-				buildError(2,receivePacket,verbose);
+				buildError(2,receivePacket,verbose,"");
 			}
 			//e1.printStackTrace();
 			return;
 		} catch (IOException e) {
-			buildError(2,receivePacket,verbose);
+			buildError(2,receivePacket,verbose,"");
 			//e.printStackTrace();
 			return;
 		}

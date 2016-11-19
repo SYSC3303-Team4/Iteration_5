@@ -113,7 +113,7 @@ class TFTPWriteThread extends ServerThread
 		   
 		   //Check for Valid MODE
 		   if(!(modeString.equalsIgnoreCase("netascii")) || !(modeString.equalsIgnoreCase("octet"))){
-			   buildError(4,receivePacket,verbose);
+			   buildError(4,receivePacket,verbose,"Invalid Mode");
 	    	   return; 
 		   }
 		   
@@ -190,7 +190,7 @@ class TFTPWriteThread extends ServerThread
 			       
 			       if(initialFileCheck){
 				       if(fileName.exists()) { 
-				    	   buildError(6,receivePacket,verbose);
+				    	   buildError(6,receivePacket,verbose,"");
 				    	   return;
 						}
 			       }
@@ -207,17 +207,17 @@ class TFTPWriteThread extends ServerThread
 						writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
 						initialFileCheck = false;
 					} catch (SecurityException e1) {
-						buildError(2,receivePacket,verbose);
+						buildError(2,receivePacket,verbose,"");
 						e1.printStackTrace();
 						return;
 					} 
 			       catch(FileNotFoundException e2)
 			       {
-			    	   buildError(1,receivePacket,verbose);
+			    	   buildError(1,receivePacket,verbose,"");
 			    	   return;
 			       }
 			       catch(IOException e2){
-						buildError(3,receivePacket,verbose);
+						buildError(3,receivePacket,verbose,"");
 						return;
 					}
 	
