@@ -180,7 +180,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     	data[data.length-1] = 0;
     	
 	    DatagramPacket sendPacket = new DatagramPacket(data, data.length,
-				     receivePacket.getAddress(), receivePacket.getPort());
+				     requestPacket.getAddress(), requestPacket.getPort());
 		/* Exit Gracefully if the stop is requested. */
 		   if(stopRequested){exitGraceFully();}
 		   printSendPacket(sendPacket,verbose);
