@@ -124,7 +124,7 @@ class TFTPWriteThread extends ServerThread
 		   
 		   printReceivedPacket(requestPacket, verbose);
 		    /* Exit Gracefully if the stop is requested. */
-	       if(stopRequested){exitGraceFully();return;}
+	       if(stopRequested){exitGraceFully();return;}  
 	       if(verbose){
 	    	   console.print("Request parsed for:");
 	    	   console.print("	Filename: " + new String(filename.toByteArray(),
