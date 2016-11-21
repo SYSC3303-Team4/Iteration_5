@@ -58,6 +58,7 @@ public class TFTPServer implements ActionListener
 		//make and run the UI
 		console = new ConsoleUI(title, this);
 		console.run();
+		console.colorScheme("dark");
 		
 		try {
 			// Construct a datagram socket and bind it to port 69
@@ -328,6 +329,22 @@ public class TFTPServer implements ActionListener
 						else
 						{
 							console.print("! Unknown Input !");
+						}
+					}
+					//alter color scheme
+					else if (input[0].equals("color") || input[0].equals("colour"))
+					{
+						boolean cs = console.colorScheme(input[1]);
+						if (verbose)
+						{
+							if(cs)
+							{
+								console.print("color scheme set to: " + input[1]);
+							}
+							else
+							{
+								console.printOperandError("color scheme not found");
+							}
 						}
 					}
 					//bad input

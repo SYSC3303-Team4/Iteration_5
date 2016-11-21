@@ -3,12 +3,17 @@
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
 *Date of Update:    16/11/2016                                              
-*Version:           1.2.0                                                      
+*Version:           1.2.1                                                      
 *                                                                                   
 *Purpose:           Generic console for basic output/inputs
 * 
 * 
-*Update Log:		v1.2.0
+*Update Log:		v1.2.1
+*						- console can run in either dark or light mode
+*						- really just a vanity update
+*						- standard operand error method added
+*						- standard error method altered to generate thread-safe popup
+*					v1.2.0
 *						- console clears inputLine after each input rather than select all text
 *						- keypress based ISRs added
 *						- Able to use keys to scroll through previous inputs
@@ -155,6 +160,50 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
         add(inputLine, c);
 	}
 	
+	
+	//swap color schemes
+	//return true if valid color scheme
+	public boolean colorScheme(String scheme)
+	{
+		Color background;
+		Color text;
+		
+		if(scheme.toLowerCase().equals("light"))
+		{
+			background = Color.WHITE;
+			text = Color.BLACK;
+		}
+		else if (scheme.toLowerCase().equals("dark"))
+		{
+			background = Color.BLACK;
+			text = Color.WHITE;
+		}
+		else if (scheme.toLowerCase().equals("ocean"))
+		{
+			background = Color.CYAN;
+			text = Color.DARK_GRAY;
+		}
+		else if (scheme.toLowerCase().equals("matrix"))
+		{
+			background = Color.BLACK;
+			text = Color.GREEN;
+		}
+		else
+		{
+			return false;
+		}
+		
+		//set outputArea colors
+		outputArea.setBackground(background);
+		outputArea.setForeground(text);
+		outputArea.setCaretColor(text);
+		//set inputLine colors
+		inputLine.setBackground(background);
+		inputLine.setForeground(text);
+		inputLine.setCaretColor(text);
+		return true;
+	}
+	
 	@Override
 	//final setup for console, set up window for visibility
 	public void run() 
@@ -255,7 +304,27 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	@Override
 	public void printError(String errorMsg)
 	{
-		print("!!ERROR!!   " + errorMsg + "   !!ERROR!!");
+		print("ERROR:  " + errorMsg);
+		JOptionPane.showMessageDialog(this, errorMsg);
+	}
+	
+	
+	public void printError(int errorCode, String errorMsg)
+	{
+		print("TFTP Error Type: " + errorCode + " - " + errorMsg);
+		JOptionPane.showMessageDialog(this, "TFTP Error Type: " + errorCode + "\n" + errorMsg);
+	}
+	
+	
+	public void printCompletion()
+	{
+		JOptionPane.showMessageDialog(this, "File Transfer Complete!");
+	}
+	
+	
+	public void printOperandError(String errorMsg)
+	{
+		print("OPERAND ERROR:  " + errorMsg);
 	}
 	
 	
@@ -316,7 +385,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	
 	@Override
 	//up or down key pressed
-	public void keyPressed(KeyEvent e) 
+	public synchronized void keyPressed(KeyEvent e) 
 	{
 		//declaring local method variables
 	    int keyCode = e.getKeyCode();
@@ -380,8 +449,11 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 		
 		//error message test
 		this.printError("something went wrong");
-		this.printError("404 - message not found");
-		this.printError("engineer.exe has stopped caring");
+		this.printError(5, "file not found");
+		this.printError(99, "engineer.exe has stopped caring");
+		this.printOperandError("NaN");
+		this.printOperandError("generic error text");
+		this.printOperandError("something else");
 		
 		//input with waiting test
 		this.print("Running Input Test...");
@@ -451,12 +523,27 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 		
 		//test clear
 		this.print("Running clear test...");
-		this.print("Enter 'clear'");
+		this.print("Enter any input");
 		input = this.getInput();
-		if (input.equals("clear"))
+		this.clear();
+		
+		//test color set
+		this.print("Running color scheme test...");
+		try 
 		{
-			this.clear();
+			this.colorScheme("dark");
+		    Thread.sleep(750);
+		    this.colorScheme("ocean");
+		    Thread.sleep(750);
+		    this.colorScheme("matrix");
+		    Thread.sleep(750);
+		    this.colorScheme("light");
+		} 
+		catch(InterruptedException ex) 
+		{
+		    Thread.currentThread().interrupt();
 		}
+		this.println();
 		
 		this.print("Test Complete");
 	}

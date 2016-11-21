@@ -109,6 +109,7 @@ public class TFTPHost
 		//run UI
 		console = new ConsoleUI("Error Simulator");
 		console.run();
+		console.colorScheme("dark");
 	}
 	
 	
@@ -736,6 +737,27 @@ public class TFTPHost
 							console.print("! Unknown Input !");
 						}
 					}
+					//alter color scheme
+					else if (input[0].equals("color") || input[0].equals("colour"))
+					{
+						boolean cs = console.colorScheme(input[1]);
+						if (verbose)
+						{
+							if(cs)
+							{
+								console.print("color scheme set to: " + input[1]);
+							}
+							else
+							{
+								console.printOperandError("color scheme not found");
+							}
+						}
+					}
+					//bad input
+					else
+					{
+						console.print("! Unknown Input !");
+					}
 					break;
 				
 				case(3):
@@ -764,7 +786,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printError("Error 2 - NAN");
+							console.printOperandError("Error 2 - NaN");
 						}
 					}
 					//lost packet
@@ -792,7 +814,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printError("Error 2 - NAN");
+							console.printOperandError("Error 2 - NaN");
 						}
 					}
 					//change the mode on the original RRQ or WRQ
@@ -833,7 +855,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printError("Error 2 - NAN");
+							console.printOperandError("Error 2 - NaN");
 						}
 					}
 					//add extra garbage data onto a DATA packet type
@@ -851,7 +873,7 @@ public class TFTPHost
 							}
 							catch (NumberFormatException nfe)
 							{
-								console.printError("Error 2 - NAN");
+								console.printOperandError("Error 2 - NaN");
 							}
 						}
 						else
@@ -873,7 +895,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printError("Error 2 - NAN");
+							console.printOperandError("Error 2 - NaN");
 						}
 					}
 					//mess up port destination on a packet
@@ -889,7 +911,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printError("Error 2 - NAN");
+							console.printOperandError("Error 2 - NaN");
 						}
 					}
 					//mess up port destination on a packet
@@ -905,7 +927,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printError("Error 2 - NAN");
+							console.printOperandError("Error 2 - NaN");
 						}
 					}
 					//bad input

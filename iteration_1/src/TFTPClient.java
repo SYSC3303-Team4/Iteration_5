@@ -2,8 +2,8 @@
 *Class:             TFTPClient.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    07/11/2016                                              
-*Version:           1.2.1                                                      
+*Date of Update:    21/11/2016                                              
+*Version:           2.0.1                                                      
 *                                                                                   
 *Purpose:           Generates a datagram following the format of [0,R/W,STR1,0,STR2,0],
 					in which R/W signifies read (1) or write (2), STR1 is a filename,
@@ -15,7 +15,13 @@
 					packet. Each datagram can be 512B max
 * 
 * 
-*Update Log:		v1.2.1
+*Update Log:		v2.0.1
+*						- DEFAULT_MODE constant replaced with standard_mode variables
+*						- standard_mode can now be set via console (NETASCII by default)
+*						- displays error packets and file transfer completion using method in ConsoleUI
+*					v2.0.0
+*						- Error handling added
+*					v1.2.1
 *						- command list printed at startup (as per request from literally everyone)
 *						- input method completely redesigned
 *						- UI now handles input parsing
@@ -97,6 +103,7 @@ public class TFTPClient extends JFrame
 	private DatagramPacket sentPacket;
 	private DatagramPacket receivedPacket;
 	private DatagramSocket generalSocket;
+	private String standardMode = "NETASCII";
 	private boolean verbose;
 	private int outPort;
 	private TFTPReader reader;
@@ -122,7 +129,6 @@ public class TFTPClient extends JFrame
 	private static final int IN_PORT_SERVER = 69;
 	private static final int MAX_SIZE = 512;
 	private static final int DATA_OFFSET = 4;
-	private static final String DEFAULT_MODE = "ASCII";
 	private static final byte[] OPCODE_RRQ =  {0,1}; 
 	private static final byte[] OPCODE_WRQ =  {0,2};
 	private static final byte[] OPCODE_DATA = {0,3};
@@ -165,6 +171,7 @@ public class TFTPClient extends JFrame
 		//make and run the UI
 		console = new ConsoleUI("TFTPClient.java");
 		console.run();
+		console.colorScheme("dark");
 	}
 	
 	
@@ -438,6 +445,7 @@ public class TFTPClient extends JFrame
 		outPort = oldPort;
 		blockNum = 0;
 		console.print("----------------------WRQ COMPLETE----------------------");
+		console.printCompletion();
 	}
 	
 	
@@ -671,6 +679,7 @@ public class TFTPClient extends JFrame
 		}
 		
 		console.print("----------------------RRQ COMPLETE----------------------");
+		console.printCompletion();
 		outPort = oldPort;
 	}
 	
@@ -707,35 +716,39 @@ public class TFTPClient extends JFrame
 		response = receivedPacket.getData();
 		if(response[0] == 0 && response[1] == 5)
 		{
+			/*
+			 * TODO
+			 * Should we not be printing out the message included in the error packet, instead of our own locally generated string?
+			 */
 			switch(errorType)
 			{
 				//file not found
 		    	case 1:
-		    			console.print("File not found, please select again");
+		    			console.printError(1,"File not found, please select again");
 		    			//start(this);
 		    			errorFlag=true;
 		    			break;
 		    	//improper rights for R/W
 		    	case 2:
-		    			console.print("You do not have the rights for this, please select again");
+		    			console.printError(2,"You do not have the rights for this, please select again");
 		    			//start(this);
 		    			errorFlag=true;
 		    			break;
 		    	//drive full
 		    	case 3:
-		    			console.print("Location full, please select a new location to write to");
+		    			console.printError(3,"Location full, please select a new location to write to");
 		    			//start(this);
 		    			errorFlag=true;
 		    			break;
 		    	//file already exists
 		    	case 6:
-		    			console.print("The file already exists, please select a new file");
+		    			console.printError(6,"The file already exists, please select a new file");
 		    			//start(this);
 		    			errorFlag=true;
 		    			break;
-		    	//unknown error
+		    	//unknown errorS
 		    	default:
-		    			/* TO DO
+		    			/* TODO
 		    			 * something
 		    			 */
 		    			break;
@@ -780,11 +793,12 @@ public class TFTPClient extends JFrame
 		console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 		console.print("'testmode BOOL'             - if set true, sends to Host. If set false, sends to Server directly");
 		console.print("'test'                                    - runs a test for the console");
+		console.print("'mode NEWMODE'           - set the default mode to NEWMODE");
 		console.println();
 		console.print("'push MODE'                    - push a file to the server in mode MODE (ex, ASCII)");
-		console.print("'push'                                - push a file to the server in mode: ASCII");
+		console.print("'push'                                - push a file to the server in default mode");
 		console.print("'pull FILENAME MODE'  - pull a file from the server in mode MODE (ex ASCII)");
-		console.print("'pull FILENAME'               - pull a file from the server in mode: ASCII");
+		console.print("'pull FILENAME'               - pull a file from the server in default mode");
 		console.println();
 		console.print("'rrq FILENAME MODE'    - send a read request for file FILENAME in mode MODE");
 		console.print("'wrq MODE'                       - send a write request in mode MODE");
@@ -816,11 +830,12 @@ public class TFTPClient extends JFrame
 						console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 						console.print("'testmode BOOL'             - if set true, sends to Host. If set false, sends to Server directly");
 						console.print("'test'                                    - runs a test for the console");
+						console.print("'mode NEWMODE'           - set the default mode to NEWMODE");
 						console.println();
 						console.print("'push MODE'                    - push a file to the server in mode MODE (ex, ASCII)");
-						console.print("'push'                                - push a file to the server in mode: ASCII");
+						console.print("'push'                                - push a file to the server in default mode");
 						console.print("'pull FILENAME MODE'  - pull a file from the server in mode MODE (ex ASCII)");
-						console.print("'pull FILENAME'               - pull a file from the server in mode: ASCII");
+						console.print("'pull FILENAME'               - pull a file from the server in default mode");
 						console.println();
 						console.print("'rrq FILENAME MODE'    - send a read request for file FILENAME in mode MODE");
 						console.print("'wrq MODE'                       - send a write request in mode MODE");
@@ -860,7 +875,7 @@ public class TFTPClient extends JFrame
 							file = fileChooser.getSelectedFile();//get file name
 							if(file.exists())
 							{
-								sendWRQ(file.getName(), DEFAULT_MODE);//enter WRQ protocol
+								sendWRQ(file.getName(), standardMode);//enter WRQ protocol
 							}
 							else
 							{
@@ -868,7 +883,7 @@ public class TFTPClient extends JFrame
 							}
 						}
 					}
-					//BAD (WOLF) INPUT
+					//BAD INPUT
 					else
 					{
 						console.print("! Unknown Input !");
@@ -908,6 +923,15 @@ public class TFTPClient extends JFrame
 							console.print("! Unknown Input !");
 						}
 					}
+					//set standard mode
+					else if (input[0].equals("mode"))
+					{
+						standardMode = input[1];
+						if(verbose)
+						{
+							console.print("standard mode set to: " + standardMode);
+						}
+					}
 					//push in mode and old wrq MODE 
 					else if (input[0].equals("push") || input[0].equals("wrq"))
 					{
@@ -942,10 +966,26 @@ public class TFTPClient extends JFrame
 						}
 						else
 						{
-							sendRRQ(input[1], DEFAULT_MODE);
+							sendRRQ(input[1], standardMode);
 						}
 					}
-					//BAD (WOLF) INPUT
+					//alter color scheme
+					else if (input[0].equals("color") || input[0].equals("colour"))
+					{
+						boolean cs = console.colorScheme(input[1]);
+						if (verbose)
+						{
+							if(cs)
+							{
+								console.print("color scheme set to: " + input[1]);
+							}
+							else
+							{
+								console.printOperandError("color scheme not found");
+							}
+						}
+					}
+					//BAD INPUT
 					else
 					{
 						console.print("! Unknown Input !");
@@ -958,7 +998,7 @@ public class TFTPClient extends JFrame
 					{
 						sendRRQ(input[1], input[2]);
 					}
-					//BAD (WOLF) INPUT
+					//BAD INPUT
 					else
 					{
 						console.print("! Unknown Input !");
@@ -966,7 +1006,7 @@ public class TFTPClient extends JFrame
 					break;
 				
 				default:
-					//BAD (WOLF) INPUT
+					//BAD INPUT
 					console.print("! Unknown Input !");
 					break;
 			}
