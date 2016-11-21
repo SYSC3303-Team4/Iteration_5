@@ -18,6 +18,7 @@
 *Update Log:		v2.0.1
 *						- DEFAULT_MODE constant replaced with standard_mode variables
 *						- standard_mode can now be set via console (NETASCII by default)
+*						- displays error packets and file transfer completion using method in ConsoleUI
 *					v2.0.0
 *						- Error handling added
 *					v1.2.1
@@ -170,6 +171,7 @@ public class TFTPClient extends JFrame
 		//make and run the UI
 		console = new ConsoleUI("TFTPClient.java");
 		console.run();
+		console.colorScheme("dark");
 	}
 	
 	
@@ -443,6 +445,7 @@ public class TFTPClient extends JFrame
 		outPort = oldPort;
 		blockNum = 0;
 		console.print("----------------------WRQ COMPLETE----------------------");
+		console.printCompletion();
 	}
 	
 	
@@ -676,6 +679,7 @@ public class TFTPClient extends JFrame
 		}
 		
 		console.print("----------------------RRQ COMPLETE----------------------");
+		console.printCompletion();
 		outPort = oldPort;
 	}
 	
@@ -712,35 +716,39 @@ public class TFTPClient extends JFrame
 		response = receivedPacket.getData();
 		if(response[0] == 0 && response[1] == 5)
 		{
+			/*
+			 * TODO
+			 * Should we not be printing out the message included in the error packet, instead of our own locally generated string?
+			 */
 			switch(errorType)
 			{
 				//file not found
 		    	case 1:
-		    			console.print("File not found, please select again");
+		    			console.printError(1,"File not found, please select again");
 		    			//start(this);
 		    			errorFlag=true;
 		    			break;
 		    	//improper rights for R/W
 		    	case 2:
-		    			console.print("You do not have the rights for this, please select again");
+		    			console.printError(2,"You do not have the rights for this, please select again");
 		    			//start(this);
 		    			errorFlag=true;
 		    			break;
 		    	//drive full
 		    	case 3:
-		    			console.print("Location full, please select a new location to write to");
+		    			console.printError(3,"Location full, please select a new location to write to");
 		    			//start(this);
 		    			errorFlag=true;
 		    			break;
 		    	//file already exists
 		    	case 6:
-		    			console.print("The file already exists, please select a new file");
+		    			console.printError(6,"The file already exists, please select a new file");
 		    			//start(this);
 		    			errorFlag=true;
 		    			break;
-		    	//unknown error
+		    	//unknown errorS
 		    	default:
-		    			/* TO DO
+		    			/* TODO
 		    			 * something
 		    			 */
 		    			break;
@@ -959,6 +967,22 @@ public class TFTPClient extends JFrame
 						else
 						{
 							sendRRQ(input[1], standardMode);
+						}
+					}
+					//alter color scheme
+					else if (input[0].equals("color") || input[0].equals("colour"))
+					{
+						boolean cs = console.colorScheme(input[1]);
+						if (verbose)
+						{
+							if(cs)
+							{
+								console.print("color scheme set to: " + input[1]);
+							}
+							else
+							{
+								console.printOperandError("color scheme not found");
+							}
 						}
 					}
 					//BAD INPUT
