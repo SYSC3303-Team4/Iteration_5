@@ -112,7 +112,12 @@ class TFTPWriteThread extends ServerThread
 				   	0,mode.toByteArray().length);
 		   
 		   //Check for Valid MODE
-		   if(!(modeString.equalsIgnoreCase("netascii")) || !(modeString.equalsIgnoreCase("octet"))){
+		   if((modeString.equalsIgnoreCase("netascii"))){
+
+		   }
+		   else if((modeString.equalsIgnoreCase("octet"))){
+
+		   } else {
 			   buildError(4,receivePacket,verbose,"Invalid Mode");
 	    	   return; 
 		   }
