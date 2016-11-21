@@ -3,12 +3,15 @@
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
 *Date of Update:    16/11/2016                                              
-*Version:           1.2.0                                                      
+*Version:           1.2.1                                                      
 *                                                                                   
 *Purpose:           Generic console for basic output/inputs
 * 
 * 
-*Update Log:		v1.2.0
+*Update Log:		v1.2.1
+*						- console can run in either dark or light mode
+*						- really just a vanity update
+*					v1.2.0
 *						- console clears inputLine after each input rather than select all text
 *						- keypress based ISRs added
 *						- Able to use keys to scroll through previous inputs
@@ -153,6 +156,39 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
         c.weightx = 5.0;
         c.weighty = 5.0;
         add(inputLine, c);
+	}
+	
+	
+	//swap color schemes
+	public void colorScheme(String scheme)
+	{
+		Color background;
+		Color text;
+		
+		if(scheme.toLowerCase().equals("light"))
+		{
+			background = Color.WHITE;
+			text = Color.BLACK;
+		}
+		else if (scheme.toLowerCase().equals("dark"))
+		{
+			background = Color.BLACK;
+			text = Color.WHITE;
+		}
+		else if (scheme.toLowerCase().equals("radical"))
+		{
+			background = Color.PINK;
+			text = Color.GREEN;
+		}
+		else
+		{
+			return;
+		}
+		
+		outputArea.setBackground(background);
+		outputArea.setForeground(text);
+		inputLine.setBackground(background);
+		inputLine.setForeground(text);
 	}
 	
 	@Override
