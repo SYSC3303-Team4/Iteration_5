@@ -27,6 +27,7 @@ public abstract class ServerThread extends Thread{
 	protected boolean verbose;
 	protected DatagramPacket requestPacket;
 	protected boolean errorFlag=false;
+	protected int clientTID;
 	
 	public ServerThread(ThreadGroup group, String name, ConsoleUI console)
 	{
@@ -247,8 +248,15 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			printReceivedPacket(receivePacket, verbose);
   		}
   		byte[] data = receivePacket.getData();
-
+  		if(receivePacket.getPort() != clientTID){
+  			buildError(5,receivePacket,verbose,"Unexpected TID");
+  			console.print("Unexpected TID");
+  			return false;
+  		}
   		//check ACK for validity
+		if(data.length > 4){
+			buildError(4,receivePacket, verbose,"Length of the ACK is over 4.");
+		}
   		if(data[0] == 0 && data[1] == 4){
 
   			//Check if the blockNumber corresponds to the expected blockNumber
@@ -320,12 +328,20 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-  		//analyze ACK for format
+  		//analyze DATA for format
   		if (verbose)
   		{
   			console.print("Server: Checking DATA...");
   		}
   		byte[] data = receivePacket.getData();
+  		if(receivePacket.getPort() != clientTID){
+  			buildError(5,receivePacket,verbose,"Unexpected TID");
+  			console.print("Unexpected TID");
+  			return false;
+  		}
+		if(data.length > 516){
+			buildError(4,receivePacket, verbose,"Length of the DATA packet is over 516.");
+		}
 
   		//check if data
   		if(data[0] == 0 && data[1] == 3){

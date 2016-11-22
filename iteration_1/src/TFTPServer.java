@@ -159,6 +159,8 @@ public class TFTPServer implements ActionListener
 			// Form a String from the byte array.
 			String received = new String(data,0,len);
 			console.print(received);
+			
+			
 
 			// If it's a read, send back DATA (03) block 1
 			// If it's a write, send back ACK (04) block 0

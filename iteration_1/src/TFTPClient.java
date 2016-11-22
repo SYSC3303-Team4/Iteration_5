@@ -112,6 +112,10 @@ public class TFTPClient extends JFrame
 	private boolean retransmitACK = false;
 	private boolean retransmitDATA = false;
 	
+	//Error handling vars
+	private int serverTID;
+	private boolean establishedConnection = false;
+	
 	//INIT socket timeout variables
 	protected static final int TIMEOUT = 5; //Seconds
 	protected static final int MAX_TIMEOUTS = 5;
@@ -403,7 +407,8 @@ public class TFTPClient extends JFrame
 		}
 		//change port to wherever ACK came from 
 		outPort = receivedPacket.getPort();
-		
+		serverTID = receivedPacket.getPort();
+		establishedConnection = true;
 		//send DATA
 		while ( !(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4)
 		{
@@ -496,6 +501,15 @@ public class TFTPClient extends JFrame
 			console.print("Client: Checking DATA...");
 		}
 		byte[] data = receivedPacket.getData();
+		if(receivedPacket.getLength() > 516){
+			buildError(4,receivedPacket, verbose,"Length of the DATA packet is over 516.");
+		}
+		if(establishedConnection){
+	  		if(receivedPacket.getPort() != serverTID){
+	  			buildError(5,receivedPacket,verbose,"Unexpected TID");
+	  			return false;
+	  		}
+  		}
 
 		//check if data
 		if(data[0] == 0 && data[1] == 3){
@@ -567,7 +581,16 @@ public class TFTPClient extends JFrame
 			console.print("Client: Checking ACK...");
 		}
 		byte[] data = receivedPacket.getData();
+		if(establishedConnection){
+	  		if(receivedPacket.getPort() != serverTID){
+	  			buildError(5,receivedPacket,verbose,"Unexpected TID");
+	  			return false;
+	  		}
+  		}
 
+		if(receivedPacket.getLength() > 4){
+			buildError(4,receivedPacket, verbose,"Length of the ACK is over 4.");
+		}
 		//check ACK for validity
 		if(data[0] == 0 && data[1] == 4){
 
@@ -621,6 +644,10 @@ public class TFTPClient extends JFrame
 			while(!receiveDATA()){if(errorFlag){return;}}
 			if(retransmitACK && !receivedData1){console.print("Never Received first data. Please try again");return;}
 			if(!retransmitACK && !duplicateDATA){
+				if(!receivedData1){
+					serverTID = receivedPacket.getPort();
+					establishedConnection = true;
+				}
 
 				outPort = receivedPacket.getPort();
 
@@ -761,6 +788,71 @@ public class TFTPClient extends JFrame
 		console.printByteArray(data, packetSize);
 		console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
 	}
+	
+    //Build an Error Packet with format :
+    /*
+    2 bytes  2 bytes        string    1 byte
+    ----------------------------------------
+ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
+    ----------------------------------------
+    */
+    protected void buildError(int errorCode,DatagramPacket receivePacket, boolean verbose, String errorInfo){
+    	int errorSizeFactor = 5;
+
+    	
+    	String errorMsg = new String("Unknown Error.");
+    	switch(errorCode){
+	    	case 1:
+	    		errorCode = 1;
+	    		console.print("Server: File not found, sending error packet");
+	    		errorMsg = "File not found: " + errorInfo;
+	    		break;
+	    	case 2: 
+	    		errorCode = 2;
+	    		console.print("Server: Access violation, sending error packet");
+	    		errorMsg = "Access violation: " + errorInfo;
+	    		break;
+	    	case 3: 
+	    		errorCode = 3;
+	    		console.print("Server: Disk full or allocation exceeded, sending error packet");
+	    		errorMsg = "Disk full or allocation exceeded: " + errorInfo;
+	    		break;
+	    	case 4:
+	    		errorCode = 4;
+	    		console.print("Illegal TFTP operation");
+	    		errorMsg = "Illegal TFTP operation: " + errorInfo;
+	    		break;
+	    	case 5:
+	    		errorCode = 5;
+	    		console.print("Unknown Transfer ID");
+	    		errorMsg = "Unknown Transfer ID: " + errorInfo;
+	    		break;
+	    	case 6: 
+	    		errorCode = 6;
+	    		console.print("Server: File already exists, sending error packet");
+	    		errorMsg = "File already exists: " + errorInfo;
+	    		break;
+    	}
+    	
+    	byte[] data = new byte[errorMsg.length() + errorSizeFactor];
+    	data[0] = 0;
+    	data[1] = 5;
+    	data[2] = 0;
+    	data[3] = (byte)errorCode;
+    	for(int c = 0; c<errorMsg.length();c++){
+    		data[4+c] = errorMsg.getBytes()[c];
+    	}
+    	data[data.length-1] = 0;
+    	
+    	sentPacket = new DatagramPacket(data, data.length,
+	    		receivePacket.getAddress(), receivePacket.getPort());
+	    if(verbose){
+		   printDatagram(sentPacket);
+	    }
+
+	    sendPacket();
+    	
+    }
 	
 	
 	
