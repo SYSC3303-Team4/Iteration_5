@@ -15,7 +15,12 @@
 					packet. Each datagram can be 512B max
 * 
 * 
-*Update Log:		v2.0.1
+*Update Log:		
+*					v2.0.2
+*						-Added unknown TID handling
+*						-Added Error Generation
+*						-Added error 4-5 Handling
+*					v2.0.1
 *						- DEFAULT_MODE constant replaced with standard_mode variables
 *						- standard_mode can now be set via console (NETASCII by default)
 *						- displays error packets and file transfer completion using method in ConsoleUI
@@ -81,7 +86,7 @@
 *						- name changed from 'Client' to 'TFTPClient'
 *						 (are you happy now Sarah??!?!?!?!?!)
 *					v1.0.0
-*                       - null
+*                       
 */
 
 

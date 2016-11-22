@@ -68,6 +68,7 @@ class TFTPReadThread  extends ServerThread
 		threadNumber  = thread;
 		verbose = verboseMode;
 		serverDump = path;
+		clientTID = requestPacketInfo.getPort();
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) {
@@ -85,7 +86,8 @@ class TFTPReadThread  extends ServerThread
 
 	public void run() {
 
-
+		connectionEstablished = true;
+		
 		printReceivedPacket(requestPacket, verbose);
 
 		/* Exit Gracefully if the stop is requested. */

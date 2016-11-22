@@ -63,12 +63,12 @@ class TFTPWriteThread extends ServerThread
     
     
 
-    public TFTPWriteThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket receivePacketInfo,String thread, Boolean verboseMode,File file) {
+    public TFTPWriteThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket requestPacketInfo,String thread, Boolean verboseMode,File file) {
     	super(group,thread,transcript);
-    	requestPacket = receivePacketInfo;  
+    	requestPacket = requestPacketInfo;  
         threadNumber = thread;
         verbose = verboseMode;
-        clientTID = receivePacketInfo.getPort();
+        clientTID = requestPacketInfo.getPort();
         this.file = file;
         try {
 			sendReceiveSocket = new DatagramSocket();
@@ -90,7 +90,7 @@ class TFTPWriteThread extends ServerThread
     	
     	
 		   
-
+    		connectionEstablished = true;
 		   //Parsing Data for filename and mode 
 		   ByteArrayOutputStream filename = new ByteArrayOutputStream();
 		   ByteArrayOutputStream mode = new ByteArrayOutputStream();
@@ -121,7 +121,7 @@ class TFTPWriteThread extends ServerThread
 		   else if((modeString.equalsIgnoreCase("octet"))){
 
 		   } else {
-			   buildError(4,receivePacket,verbose,"Invalid Mode");
+			   buildError(4,requestPacket,verbose,"Invalid Mode");
 	    	   return; 
 		   }
 		   
@@ -170,7 +170,7 @@ class TFTPWriteThread extends ServerThread
 			  ---------------------------------
 			*/
 			   byte[] rawData = new byte[516];
-			   receivePacket = new DatagramPacket(rawData, rawData.length);
+			   requestPacket = new DatagramPacket(rawData, rawData.length);
 			   
 			    /* Exit Gracefully if the stop is requested. */
 			   if(stopRequested){continue;}
@@ -181,12 +181,12 @@ class TFTPWriteThread extends ServerThread
 
 		       if(!retransmitACK){
 		       
-		    	   printReceivedPacket(receivePacket,verbose);
-			       byte[] data = new byte[receivePacket.getLength()-4];
+		    	   printReceivedPacket(requestPacket,verbose);
+			       byte[] data = new byte[requestPacket.getLength()-4];
 	
 			       //Parse data from DATA packet
-			       for(int i = 4; i < receivePacket.getLength();i++){
-			    	   data[i-4] = receivePacket.getData()[i];
+			       for(int i = 4; i < requestPacket.getLength();i++){
+			    	   data[i-4] = requestPacket.getData()[i];
 			       }
 			       
 	
@@ -198,7 +198,7 @@ class TFTPWriteThread extends ServerThread
 			       
 			       if(initialFileCheck){
 				       if(fileName.exists()) { 
-				    	   buildError(6,receivePacket,verbose,"");
+				    	   buildError(6,requestPacket,verbose,"");
 				    	   return;
 						}
 			       }
@@ -206,7 +206,7 @@ class TFTPWriteThread extends ServerThread
 			       /*
 			       if(!fileName.canWrite())
 			       {
-			    	   buildError(2,receivePacket,verbose);
+			    	   buildError(2,requestPacket,verbose);
 			    	   return;
 			       }
 			       */
@@ -215,17 +215,17 @@ class TFTPWriteThread extends ServerThread
 						writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
 						initialFileCheck = false;
 					} catch (SecurityException e1) {
-						buildError(2,receivePacket,verbose,"");
+						buildError(2,requestPacket,verbose,"");
 						e1.printStackTrace();
 						return;
 					} 
 			       catch(FileNotFoundException e2)
 			       {
-			    	   buildError(1,receivePacket,verbose,"");
+			    	   buildError(1,requestPacket,verbose,"");
 			    	   return;
 			       }
 			       catch(IOException e2){
-						buildError(3,receivePacket,verbose,"");
+						buildError(3,requestPacket,verbose,"");
 						return;
 					}
 	
@@ -245,8 +245,8 @@ class TFTPWriteThread extends ServerThread
 				  --------------------
 				*/
 	
-				   response[2]=receivePacket.getData()[2];
-				   response[3]=receivePacket.getData()[3];
+				   response[2]=requestPacket.getData()[2];
+				   response[3]=requestPacket.getData()[3];
 	
 		       }
 				   
