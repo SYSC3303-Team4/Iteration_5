@@ -301,9 +301,43 @@ public class TFTPHost
 		
 		sendDatagram(outPort,socket);
 		needSend=false;
-		
-		
 	}
+	
+	
+	
+	//tack on garbage to the outgoing packet
+		public void addData(int outPort, DatagramSocket socket)
+		{
+			console.print("Adding " + inputStack.peek().getExtraBytes() + " Bytes of garbage to datagram...");
+			//generate trash and prep DatagramArtisan
+			byte[] trash = (new TrashFactory()).produce(inputStack.peek().getExtraBytes());
+			DatagramArtisan da = new DatagramArtisan();
+			
+			//extract parameters from receivedPacket
+			byte[] opCode = da.getOpCode(receivedPacket);
+			int blockNum = da.getBlockNum(receivedPacket);
+			byte[] data = da.getData(receivedPacket);
+			InetAddress address = receivedPacket.getAddress();
+			int packetPort = receivedPacket.getPort();
+			
+			//tack on garbage in dataWithTrash[]
+			byte[] dataWithTrash = new byte[data.length+trash.length];
+			int i=0;
+			for (; i<data.length; i++)
+			{
+				dataWithTrash[i] = data[i];
+			}
+			for (int c=0; i<dataWithTrash.length; i++,c++)
+			{
+				dataWithTrash[i] = trash[c];
+			}
+
+			//generate datagram and send datagram
+			receivedPacket = da.produceDATA(opCode, blockNum, dataWithTrash, address, packetPort);
+			sendDatagram(outPort,socket);
+			
+			needSend=false;
+		}
 	
 	
 	public void changeType(int outPort, DatagramSocket socket)//change OP
