@@ -204,7 +204,7 @@ public class TFTPServer implements ActionListener
 				threadNum++;
 				Thread writeRequest =  new TFTPWriteThread(initializedThreads,console, receivePacket,"Thread "+threadNum, verbose,file);
 				writeRequest.start();
-				response = writeResp;
+				response = writeResp; 
 			} else { // it was invalid, send 
 	    		int errorCode = 4;
 	    		console.print("Illegal TFTP operation");

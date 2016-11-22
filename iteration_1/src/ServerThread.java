@@ -28,7 +28,7 @@ public abstract class ServerThread extends Thread{
 	protected boolean connectionEstablished;
 
 	protected boolean errorFlag=false;
-	protected int clientTID;
+	protected int clientTID; 
 	
 	public ServerThread(ThreadGroup group, String name, ConsoleUI console)
 	{

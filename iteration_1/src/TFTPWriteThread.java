@@ -69,7 +69,7 @@ class TFTPWriteThread extends ServerThread
         threadNumber = thread;
         verbose = verboseMode;
         clientTID = requestPacketInfo.getPort();
-        this.file = file;
+        this.file = file; 
         try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) {

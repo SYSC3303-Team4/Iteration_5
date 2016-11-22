@@ -66,7 +66,7 @@ class TFTPReadThread  extends ServerThread
 		super(group,thread,transcript);
 		requestPacket = requestPacketInfo;
 		threadNumber  = thread;
-		verbose = verboseMode;
+		verbose = verboseMode; 
 		serverDump = path;
 		clientTID = requestPacketInfo.getPort();
 		try {

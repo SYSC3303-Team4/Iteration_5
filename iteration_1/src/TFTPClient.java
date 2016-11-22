@@ -5,7 +5,7 @@
 *Date of Update:    21/11/2016                                              
 *Version:           2.0.1                                                      
 *                                                                                   
-*Purpose:           Generates a datagram following the format of [0,R/W,STR1,0,STR2,0],
+*Purpose:           Generates a datagram following the format of [0,R/W,STR1,0,STR2,0], 
 					in which R/W signifies read (1) or write (2), STR1 is a filename,
 					and STR2 is the mode. Sends this datagram to the IntermediateHost
 					and waits for response from intermediateHost. Repeats this
