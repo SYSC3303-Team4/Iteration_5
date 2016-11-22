@@ -27,6 +27,7 @@ public abstract class ServerThread extends Thread{
 	protected boolean verbose;
 	protected DatagramPacket requestPacket;
 	protected boolean errorFlag=false;
+	protected int clientTID;
 	
 	public ServerThread(ThreadGroup group, String name, ConsoleUI console)
 	{
@@ -46,7 +47,7 @@ public abstract class ServerThread extends Thread{
 			sendReceiveSocket.close();
 		}
 		console.print("Server: Closing thread.");
-	}
+	} 
 	
 	protected void printReceivedPacket(DatagramPacket receivedPacket, boolean verbose){
 		console.print("Server: Received packet...");
@@ -132,7 +133,7 @@ DATA  | 03    |   Block #  |    Data    |
 ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     ----------------------------------------
     */
-    protected void buildError(int errorCode,DatagramPacket receivePacket, boolean verbose){
+    protected void buildError(int errorCode,DatagramPacket receivePacket, boolean verbose, String errorInfo){
     	int errorSizeFactor = 5;
     	
     	String errorMsg = new String("Unknown Error.");
@@ -140,22 +141,32 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 	    	case 1:
 	    		errorCode = 1;
 	    		console.print("Server: File not found, sending error packet");
-	    		errorMsg = "File not found.";
+	    		errorMsg = "File not found: " + errorInfo;
 	    		break;
 	    	case 2: 
 	    		errorCode = 2;
 	    		console.print("Server: Access violation, sending error packet");
-	    		errorMsg = "Access violation.";
+	    		errorMsg = "Access violation: " + errorInfo;
 	    		break;
 	    	case 3: 
 	    		errorCode = 3;
 	    		console.print("Server: Disk full or allocation exceeded, sending error packet");
-	    		errorMsg = "Disk full or allocation exceeded.";
+	    		errorMsg = "Disk full or allocation exceeded: " + errorInfo;
+	    		break;
+	    	case 4:
+	    		errorCode = 4;
+	    		console.print("Illegal TFTP operation");
+	    		errorMsg = "Illegal TFTP operation: " + errorInfo;
+	    		break;
+	    	case 5:
+	    		errorCode = 5;
+	    		console.print("Unknown Transfer ID");
+	    		errorMsg = "Unknown Transfer ID: " + errorInfo;
 	    		break;
 	    	case 6: 
 	    		errorCode = 6;
 	    		console.print("Server: File already exists, sending error packet");
-	    		errorMsg = "File already exists.";
+	    		errorMsg = "File already exists: " + errorInfo;
 	    		break;
     	}
     	
@@ -170,7 +181,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     	data[data.length-1] = 0;
     	
 	    DatagramPacket sendPacket = new DatagramPacket(data, data.length,
-				     receivePacket.getAddress(), receivePacket.getPort());
+				     requestPacket.getAddress(), requestPacket.getPort());
 		/* Exit Gracefully if the stop is requested. */
 		   if(stopRequested){exitGraceFully();}
 		   printSendPacket(sendPacket,verbose);
@@ -227,7 +238,6 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 
 
   		} catch (IOException e) {
-  			// TODO Auto-generated catch block
   			e.printStackTrace();
   			return false;
   		} 
@@ -238,8 +248,15 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			printReceivedPacket(receivePacket, verbose);
   		}
   		byte[] data = receivePacket.getData();
-
+  		if(receivePacket.getPort() != clientTID){
+  			buildError(5,receivePacket,verbose,"Unexpected TID");
+  			console.print("Unexpected TID");
+  			return false;
+  		}
   		//check ACK for validity
+		if(data.length > 4){
+			buildError(4,receivePacket, verbose,"Length of the ACK is over 4.");
+		}
   		if(data[0] == 0 && data[1] == 4){
 
   			//Check if the blockNumber corresponds to the expected blockNumber
@@ -311,12 +328,20 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-  		//analyze ACK for format
+  		//analyze DATA for format
   		if (verbose)
   		{
   			console.print("Server: Checking DATA...");
   		}
   		byte[] data = receivePacket.getData();
+  		if(receivePacket.getPort() != clientTID){
+  			buildError(5,receivePacket,verbose,"Unexpected TID");
+  			console.print("Unexpected TID");
+  			return false;
+  		}
+		if(data.length > 516){
+			buildError(4,receivePacket, verbose,"Length of the DATA packet is over 516.");
+		}
 
   		//check if data
   		if(data[0] == 0 && data[1] == 3){

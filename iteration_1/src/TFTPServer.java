@@ -70,6 +70,13 @@ public class TFTPServer implements ActionListener
 			se.printStackTrace();
 			System.exit(1);
 		}
+		try{
+			sendSocket = new DatagramSocket();
+		} catch (SocketException se){
+			console.print("SOCKET BIND ERROR");
+			se.printStackTrace();
+			System.exit(1);
+		}
 		while(file == null)
 		{
 			fileChooserFrame = new JTextArea(5,40);
@@ -153,6 +160,8 @@ public class TFTPServer implements ActionListener
 			// Form a String from the byte array.
 			String received = new String(data,0,len);
 			console.print(received);
+			
+			
 
 			// If it's a read, send back DATA (03) block 1
 			// If it's a write, send back ACK (04) block 0
@@ -196,8 +205,31 @@ public class TFTPServer implements ActionListener
 				Thread writeRequest =  new TFTPWriteThread(initializedThreads,console, receivePacket,"Thread "+threadNum, verbose,file);
 				writeRequest.start();
 				response = writeResp;
-			} else { // it was invalid, just quit
-				throw new Exception("Not yet implemented");
+			} else { // it was invalid, send 
+	    		int errorCode = 4;
+	    		console.print("Illegal TFTP operation");
+	    		String errorMsg = "Illegal TFTP operation.";
+	    		byte[] dataError = new byte[errorMsg.length() + 5];
+	        	data[0] = 0;
+	        	data[1] = 5;
+	        	data[2] = 0;
+	        	data[3] = (byte)errorCode;
+	        	for(int c = 0; c<errorMsg.length();c++){
+	        		data[4+c] = errorMsg.getBytes()[c];
+	        	}
+	        	data[data.length-1] = 0;
+	        	
+	    	    DatagramPacket sendPacket = new DatagramPacket(data, data.length,
+	    				     receivePacket.getAddress(), receivePacket.getPort());
+	    	    console.print("Sending: Illegal TFTP operation Error Packet");
+
+	    	       	try {
+	    	       		sendSocket.send(sendPacket);
+	    	       	} catch (IOException e) {
+	    	       		e.printStackTrace();
+	    	       		System.exit(1);
+	    	       	}
+				
 			} 
 		}
 	System.exit(0);

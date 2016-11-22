@@ -68,6 +68,7 @@ class TFTPWriteThread extends ServerThread
     	requestPacket = receivePacketInfo;  
         threadNumber = thread;
         verbose = verboseMode;
+        clientTID = receivePacketInfo.getPort();
         this.file = file;
         try {
 			sendReceiveSocket = new DatagramSocket();
@@ -86,6 +87,8 @@ class TFTPWriteThread extends ServerThread
     }
 
     public void run() {
+    	
+    	
 		   
 
 		   //Parsing Data for filename and mode 
@@ -108,9 +111,23 @@ class TFTPWriteThread extends ServerThread
 				   }
 				}
 		   }
+		   String modeString = new String(mode.toByteArray(), 
+				   	0,mode.toByteArray().length);
+		   
+		   //Check for Valid MODE
+		   if((modeString.equalsIgnoreCase("netascii"))){
+
+		   }
+		   else if((modeString.equalsIgnoreCase("octet"))){
+
+		   } else {
+			   buildError(4,receivePacket,verbose,"Invalid Mode");
+	    	   return; 
+		   }
+		   
 		   printReceivedPacket(requestPacket, verbose);
 		    /* Exit Gracefully if the stop is requested. */
-	       if(stopRequested){exitGraceFully();return;}
+	       if(stopRequested){exitGraceFully();return;}  
 	       if(verbose){
 	    	   console.print("Request parsed for:");
 	    	   console.print("	Filename: " + new String(filename.toByteArray(),
@@ -181,7 +198,7 @@ class TFTPWriteThread extends ServerThread
 			       
 			       if(initialFileCheck){
 				       if(fileName.exists()) { 
-				    	   buildError(6,receivePacket,verbose);
+				    	   buildError(6,receivePacket,verbose,"");
 				    	   return;
 						}
 			       }
@@ -198,17 +215,17 @@ class TFTPWriteThread extends ServerThread
 						writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
 						initialFileCheck = false;
 					} catch (SecurityException e1) {
-						buildError(2,receivePacket,verbose);
+						buildError(2,receivePacket,verbose,"");
 						e1.printStackTrace();
 						return;
 					} 
 			       catch(FileNotFoundException e2)
 			       {
-			    	   buildError(1,receivePacket,verbose);
+			    	   buildError(1,receivePacket,verbose,"");
 			    	   return;
 			       }
 			       catch(IOException e2){
-						buildError(3,receivePacket,verbose);
+						buildError(3,receivePacket,verbose,"");
 						return;
 					}
 	
