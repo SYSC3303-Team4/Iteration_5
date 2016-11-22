@@ -305,16 +305,6 @@ public class TFTPHost
 		
 	}
 	
-	public void addData(int outPort, DatagramSocket socket)//JASON do
-	{
-		TrashFactory adding =new TrashFactory();
-		
-		console.print("Add data selected, sending packet normaly");
-		adding.produce(inputStack.peek().getExtraBytes());
-		
-		sendDatagram(outPort,socket);
-		needSend=false;
-	}
 	
 	public void changeType(int outPort, DatagramSocket socket)//change OP
 	{
