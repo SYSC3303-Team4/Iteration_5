@@ -1,3 +1,4 @@
+
 /**
 *Class:             TFTPHost.java
 *Project:           TFTP Project - Group 4
@@ -38,6 +39,7 @@ import javax.swing.JTextArea;
 
 import ui.ConsoleUI;
 import inputs.*;
+import errorhelpers.*;
 
 
 public class TFTPHost 
@@ -50,12 +52,12 @@ public class TFTPHost
 	public final int ERR_MODE		= 3;	//alter the mode of RRQ or WRQ to invalid
 	public final int ERR_ADD_DATA	= 4;	//make data in packet over limit of 512
 	public final int ERR_OPCODE		= 5;	//alter a packet opcode to an in greater than 5
-	public final int ERR_TID			= 6;	//alter a packets destination port
+	public final int ERR_TID		= 6;	//alter a packets destination port
 	public final int ERR_BLOCKNUM	= 7;	//incorrectly change block number
 	//packet type
 	public final int PACKET_RRQ		= 1;	//RRQ Packet
 	public final int PACKET_WRQ		= 2;	//WRQ Packet
-	public final int PACKET_DATA		= 3;	//DATA Packet
+	public final int PACKET_DATA	= 3;	//DATA Packet
 	public final int PACKET_ACK		= 4;	//ACK Packet
 	public final int PACKET_ERR		= 5;	//ERROR Packet
 		
@@ -109,7 +111,6 @@ public class TFTPHost
 		//run UI
 		console = new ConsoleUI("Error Simulator");
 		console.run();
-		console.colorScheme("dark");
 	}
 	
 	
@@ -277,6 +278,77 @@ public class TFTPHost
 		console.print("Packet successfully sent");
 		
 	}
+	
+	public void changeMode(int outPort, DatagramSocket socket)
+	{
+		//console.print("Change mode selected, changing mode to"+ inputStack.peek().getNewMode());
+		console.print("Chang mode selected,sending normally");
+		/*
+		 * Note super sure how to accsess mode, talk to server guys
+		byte newMode[] = new byte[2];
+		
+		newMode[1] = (byte)(inputStack.peek().getNewMode() & 0xFF);
+		newMode[0] = (byte)((inputStack.peek().getNewMode() >> 8)& 0xFF);
+		
+		receivedPacket.getData()[0]= newMode[0];
+		receivedPacket.getData()[1]=newMode[1];
+		*/
+		sendDatagram(outPort,socket);
+		needSend=false;
+		
+		
+	}
+	
+	public void addData(int outPort, DatagramSocket socket)
+	{
+		TrashFactory adding =new TrashFactory();
+		
+		console.print("Add data selected, sending packet normaly");
+		adding.produce(inputStack.peek().getExtraBytes());
+		
+		sendDatagram(outPort,socket);
+		needSend=false;
+	}
+	
+	public void changeType(int outPort, DatagramSocket socket)
+	{
+		console.print("Change packet type selected,changing to packet type"+inputStack.peek().getPacketType());
+		
+		
+		byte newType[] = new byte[2];
+		
+		newType[1] = (byte)(inputStack.peek().getPacketType() & 0xFF);
+		newType[0] = (byte)((inputStack.peek().getPacketType() >> 8)& 0xFF);
+		
+		receivedPacket.getData()[0]= newType[0];
+		receivedPacket.getData()[1]=newType[1];
+		sendDatagram(outPort,socket);
+		needSend=false;
+	}
+	
+	public void changePort(int outPort, DatagramSocket socket)
+	{
+		console.print("Sendign Data to"+ inputStack.peek().getTID());
+		sendDatagram(inputStack.peek().getTID(),socket);
+		needSend=false;
+	}
+	
+	public void changeBlock(int outPort, DatagramSocket socket)
+	{
+		console.print("Change Block slected, changing block number to "+inputStack.peek().getAlteredBlockNum());
+		
+		byte newBlock[] = new byte[2];
+		
+		newBlock[1] = (byte)(inputStack.peek().getAlteredBlockNum() & 0xFF);
+		newBlock[0] = (byte)((inputStack.peek().getAlteredBlockNum() >> 8)& 0xFF);
+		
+		receivedPacket.getData()[3]= newBlock[0];
+		receivedPacket.getData()[4]=newBlock[1];
+		sendDatagram(outPort,socket);
+		needSend=false;
+		
+	}
+	
 	public void passIt(int mode,int delay,int clientPort,DatagramSocket genSocket )
 	{
 		if(mode==0)//delay
@@ -305,6 +377,54 @@ public class TFTPHost
 			}
 			losePack( clientPort, genSocket);
 		}
+		
+		else if (mode==3)//change mode
+		{
+			if(verbose)
+			{
+				console.print("Changing Mode");
+			}
+			changeMode( clientPort, genSocket);
+		}
+		
+		else if (mode==4)//add random data
+		{
+			if(verbose)
+			{
+				console.print("Adding extra Data");
+				
+			}
+			
+			addData(clientPort,genSocket);
+		}
+		
+		else if (mode==5)//change packet type
+		{
+			if(verbose)
+			{
+				console.print("Changing Packet Type");
+			}
+			changeType(clientPort, genSocket);
+		}
+		
+		else if (mode==6)
+		{
+			if(verbose)
+			{
+				console.print("Changing Destination Port");
+			}
+			changePort(clientPort,genSocket);
+		}
+		
+		else if (mode==7)
+		{
+			if(verbose)
+			{
+				console.print("Changing Block Number");
+			}
+			changeBlock(clientPort,genSocket);
+		}
+		
 		
 		else
 		{
@@ -443,6 +563,7 @@ public class TFTPHost
 		{
 			console.print("Data Lost");
 		}
+		needSend=false;//new add
 	}
 	
 	public void maybeSend(int clientPort,DatagramSocket genSocket,DatagramPacket receivedPacket)
@@ -507,13 +628,13 @@ public class TFTPHost
 	
 	/**
 	 * TODO
-	 * Implement handling of Error Types:
+	 * Implement handling of Error Types:	
 	 * 
-	 * 		- alter the mode of RRQ or WRQ to invalid			ERR_MODE
-	 *		- make data in packet over limit of 512				ERR_ADD_DATA	[I've made a TrashFactory class to help]
-	 *		- alter a packet opcode to an in greater than 5		ERR_OPCODE
-	 * 		- alter a packets destination port					ERR_TID
-	 * 		- incorrectly change block number					ERR_BLOCKNUM
+	 * 		- alter the mode of RRQ or WRQ to invalid			ERR_MODE (nope)
+	 *		- make data in packet over limit of 512				ERR_ADD_DATA (done)	[I've made a TrashFactory class to help]
+	 *		- alter a packet opcode to an in greater than 5		ERR_OPCODE (done)
+	 * 		- alter a packets destination port					ERR_TID (done)
+	 * 		- incorrectly change block number					ERR_BLOCKNUM (done)
 	 * 
 	 * Please remove this when implemented
 	 */
@@ -656,7 +777,11 @@ public class TFTPHost
 						console.println();
 						console.print("'delay PT BN DL'             - set a delay for packet type PT, block number BN for DL sec");
 						console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
-						console.print("'lose PT BN'                      - lose packet type PT, block number BN");						
+						console.print("'lose PT BN'                      - lose packet type PT, block number BN");
+						
+						//new stuff to be added
+						
+						
 						console.print("'mode PT STRING'          - set the mode on either a RRQ or WRQ to STRING");					
 						console.print("'add PT BN BY'                 - add BY bytes of garbage data to PT packet BN");
 						console.print("'opcode PT BN OP'         - change packet type PT, number BN's opcode to OP");				
@@ -737,27 +862,6 @@ public class TFTPHost
 							console.print("! Unknown Input !");
 						}
 					}
-					//alter color scheme
-					else if (input[0].equals("color") || input[0].equals("colour"))
-					{
-						boolean cs = console.colorScheme(input[1]);
-						if (verbose)
-						{
-							if(cs)
-							{
-								console.print("color scheme set to: " + input[1]);
-							}
-							else
-							{
-								console.printOperandError("color scheme not found");
-							}
-						}
-					}
-					//bad input
-					else
-					{
-						console.print("! Unknown Input !");
-					}
 					break;
 				
 				case(3):
@@ -786,7 +890,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printOperandError("Error 2 - NaN");
+							console.printError("Error 2 - NAN");
 						}
 					}
 					//lost packet
@@ -814,7 +918,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printOperandError("Error 2 - NaN");
+							console.printError("Error 2 - NAN");
 						}
 					}
 					//change the mode on the original RRQ or WRQ
@@ -855,7 +959,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printOperandError("Error 2 - NaN");
+							console.printError("Error 2 - NAN");
 						}
 					}
 					//add extra garbage data onto a DATA packet type
@@ -873,7 +977,7 @@ public class TFTPHost
 							}
 							catch (NumberFormatException nfe)
 							{
-								console.printOperandError("Error 2 - NaN");
+								console.printError("Error 2 - NAN");
 							}
 						}
 						else
@@ -895,7 +999,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printOperandError("Error 2 - NaN");
+							console.printError("Error 2 - NAN");
 						}
 					}
 					//mess up port destination on a packet
@@ -911,7 +1015,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printOperandError("Error 2 - NaN");
+							console.printError("Error 2 - NAN");
 						}
 					}
 					//mess up port destination on a packet
@@ -927,7 +1031,7 @@ public class TFTPHost
 						}
 						catch (NumberFormatException nfe)
 						{
-							console.printOperandError("Error 2 - NaN");
+							console.printError("Error 2 - NAN");
 						}
 					}
 					//bad input

@@ -1,5 +1,10 @@
 /.DS_Store
 /Completed Iteration_1 UML.docx
+/Test_Cases.txt
+/UCM.vsd
+/errorhelpers/
+/inputs/
+/ui/
 /ServerThread.class
 /TFTPClient.class
 /TFTPHost.class
@@ -13,7 +18,3 @@
 /TestBench$2.class
 /TestBench$3.class
 /TestBench.class
-/Test_Cases.txt
-/UCM.vsd
-/inputs/
-/ui/
