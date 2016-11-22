@@ -282,8 +282,7 @@ public class TFTPHost
 	
 	public void changeMode(int outPort, DatagramSocket socket)//netsci ascii
 	{
-		//console.print("Change mode selected, changing mode to"+ inputStack.peek().getNewMode());
-		console.print("Chang mode selected,sending normally");
+		console.print("Change mode selected, changing mode to"+ inputStack.peek().getNewMode());
 		
 		InetAddress localAddress=null;
 		
@@ -319,7 +318,7 @@ public class TFTPHost
 	
 	public void changeType(int outPort, DatagramSocket socket)//change OP
 	{
-		console.print("Changeing Type");
+		console.print("Changeing Type to" +inputStack.peek().getOpcode());
 		
 		InetAddress localAddress=null;
 		
@@ -337,16 +336,19 @@ public class TFTPHost
 		
 		if(receivedPacket.getData()[1]==1 ||receivedPacket.getData()[1]==2)
 		{
-			receivedPacket=dataArt.produceRWRQ(newOP,dataArt.getFileName(receivedPacket),inputStack.peek().getNewMode(), localAddress, outPort);
+			receivedPacket=dataArt.produceRWRQ(newOP,dataArt.getFileName(receivedPacket),dataArt.getMode(receivedPacket), localAddress, outPort);
+			console.print("change read/write rrq");
 		}
 		
 		else if (receivedPacket.getData()[1]==3)
 		{
+			console.print("change data");
 			receivedPacket=dataArt.produceDATA(newOP, dataArt.getBlockNum(receivedPacket), dataArt.getData(receivedPacket), localAddress,outPort);
 		}
 		
 		else if (receivedPacket.getData()[1]==4)
 		{
+			console.print("change ack");
 			receivedPacket=dataArt.produceACK(newOP, dataArt.getBlockNum(receivedPacket), localAddress,outPort);
 		}
 		
@@ -385,18 +387,18 @@ public class TFTPHost
 		}
 		catch(Exception e) {}
 		
-		int newBlock = (inputStack.peek().getBlockNum());
+		int newBlock = (inputStack.peek().getAlteredBlockNum());
 		
 		
 		if(receivedPacket.getData()[1]==3)
 		{
 			
-			receivedPacket=dataArt.produceDATA(newOP, dataArt.getBlockNum(receivedPacket), dataArt.getData(receivedPacket), localAddress,outPort);
+			receivedPacket=dataArt.produceDATA(newOP, newBlock, dataArt.getData(receivedPacket), localAddress,outPort);
 		}
 		
 		else if (receivedPacket.getData()[1]==4)
 		{
-			receivedPacket=dataArt.produceACK(newOP, inputStack.peek().getAlteredBlockNum(), localAddress,outPort);
+			receivedPacket=dataArt.produceACK(newOP, newBlock, localAddress,outPort);
 		}
 		
 		else 
