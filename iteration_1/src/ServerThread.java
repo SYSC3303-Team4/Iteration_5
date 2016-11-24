@@ -89,7 +89,7 @@ public abstract class ServerThread extends Thread{
 				   2,2));
 	    console.print("ErrorMessage: " );
 	    console.print(new String(packet.getData(),
-				   4,packet.getData().length-1));
+				   4,packet.getLength()-1));
     }
     /* Send Data packet with no data
     2 bytes    2 bytes       0 bytes
@@ -253,12 +253,15 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 	  		if(requestPacket.getPort() != clientTID){
 	  			buildError(5,requestPacket,verbose,"Unexpected TID");
 	  			console.print("Unexpected TID");
-	  			return false;
+	  			errorFlag=true;
+				return false;
 	  		}
   		}
   		//check ACK for validity
 		if(data.length > 4){
 			buildError(4,requestPacket, verbose,"Length of the ACK is over 4.");
+			errorFlag=true;
+			return false;
 		}
   		if(data[0] == 0 && data[1] == 4){
 
@@ -292,6 +295,8 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			//ITERATION 5 ERROR
   			//Invalid TFTP code
   			buildError(4,requestPacket,verbose,"Not the Expected DATA packet.");
+  			errorFlag=true;
+			return false;
   		}
   		return true;
   	}
@@ -342,11 +347,14 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 	  		if(requestPacket.getPort() != clientTID){
 	  			buildError(5,requestPacket,verbose,"Unexpected TID");
 	  			console.print("Unexpected TID");
-	  			return false;
+	  			errorFlag=true;
+				return false;
 	  		}
   		}
 		if(data.length > 516){
 			buildError(4,requestPacket, verbose,"Length of the DATA packet is over 516.");
+			errorFlag=true;
+			return false;
 		}
 
   		//check if data
@@ -379,8 +387,15 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				return false;
   			}
   		}
+  		else if(data[0] == 0 && data[1] == 5){
+  			printError(requestPacket, verbose);
+  			errorFlag=true;
+			return false;
+  		}
   		else{
-  			return false;
+  			buildError(5,requestPacket,verbose,"OpCode is invalid");
+  			errorFlag=true;
+			return false;
   		}
   		return true;
   	}

@@ -57,7 +57,7 @@ class TFTPWriteThread extends ServerThread
     File file;
     private boolean blockFlag=true;
 
-    public static final byte[] response = {0, 4, 0, 0};
+    public final byte[] response = {0, 4, 0, 0};
     
     private boolean initialFileCheck = false;
     

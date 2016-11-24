@@ -514,19 +514,19 @@ public class TFTPClient extends JFrame
 			console.print("Client: Checking DATA...");
 		}
 		byte[] data = receivedPacket.getData();
-		if(receivedPacket.getLength() > 516){
-			buildError(4,receivedPacket, verbose,"Length of the DATA packet is over 516.");
-		}
 		if(establishedConnection){
 	  		if(receivedPacket.getPort() != serverTID){
 	  			buildError(5,receivedPacket,verbose,"Unexpected TID");
-	  			return false;
+	  			errorFlag=true;
+				return false;
 	  		}
   		}
 
 		//check if data
 		if(data[0] == 0 && data[1] == 3){
-
+			if(receivedPacket.getLength() > 516){
+				buildError(4,receivedPacket, verbose,"Length of the DATA packet is over 516.");
+			}
 			//Check if the blockNumber corresponds to the expected blockNumber
 			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
 				blockNum++;
@@ -552,8 +552,10 @@ public class TFTPClient extends JFrame
 		else{
 			//ITERATION 5 ERROR
 			//Invalid TFTP code
+			buildError(5,receivedPacket,verbose,"OpCode is invalid");
+			errorFlag=true;
+			return false;
 		}
-		return false;
 	}
 	
 	//receive ACK
@@ -600,13 +602,12 @@ public class TFTPClient extends JFrame
 	  			return false;
 	  		}
   		}
-
-		if(receivedPacket.getLength() > 4){
-			buildError(4,receivedPacket, verbose,"Length of the ACK is over 4.");
-		}
 		//check ACK for validity
 		if(data[0] == 0 && data[1] == 4){
 
+			if(receivedPacket.getLength() > 4){
+				buildError(4,receivedPacket, verbose,"Length of the ACK is over 4.");
+			}
 			//Check if the blockNumber corresponds to the expected blockNumber
 			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
 				blockNum++;
@@ -629,6 +630,8 @@ public class TFTPClient extends JFrame
 			}
 			return true;
 		}
+		buildError(5,receivedPacket,verbose,"OpCode is invalid");
+		errorFlag=true;
 		return false;
 	}
 	
@@ -892,9 +895,9 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		console.print("'test'                                    - runs a test for the console");
 		console.print("'mode NEWMODE'           - set the default mode to NEWMODE");
 		console.println();
-		console.print("'push MODE'                    - push a file to the server in mode MODE (ex, ASCII)");
+		console.print("'push MODE'                    - push a file to the server in mode MODE (ex, NETASCII)");
 		console.print("'push'                                - push a file to the server in default mode");
-		console.print("'pull FILENAME MODE'  - pull a file from the server in mode MODE (ex ASCII)");
+		console.print("'pull FILENAME MODE'  - pull a file from the server in mode MODE (ex NETASCII)");
 		console.print("'pull FILENAME'               - pull a file from the server in default mode");
 		console.println();
 		console.print("'rrq FILENAME MODE'    - send a read request for file FILENAME in mode MODE");
@@ -903,7 +906,6 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		console.println();
 		
 		/** TODO DELETE THIS*/
-		testMode(true);
 		verbose=true;
 		//main input loop
 		while(runFlag)
@@ -1107,9 +1109,22 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 					console.print("! Unknown Input !");
 					break;
 			}
+			cleanup();//clears all flag values.
 		}
 	}
 	
+	private void cleanup()
+	{
+		duplicateACK = false;
+		duplicateDATA = false;
+		retransmitACK = false;
+		retransmitDATA = false;
+		establishedConnection = false;
+		timeouts = 0;
+
+		timeoutFlag = false;
+		errorFlag = false;
+	}
 	
 	public static void main (String[] args) 
 	{

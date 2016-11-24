@@ -40,6 +40,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.file.AccessDeniedException;
@@ -55,7 +57,7 @@ class TFTPReadThread  extends ServerThread
 	boolean sendZeroDataPacket = false;
 	boolean duplicateACK = false;
 	private String threadNumber;
-	public static final byte[] response = {0, 3, 0, 0};
+	public final byte[] response = {0, 3, 0, 0};
 	private boolean terminate = false;
 	private File serverDump;
 
@@ -169,8 +171,12 @@ class TFTPReadThread  extends ServerThread
 			//e.printStackTrace();
 			return;
 		}
-
-
+		byte[] rawData = new byte[4];
+		int port = requestPacket.getPort();
+		InetAddress address = requestPacket.getAddress();
+		requestPacket = new DatagramPacket(rawData, rawData.length);
+		requestPacket.setPort(port);
+		requestPacket.setAddress(address);
 		while(!stopRequested()){
 
 			if(!retransmitDATA){
