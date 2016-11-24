@@ -221,6 +221,11 @@ class TFTPWriteThread extends ServerThread
 					} 
 			       catch(FileNotFoundException e2)
 			       {
+			    	   if(file.exists())
+			    	   {
+			    		   buildError(2,requestPacket,verbose,"");
+				    	   return;
+			    	   }
 			    	   buildError(1,requestPacket,verbose,"");
 			    	   return;
 			       }

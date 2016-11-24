@@ -907,6 +907,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		
 		/** TODO DELETE THIS*/
 		verbose=true;
+		testMode(true);
 		//main input loop
 		while(runFlag)
 		{

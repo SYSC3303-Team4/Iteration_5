@@ -156,15 +156,12 @@ class TFTPReadThread  extends ServerThread
 			reader.readAndSplit(file.toString());
 
 		} catch (FileNotFoundException e1) {
-			if(!file.exists())
-			{
-				buildError(1,requestPacket,verbose,"");
-			}
-			else
+			if(file.exists())
 			{
 				buildError(2,requestPacket,verbose,"");
+				return;
 			}
-			//e1.printStackTrace();
+			buildError(1,requestPacket,verbose,"");
 			return;
 		} catch (IOException e) {
 			buildError(2,requestPacket,verbose,"");
