@@ -199,10 +199,7 @@ public class TFTPClient extends JFrame
 	public void verboseMode(boolean v)
 	{
 		verbose = v;
-		if(verbose)
-		{
-			console.print("Verbose mode set " + verbose);
-		}
+		console.print("Verbose mode set " + verbose);
 	}
 	
 	
@@ -906,8 +903,11 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		console.println();
 		
 		/** TODO DELETE THIS*/
-		verbose=true;
-		testMode(true);
+		//==================================================
+		this.verboseMode(true);
+		this.testMode(true);
+		//==================================================
+		
 		//main input loop
 		while(runFlag)
 		{

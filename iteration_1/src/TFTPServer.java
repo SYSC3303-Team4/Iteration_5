@@ -96,11 +96,6 @@ public class TFTPServer implements ActionListener
 
 	public void receiveAndSendTFTP() throws Exception
 	{
-		// out.append("Initializing Server...\n");
-		//Find whether you want to run in verbose mode or not
-		/** TODO delete this*/
-		verbose=true;
-
 		byte[] data,
 		response = new byte[4];
 
@@ -124,6 +119,12 @@ public class TFTPServer implements ActionListener
 		console.print("'path'                                  - print the path the server will use");
 		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		console.println();
+		
+		//TODO DELETE THIS
+		//==================================================
+		this.verbose = true;
+		console.print("Verbose mode set " + verbose);
+		//==================================================
 		
 		//main input loop
 		while(runFlag) 
@@ -265,8 +266,6 @@ public class TFTPServer implements ActionListener
 		console.actionPerformed(e);
 		String[] input = console.getParsedInput(false);
 		
-		/** TODO DELETE THIS*/
-		verbose=true;
 		//process input, handle inputs based on param number
 		if(input != null)
 		{
@@ -353,10 +352,12 @@ public class TFTPServer implements ActionListener
 						if(input[1].equals("true"))
 						{
 							this.verbose = true;
+							console.print("Verbose mode set " + verbose);
 						}
 						else if (input[1].equals("false"))
 						{
 							this.verbose = false;
+							console.print("Verbose mode set " + verbose);
 						}
 						else
 						{

@@ -61,6 +61,10 @@ class TFTPWriteThread extends ServerThread
     
     private boolean initialFileCheck = false;
     
+    //declaring local class constants
+    private static final int ABSOLUTE_PACKET_BUFFER_SIZE = 1000;
+    private static final int DATA_PACKET_MAX_SIZE = 516;
+    
     
 
     public TFTPWriteThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket requestPacketInfo,String thread, Boolean verboseMode,File file) {
