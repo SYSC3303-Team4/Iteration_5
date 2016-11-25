@@ -6,7 +6,7 @@
 *Version:           1.1.0                                                      
 *                                                                                   
 *Purpose:           Homemade, artisan crafted datagrams.
-*					Just like mom used to make.
+*					Just like mom used to make and her mother before her.
 *					Also can dissect and return specific parts in a packet.
 * 
 * 
@@ -130,6 +130,15 @@ public class DatagramArtisan
 	}
 	
 	
+	//return the 2 byte opcode
+	public byte[] getOpCode(DatagramPacket datagram)
+	{
+		byte[] data = datagram.getData();
+		byte[] opCode = {data[0],data[1]};
+		return opCode;
+	}
+	
+	
 	//return the filename from a RRQ or WRQ
 	//returns null if not a valid packet type
 	public String getFileName(DatagramPacket datagram)
@@ -219,7 +228,6 @@ public class DatagramArtisan
 	
 	
 	//used for testing please do not delete
-	/*
 	public static void main (String[] args)
 	{
 		DatagramArtisan da = new DatagramArtisan();
@@ -292,5 +300,4 @@ public class DatagramArtisan
 		System.out.println("Address read: " + packet.getAddress());
 		System.out.println("Outport read: " + packet.getPort());
 	}
-	*/
 }

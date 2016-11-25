@@ -72,6 +72,7 @@ public class TFTPHost
 	private boolean verbose;
 	private ConsoleUI console;
 	private InputStack inputStack = new InputStack();
+	private DatagramArtisan dataArt=new DatagramArtisan();
 	
 	    
 	//sarah var
@@ -279,51 +280,111 @@ public class TFTPHost
 		
 	}
 	
-	public void changeMode(int outPort, DatagramSocket socket)
+	public void changeMode(int outPort, DatagramSocket socket)//netsci ascii
 	{
-		//console.print("Change mode selected, changing mode to"+ inputStack.peek().getNewMode());
-		console.print("Chang mode selected,sending normally");
-		/*
-		 * Note super sure how to accsess mode, talk to server guys
-		byte newMode[] = new byte[2];
+		console.print("Change mode selected, changing mode to"+ inputStack.peek().getNewMode());
 		
-		newMode[1] = (byte)(inputStack.peek().getNewMode() & 0xFF);
-		newMode[0] = (byte)((inputStack.peek().getNewMode() >> 8)& 0xFF);
+		InetAddress localAddress=null;
 		
-		receivedPacket.getData()[0]= newMode[0];
-		receivedPacket.getData()[1]=newMode[1];
-		*/
-		sendDatagram(outPort,socket);
-		needSend=false;
-		
-		
-	}
+		byte newOP[] = new byte[2];
 	
-	public void addData(int outPort, DatagramSocket socket)
-	{
-		TrashFactory adding =new TrashFactory();
+		newOP[1] = (byte)(receivedPacket.getData()[1] & 0xFF);
+		newOP[0] = (byte)((receivedPacket.getData()[0] >> 8)& 0xFF);
 		
-		console.print("Add data selected, sending packet normaly");
-		adding.produce(inputStack.peek().getExtraBytes());
+		try
+		{
+			localAddress = InetAddress.getLocalHost();
+		}
+		catch(Exception e) {}
+		
+		receivedPacket=dataArt.produceRWRQ(newOP,dataArt.getFileName(receivedPacket),inputStack.peek().getNewMode(), localAddress, outPort);
 		
 		sendDatagram(outPort,socket);
 		needSend=false;
 	}
 	
-	public void changeType(int outPort, DatagramSocket socket)
+	
+	
+	//tack on garbage to the outgoing packet
+		public void addData(int outPort, DatagramSocket socket)
+		{
+			console.print("Adding " + inputStack.peek().getExtraBytes() + " Bytes of garbage to datagram...");
+			//generate trash and prep DatagramArtisan
+			byte[] trash = (new TrashFactory()).produce(inputStack.peek().getExtraBytes());
+			DatagramArtisan da = new DatagramArtisan();
+			
+			//extract parameters from receivedPacket
+			byte[] opCode = da.getOpCode(receivedPacket);
+			int blockNum = da.getBlockNum(receivedPacket);
+			byte[] data = da.getData(receivedPacket);
+			InetAddress address = receivedPacket.getAddress();
+			int packetPort = receivedPacket.getPort();
+			
+			//tack on garbage in dataWithTrash[]
+			byte[] dataWithTrash = new byte[data.length+trash.length];
+			int i=0;
+			for (; i<data.length; i++)
+			{
+				dataWithTrash[i] = data[i];
+			}
+			for (int c=0; i<dataWithTrash.length; i++,c++)
+			{
+				dataWithTrash[i] = trash[c];
+			}
+
+			//generate datagram and send datagram
+			receivedPacket = da.produceDATA(opCode, blockNum, dataWithTrash, address, packetPort);
+			sendDatagram(outPort,socket);
+			
+			needSend=false;
+		}
+	
+	
+	public void changeType(int outPort, DatagramSocket socket)//change OP
 	{
-		console.print("Change packet type selected,changing to packet type"+inputStack.peek().getPacketType());
+		console.print("Changeing Type to" +inputStack.peek().getOpcode());
+		
+		InetAddress localAddress=null;
+		
+		try
+		{
+			localAddress = InetAddress.getLocalHost();
+		}
+		catch(Exception e) {}
+		
+		byte newOP[] = new byte[2];
+		
+		newOP[1] = (byte)(inputStack.peek().getOpcode());
+		newOP[0] = (byte)(0);
 		
 		
-		byte newType[] = new byte[2];
+		if(receivedPacket.getData()[1]==1 ||receivedPacket.getData()[1]==2)
+		{
+			receivedPacket=dataArt.produceRWRQ(newOP,dataArt.getFileName(receivedPacket),dataArt.getMode(receivedPacket), localAddress, outPort);
+			console.print("change read/write rrq");
+		}
 		
-		newType[1] = (byte)(inputStack.peek().getPacketType() & 0xFF);
-		newType[0] = (byte)((inputStack.peek().getPacketType() >> 8)& 0xFF);
+		else if (receivedPacket.getData()[1]==3)
+		{
+			console.print("change data");
+			receivedPacket=dataArt.produceDATA(newOP, dataArt.getBlockNum(receivedPacket), dataArt.getData(receivedPacket), localAddress,outPort);
+		}
 		
-		receivedPacket.getData()[0]= newType[0];
-		receivedPacket.getData()[1]=newType[1];
+		else if (receivedPacket.getData()[1]==4)
+		{
+			console.print("change ack");
+			receivedPacket=dataArt.produceACK(newOP, dataArt.getBlockNum(receivedPacket), localAddress,outPort);
+		}
+		
+		else 
+		{
+			console.print("Invalide Mode");
+		}
+		
+		
 		sendDatagram(outPort,socket);
 		needSend=false;
+		
 	}
 	
 	public void changePort(int outPort, DatagramSocket socket)
@@ -337,13 +398,39 @@ public class TFTPHost
 	{
 		console.print("Change Block slected, changing block number to "+inputStack.peek().getAlteredBlockNum());
 		
-		byte newBlock[] = new byte[2];
+		InetAddress localAddress=null;
 		
-		newBlock[1] = (byte)(inputStack.peek().getAlteredBlockNum() & 0xFF);
-		newBlock[0] = (byte)((inputStack.peek().getAlteredBlockNum() >> 8)& 0xFF);
+		byte newOP[] = new byte[2];
 		
-		receivedPacket.getData()[3]= newBlock[0];
-		receivedPacket.getData()[4]=newBlock[1];
+		newOP[1] = (byte)(receivedPacket.getData()[1] & 0xFF);
+		newOP[0] = (byte)((receivedPacket.getData()[0] >> 8)& 0xFF);
+		
+		try
+		{
+			localAddress = InetAddress.getLocalHost();
+		}
+		catch(Exception e) {}
+		
+		int newBlock = (inputStack.peek().getAlteredBlockNum());
+		
+		
+		if(receivedPacket.getData()[1]==3)
+		{
+			
+			receivedPacket=dataArt.produceDATA(newOP, newBlock, dataArt.getData(receivedPacket), localAddress,outPort);
+		}
+		
+		else if (receivedPacket.getData()[1]==4)
+		{
+			receivedPacket=dataArt.produceACK(newOP, newBlock, localAddress,outPort);
+		}
+		
+		else 
+		{
+			console.print("Invalide Block");
+		}
+		
+		
 		sendDatagram(outPort,socket);
 		needSend=false;
 		
