@@ -3,8 +3,8 @@
 *Class:             TFTPHost.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    15/11/2016                                              
-*Version:           2.1.0                                                      
+*Date of Update:    25/11/2016                                              
+*Version:           2.1.1                                                      
 *                                                                                    
 *Purpose:           Receives packet from Client, sends packet to Server and waits
 *					for Server response. Sends Server response back to Client. Repeats
@@ -14,7 +14,9 @@
 *					all 3 verb inputs. However, in order to check that user noun input is valid, they are in separate if statements.
 * 
 * 
-*Update Log:        v2.1.0
+*Update Log:        v2.1.1
+*						- removed unnecessary accessors/mutators
+*					v2.1.0
 *						- added new inputs for error types
 *						- reset method added for InputStack
 *						- updated help menus to reflect new errors
@@ -106,35 +108,13 @@ public class TFTPHost
 			System.exit(1);
 		}
 		
-		//initialize echo --> off
+		//initialize echo --> false
 		verbose = false;
 		
 		//run UI
 		console = new ConsoleUI("Error Simulator");
 		console.run();
-	}
-	
-	
-	//basic accessors and mutators
-	public DatagramSocket getInSocket()
-	{    
-		return inSocket;
-	}
-	public void setClientPort(int n)
-	{
-		clientPort = n;
-	}
-	public int getClientPort()
-	{
-		return clientPort;
-	}
-	public DatagramPacket getReceivedPacket()
-	{
-		return receivedPacket;
-	}
-	public void setVerbose(boolean f)
-	{
-		verbose = f;
+		console.colorScheme("dark");
 	}
 	
 	
@@ -306,38 +286,38 @@ public class TFTPHost
 	
 	
 	//tack on garbage to the outgoing packet
-		public void addData(int outPort, DatagramSocket socket)
+	public void addData(int outPort, DatagramSocket socket)
+	{
+		console.print("Adding " + inputStack.peek().getExtraBytes() + " Bytes of garbage to datagram...");
+		//generate trash and prep DatagramArtisan
+		byte[] trash = (new TrashFactory()).produce(inputStack.peek().getExtraBytes());
+		DatagramArtisan da = new DatagramArtisan();
+		
+		//extract parameters from receivedPacket
+		byte[] opCode = da.getOpCode(receivedPacket);
+		int blockNum = da.getBlockNum(receivedPacket);
+		byte[] data = da.getData(receivedPacket);
+		InetAddress address = receivedPacket.getAddress();
+		int packetPort = receivedPacket.getPort();
+		
+		//tack on garbage in dataWithTrash[]
+		byte[] dataWithTrash = new byte[data.length+trash.length];
+		int i=0;
+		for (; i<data.length; i++)
 		{
-			console.print("Adding " + inputStack.peek().getExtraBytes() + " Bytes of garbage to datagram...");
-			//generate trash and prep DatagramArtisan
-			byte[] trash = (new TrashFactory()).produce(inputStack.peek().getExtraBytes());
-			DatagramArtisan da = new DatagramArtisan();
-			
-			//extract parameters from receivedPacket
-			byte[] opCode = da.getOpCode(receivedPacket);
-			int blockNum = da.getBlockNum(receivedPacket);
-			byte[] data = da.getData(receivedPacket);
-			InetAddress address = receivedPacket.getAddress();
-			int packetPort = receivedPacket.getPort();
-			
-			//tack on garbage in dataWithTrash[]
-			byte[] dataWithTrash = new byte[data.length+trash.length];
-			int i=0;
-			for (; i<data.length; i++)
-			{
-				dataWithTrash[i] = data[i];
-			}
-			for (int c=0; i<dataWithTrash.length; i++,c++)
-			{
-				dataWithTrash[i] = trash[c];
-			}
-
-			//generate datagram and send datagram
-			receivedPacket = da.produceDATA(opCode, blockNum, dataWithTrash, address, packetPort);
-			sendDatagram(outPort,socket);
-			
-			needSend=false;
+			dataWithTrash[i] = data[i];
 		}
+		for (int c=0; i<dataWithTrash.length; i++,c++)
+		{
+			dataWithTrash[i] = trash[c];
+		}
+
+		//generate datagram and send datagram
+		receivedPacket = da.produceDATA(opCode, blockNum, dataWithTrash, address, packetPort);
+		sendDatagram(outPort,socket);
+		
+		needSend=false;
+	}
 	
 	
 	public void changeType(int outPort, DatagramSocket socket)//change OP
@@ -389,7 +369,7 @@ public class TFTPHost
 	
 	public void changePort(int outPort, DatagramSocket socket)
 	{
-		console.print("Sendign Data to"+ inputStack.peek().getTID());
+		console.print("Sending Data to"+ inputStack.peek().getTID());
 		sendDatagram(inputStack.peek().getTID(),socket);
 		needSend=false;
 	}
@@ -733,15 +713,24 @@ public class TFTPHost
 		receiveDatagram(inSocket);
 		console.print("First Packet Recieved");
 		
-		
 		//sort InputStack accordingly
 		if ( (receivedPacket.getData())[1] == 1 )
 		{
 			inputStack.sortRRQ();
+			if(verbose)
+			{
+				console.print("RRQ detected");
+				console.print(inputStack.toFancyString());
+			}
 		}
 		else if ( (receivedPacket.getData())[1] == 2 )
 		{
 			inputStack.sortWRQ();
+			if(verbose)
+			{
+				console.print("WRQ detected");
+				console.print(inputStack.toFancyString());
+			}
 		}
 		
 		//save port 
@@ -795,14 +784,13 @@ public class TFTPHost
 	
 	public void mainPassingLoop()
 	{
-		console.print("TFTPHost Operating...");
-		
 		//declaring local variables
 		boolean runFlag = true;
 		String input[] = null;
 		int packetType, blockNum, extraInt;		//temp variables that are never guarenteed to hold their value
 		
 		//print starting text
+		console.print("TFTPHost running...");
 		console.print("type 'help' for command list");
 		console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
 		console.print("'help'                                   - print all commands and how to use them");
@@ -838,6 +826,12 @@ public class TFTPHost
 		console.print("Error Simulator is not ready for data if run is not entered");
 		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		console.println();
+		
+		//TODO DELETE THIS
+		//==================================================
+		this.verbose = true;
+		console.print("Verbose mode set " + verbose);
+		//==================================================
 		
 		//main input loop
 		while(runFlag && LIT)
@@ -947,6 +941,22 @@ public class TFTPHost
 						else
 						{
 							console.print("! Unknown Input !");
+						}
+					}
+					//alter color scheme
+					else if (input[0].equals("color") || input[0].equals("colour"))
+					{
+						boolean cs = console.colorScheme(input[1]);
+						if (verbose)
+						{
+							if(cs)
+							{
+								console.print("color scheme set to: " + input[1]);
+							}
+							else
+							{
+								console.printOperandError("color scheme not found");
+							}
 						}
 					}
 					break;
