@@ -198,7 +198,8 @@ class TFTPWriteThread extends ServerThread
 		   DATA  | 03    |   Block #  |    Data    |
 			  ---------------------------------
 			*/
-			   byte[] rawData = new byte[516];
+	    	   //set up empty packet to receive into
+			   byte[] rawData = new byte[ABSOLUTE_PACKET_BUFFER_SIZE];
 			   requestPacket = new DatagramPacket(rawData, rawData.length);
 			   
 			    /* Exit Gracefully if the stop is requested. */

@@ -2,15 +2,17 @@
 *Class:             DatagramArtisan.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    21/11/2016                                              
-*Version:           1.1.0                                                      
+*Date of Update:    25/11/2016                                              
+*Version:           1.2.0                                                      
 *                                                                                   
 *Purpose:           Homemade, artisan crafted datagrams.
 *					Just like mom used to make and her mother before her.
 *					Also can dissect and return specific parts in a packet.
 * 
 * 
-*Update Log:		v1.1.0
+*Update Log:		v1.2.0
+*						- parsing for error message in error packet added
+*					v1.1.0
 *						- the artisan has expanded his talents, he now can provide detailed
 *						  information from any packet
 *					v1.0.0
@@ -226,6 +228,18 @@ public class DatagramArtisan
 	}
 	
 	
+	//return the error message in a ERR packet
+	public String getErrorMsg(DatagramPacket datagram)
+	{
+		String msg = "";
+		byte[] data = getData(datagram);
+		for(int i=0; i<data.length-1; i++)
+		{
+			msg = msg + (char)(data[i]);
+		}
+		return msg;
+	}
+	
 	
 	//used for testing please do not delete
 	public static void main (String[] args)
@@ -296,6 +310,7 @@ public class DatagramArtisan
 		{
 			temp=temp+b[i]+", ";
 		}
+		System.out.println(da.getErrorMsg(packet));
 		System.out.println("Data read: "+temp);
 		System.out.println("Address read: " + packet.getAddress());
 		System.out.println("Outport read: " + packet.getPort());
