@@ -1,17 +1,16 @@
 *********************************************************
-*	______ _____  ___ ______  ___  ___ _____ 	        *
-*	| ___ \  ___|/ _ \|  _  \ |  \/  ||  ___|           *
-*	| |_/ / |__ / /_\ \ | | | | .  . || |__             *
-*	|    /|  __||  _  | | | | | |\/| ||  __|            *
-*	| |\ \| |___| | | | |/ /  | |  | || |___            *
-*	\_| \_\____/\_| |_/___/   \_|  |_/\____/            *
+*	______ _____  ___ ______  ___  ___ _____ 	    	*
+*	| ___ \  ___|/ _ \|  _  \ |  \/  ||  ___|       	*
+*	| |_/ / |__ / /_\ \ | | | | .  . || |__         	*
+*	|    /|  __||  _  | | | | | |\/| ||  __|        	*
+*	| |\ \| |___| | | | |/ /  | |  | || |___        	*
+*	\_| \_\____/\_| |_/___/   \_|  |_/\____/        	*
 *                                                       *
 *********************************************************
-
-                       
+		== best viewed in notepad++ ==                       
  
 
-TFTP Project - Iteration 3
+TFTP Project - Iteration 4
 SYSC 3303
 Group 4
 
@@ -21,49 +20,46 @@ Jason Van Kerkhoven     [100974276]
 Nathaniel Charlebois    [100964496]
 Sarah Garlough          [100965386]
 
-12/10/2016
+25/11/2016
 
 
 -----------------------------------------------------------
 TEAM LOGISTICS
 
 	Adam Staples
-		- Bug Fixes
 		- Timing Diagram
-		- Corrected Old Timing Diagrams
-		- UML Artesian
-		- Testing the file transfers with and without errors
+		- Testing
 		
 	Dan Hogan
 		- Bug Fixes
-		- Improved TFTPServer directory chooser
-		- Small Features
-		- Added delay error into TFTPHost
-		- Readme
-		- Testing the file transfers with and without errors
+		- Testing
+		- Code clean-up in server
 	
 	Jason Van Kerkhoven
-		- Refactored UI
-		- Created InputStack.java and Input.java datatypes
-		- Integrated UI into TFTPHost
-		- Bug Fixes
+		- UI updates for new errors
+		- Created DataArtisan.java and TrashFactory.java class
+		- Client error packet handling debugging + refactoring
+		- Add data error in host implimentation
+		- README
 
 	Nathaniel Charlebois
-		- Server side re-transmission and timeout protocols 
-		- Client side re-transmission and timeout protocols
-		- Server Thread debugging
-		- Server file writting debugging
-		- Bug Fixes
+		- Server error packet handling
+		- Client error packet handling
+		- Bug fixes on client and server
+		- Testing
 	
 	Sarah Garlough
-		- Bug Fixes
-		- Implimented lost, duplicate, and delay packets in TFTPHost
-		- Debugging for Host UI
-		- TFTPHost refactoring
+		- Implimented opcode error in host
+		- Implimented TID error in host
+		- Implimented blocknum error in host
+		- implimented mode error in host
 
 
 -----------------------------------------------------------
 CONTENTS:
+	
+	SOURCE CODE
+	==============================
 	Package: scr
 		ServerThread.java	
 		TFTPCLient.java		
@@ -83,6 +79,14 @@ CONTENTS:
 		Input.java
 		InputStack.java
 	
+	Package: helpers
+		DatagramArtisan.java
+		TrashFactory.java
+
+	
+
+	TEST FILES
+	==============================
 	Test Files:
 		1ByteData.txt
 		305ByteData.txt
@@ -92,6 +96,10 @@ CONTENTS:
 		Oxford_Medical_Publications_Manual_of_Surgery.txt
 		Don'tstopBelievin.txt
 	
+
+
+	DIAGRAMS & FIGURES
+	==============================
 	Timing Diagrams:
 		RRQ_Error_Access_Violation.pdf
 		RRW_Error_File_Not_Found.pdf
@@ -100,6 +108,10 @@ CONTENTS:
 		WRQ_Error_NoPermission.pdf
 		WRQ_Typical_Case.pdf
 	
+
+
+	MISCELLANEOUS
+	==============================
 	Miscellaneous:
 		.project
 		.classpath
@@ -115,27 +127,30 @@ SET UP INSTRUCTIONS
 	2.	Build project
 	
 	RRQ Instructions
+	==============================
 	1. 	Run testBench.java(Runs TFTPClient, TFTPHost, TFTPServer)	
 	3. 	Choose the Server's file dump directory from popup filechooser
-	4.  Select desired parameters in TFTPClient, TFTPHost, TFTPServer
-		4.1	
+	4.	Select desired parameters in TFTPClient, TFTPHost, TFTPServer
 	5.	Run Client.java*
 	6.  Enter help on the client to see instructions
 	7.  Enter RRQ FileName Mode, with filename being the file you wish to read.
 	8.	View Output in server and client
 	9.  Use the x on the top of UI window to exit
 	
+
+
 	WRQ Instructions
+	==============================
 	1. 	Run Host
 	2.	Run Server.java
 	3. 	Choose file dump directory from popup filechooser
 	4.  Enter true(Verbose) or false(Quiet) into console
-	5.	Run Client.java*
+	5.	Run Client.java
 	6.  Enter help on the client to see instructions
 	7.  Enter WRQ Mode
 	8.	A File Explorer will appear to select the directory you would like to write to on the server.
 	9.	View Output in server and client
-	10.  Use the x on the top of UI window to exit
+	10.	Use the x on the top of UI window to exit
 
 	
 	
@@ -144,96 +159,138 @@ OPERATING INSTRUCTIONS
 
 	USING THE UI
 	==============================
-	Instances of TFTPClient, TFTPHost, and TFTPServer class are designed to work with the standard UI produced 
-	for this project, ConsoleUI.
+	Instances of TFTPClient, TFTPHost, and TFTPServer class are designed to work with the standard UI 
+	produced for this project, ConsoleUI.
 	
-	By default, verbose mode is set to false for all of the classes listed above. Additionally, test mode by default
-	is set to false for any instance of TFTPClient.
+	By default, verbose mode is set to false for all of the classes listed above. Additionally, test
+	mode by default is set to false for any instance of TFTPClient.
 	
 	The ConsoleUI class functions using a noun-extended verb input format, that is, inputs are typed into
 	the console using a "noun" to denote what you want it to do, followed by a number of "verbs" denoting
-	how you want to do it. Verbs can be thought of as parameters to a function, while nouns are the function
-	call itself. To illustrate, a standard function verbose(Boolean b) would be called as 'verbose b'. Verbose
-	acts as the noun, while the boolean value b acts as the verb. Nouns/verbs are seperated by a single space.
+	how you want to do it. Verbs can be thought of as parameters to a function, while nouns are the 
+	function call itself. To illustrate, a standard function verbose(Boolean b) would be called as 
+	'verbose b'. Verbose acts as the noun, while the boolean value b acts as the verb. Nouns/verbs 
+	are seperated by a single space.
 	
-	All acceptable noun-verb inputs can be called for viewing in any of the three runnable classes assoiciated with
-	this project (ie TFTPClient, TFTPHost, and TFTPServer) by typing 'help' into the relavent console.
+	All acceptable noun-verb inputs can be called for viewing in any of the three runnable classes 
+	assoiciated with this project (ie TFTPClient, TFTPHost, and TFTPServer) by typing 'help' into the 
+	relavent console.
 	
-	ConsoleUI echos any user input to the screen in addition to any output generated by the associated program.
-	User input is denoted with a '>' character preceding it.
+	ConsoleUI echos any user input to the screen in addition to any output generated by the associated 
+	program. User input is denoted with a '>' character preceding it.
 	
 	
 	RUNNING THE TFTP SYSTEM
 	==============================
-	Instances of all required classes (TFTPClient, TFTPHost, TFTPServer) can be launched at the same time through
-	running TestBench.java. This class trivially creates 3 threads and run an instance of either client, host, and server
-	on each repsectively. Alternatively, each class can be started and run seperately instead of using the provided test
-	bench. It should be noted, however, that in the event either server, host, or client encounters a critcal error where the thread would
-	be terminated without warning, all three classes will stop running. The solution to this is running all three classes OUTSIDE of the
-	TestBench class, in other words, run all three classes normally without the use of testBench.java.
+	Instances of all required classes (TFTPClient, TFTPHost, TFTPServer) can be launched at the same time 
+	through running TestBench.java. This class trivially creates 3 threads and run an instance of either client, 
+	host, and server on each repsectively. Alternatively, each class can be started and run seperately instead 
+	of using the provided test bench. It should be noted, however, that in the event either server, host, or 
+	client encounters a critcal error where the thread would be terminated without warning, all three classes 
+	will stop running. The solution to this is running all three classes OUTSIDE of the TestBench class, in 
+	other words, run all three classes normally WITHOUT the use of testBench.java.
 	
 	Directly after the launch of TFTPServer, a dialog box will apear prompting you to select a directory for use.
-	This is the directory which the server will read all files from, and write all files to. This directory can be located
-	anywhere on your machine. A directory MUST be chosen for the server to function.
+	This is the directory which the server will read all files from, and write all files to. This directory 
+	can be located anywhere on your machine. A directory MUST be chosen for the server to function.
 	
-	It should also be noted for additional simplicity, the commands 'pull' and 'push' are used in addition to specifying RRQ or 
-	WRQ. The use of push, pull, rrq, and wrq commands are given in greater detail below. The 'push' command opens a file explorer,
-	which in turn allows for the selection of the file you wish to push (write) to the server. The 'pull' command allows the
-	client to read a file (RRQ) from the server, and save it to the main directory (ie above src).
+	It should also be noted for additional simplicity, the commands 'pull' and 'push' are used in addition to 
+	specifying RRQ or WRQ. The use of push, pull, rrq, and wrq commands are given in greater detail below. The 
+	'push' command opens a file explorer, which in turn allows for the selection of the file you wish to push 
+	(write) to the server. The 'pull' command allows the client to read a file (RRQ) from the server, 
+	and save it to the main directory (ie above src).
 	
 	
 	SETTING UP ERRORS IN HOST
 	==============================
-	Errors are set using the input line in the host UI.  There are three (3) errors that can be simulated in the host, a duplicate packet error,
-	a lost packet error, and a delayed packet error. These errors can affect either a ACK-type (04) packet, or a DATA-type (03) packet. Currently, the host
-	cannot simulate errors on a RRQ-type (01) packet, a WRQ-type (02) packet or a ERR-type (05) packet.
+	Errors are set using the input line in the host UI.  There are three (3) errors that can be simulated in 
+	the host, a duplicate packet error, a lost packet error, and a delayed packet error. These errors can 
+	affect either a ACK-type (04) packet, a DATA-type (03) packet, a WRQ-type (02) packet, or a RRQ-type (03)
+	packet. Currently, the host cannot simulate errors on a ERR-type (05) packet.
 	
-	Errors are given a numerical code for respresentation. 0 respresents a delay, 1 represents a duplication, and 2 respresents a lose.
+	Errors are given a numerical code for respresentation. The numerical representation of each error type
+	can be seen in the chart below:
 	
-	The commands for duplication and lose error simulation are given in a 1-noun 2-verb format. The noun, being either 'dup' or 'lose'
-	denotes what type of error you wish to simulate. The 2 verbs that follow are, in order, the packet type and the block number.
-	The packet type denotes on what packet you want to simulate the error on, and block number is the specific number of packet type.
-	The packet type can either be given numericly (3 for Data, 4 for ACK), or as a simple lowercase string (ack or data). Errors to be
-	simulated DO NOT have to be entered in order of simulation (ie you can safely enter an error on block 5 before block 2), however,
-	two errors of the SAME packet-type and the SAME block number will cause unexpected simulation results, as it is nonsensicle to have
-	a packet which is both delayed and lost, or similar.
+		|-------------------|---------------|
+		|	ERROR TYPE		|	ERROR CODE	|
+		|-------------------|---------------|
+		| Delay				|	0			|
+		| Duplicate			|	1			|
+		| Lose				|	2			|
+		| Alter Mode		|	3			|
+		| Add Garabage Data	|	4			|
+		| Alter OpCode		|	5			|
+		| Alter TID			|	6			|
+		| Alter BlockNumber	|	7			|
+		|-------------------|---------------|
 	
-	The command for setting up a delay error in the error simulator is given as in 1-noun 3-verb format. The noun and first 2 verbs follow the
-	same schism as the commands for duplicate and lose error, that is, the noun is given as delay, and the following 2 verbs are to denote
-	packet type and block number. The third and last verb is the length of time you wish to delay, given in seconds.
+	The commands for duplication and lose error simulation are given in a 1-noun 2-verb format. The noun, 
+	being either 'dup' or 'lose' denotes what type of error you wish to simulate. The 2 verbs that follow are, 
+	in order, the packet type and the block number. The packet type denotes on what packet you want to simulate 
+	the error on, and block number is the specific number of packet type. The packet type can either be given 
+	numericly (3 for Data, 4 for ACK), or as a simple lowercase string (ack or data). Errors to be simulated 
+	DO NOT have to be entered in order of simulation (ie you can safely enter an error on block 5 before block 2), 
+	however, two errors of the SAME packet-type and the SAME block number will cause unexpected simulation 
+	results, as it is nonsensicle to have a packet which is both delayed and lost, or similarly manipulated.
+	
+	The command for setting up a delay error in the error simulator is given as in 1-noun 3-verb format. The
+	noun and first 2 verbs follow the same schism as the commands for duplicate and lose error, that is, the
+	noun is given as delay, and the following 2 verbs are to denote packet type and block number. 
+	The third and last verb is the length of time you wish to delay, given in seconds.
 	
 	Examples of setting up duplication, lose, and delay errors are given below:
 	
-		|---------------------------------------|-----------------------|---------------|
-		|	written desciption of error         |str-based input        |int-based input|
-		|---------------------------------------|-----------------------|---------------|
-		|	delay DATA packet 3 for 5 sec       |   delay data 3 5      |    0 3 3 5    |
-		|	duplicate ACK packet 1              |   dup ack 1           |    1 4 1      |
-		|	lose DATA packet 2                  |   lose data 2         |    2 3 2      |
-		|	delay ACK packet 2 for 10 sec       |   delay ack 2 10      |    0 4 2 10   |
-		|---------------------------------------|-----------------------|---------------|
+		|-------------------------------------------|-----------------------|-------------------|
+		|	WRITTEN DESCIPTION OF ERROR        		|   STRING BASED INPUT	|	INT BASED INPUT	|
+		|-------------------------------------------|-----------------------|-------------------|
+		|	delay DATA packet 3 for 5 sec       	|   delay data 3 5      |	0 3 3 5			|
+		|	delay ACK packet 2 for 10 sec       	|   delay ack 2 10      |	0 4 2 10		|
+		|											|						|					|
+		|	duplicate ACK packet 1              	|	dup ack 1           |	1 4 1			|
+		|											|						|					|
+		|	lose DATA packet 2                  	|   lose data 2         |	2 3 2			|
+		|											|						|					|
+		|	set mode on RRQ packet to ascii			|	mode rrq ascii		|	3 1 ascii		|
+		|	set mode on WRQ packet to sysc3303		|	mode wrq sysc3303	|	3 2 sysc3303	|
+		|											|						|					|
+		|	add 10 extra random bytes to DATA 3		|	add data 3 10		|	4 3 3 10		|
+		|	add 50 extra random bytes to DATA 8		|	add data 8 50		|	4 3 8 50		|
+		|											|						|					|
+		|	change the opcode in DATA 3 to 01		|	opcode data 3 1		|	5 3 3 1			|
+		|	change the opcode in ACK 1 to 10		|	opcode ack 1 10		|	5 4 1 10		|
+		|											|						|					|
+		|	change the TID address of DATA 1 to 101	|	tid data 1 101		|	6 3 1 101		|
+		|	change the TID address of ACK 4 to 24	|	tid ack 4 24		|	6 4 4 24		|
+		|											|						|					|
+		|	change the blocknum of DATA 5 to 6		|	blocknum data 5 6	|	7 3 5 6			|
+		|	change the blocknum of ACK 1 to 22		|	blocknum ack 1 22	|	7 4 1 22		|
+		|	change the blocknum of DATA 5 to 2		|	blocknum data 5 2	|	7 3 5 2			|
+		|-------------------------------------------|-----------------------|-------------------|
 	
-	To view all of the errors to be simulated in the host, use the command 'errors', which will print the list of all errors programmed
-	into the simulator.
+	To view all of the errors to be simulated in the host, use the command 'errors', which will print the list 
+	of all errors programmed into the simulator.
 	
-	It should be noted that BEFORE the file transfer begins, YOU MUST indicate to the host that you have entered all the errors you wish
-	to simulate. This is done by typing the 'run' command. If this is not done, host WILL NOT pass through any data to server or client.
+	It should be noted that BEFORE the file transfer begins, YOU MUST indicate to the host that you have entered 
+	all the errors you wish to simulate. This is done by typing the 'run' command. If this is not done, host 
+	WILL NOT pass through any data to server or client.
 	
 	
 	SENDING RRQ AND WRQ TO SERVER
 	==============================
-	Sending RRQ and WRQ can be done trivially via serveral given commands. The rrq command is synonymous with the pull command,
-	similarly, the wrq command is synonymous with the push command.
-	Files are written and read from the directory specidied upon server execuion or through use of the 'cd' server command.
-	On the client side, files are read from anywhere on the computer. However, the files are always saved to the directory directly above
-	src. This is planned to be patched in a future version.
+	Sending RRQ and WRQ can be done trivially via serveral given commands. The rrq command is synonymous with the 
+	pull command, similarly, the wrq command is synonymous with the push command. Files are written and read from 
+	the directory specidied upon server execuion or through use of the 'cd' server command. On the client side, 
+	files are read from anywhere on the computer. However, the files are always saved to the directory directly 
+	above src. This is planned to be patched in a future version.
 	
-	If not specified, the assumed mode for all file transfers is pressumed to be in standard 8-bit ASCII format.
+	If not specified, the assumed mode for all file transfers is pressumed to be in standard 8-bit NETASCII 
+	format.
 	
 	The use of all pull and push commands are given both below, and by calling the 'help' method.
 	
-	It should also be noted that for a RRQ, you must specify the file you wish to pull from the server via the filename, given in text
-	along with the command. However, for a WRQ, the file you wish to push to server is selected via a file chooser.
+	It should also be noted that for a RRQ, you must specify the file you wish to pull from the server via the 
+	filename, given in text along with the command. However, for a WRQ, the file you wish to push to server is 
+	selected via a file chooser.
 
 
 	
@@ -242,29 +299,52 @@ OPERATING INSTRUCTIONS
 		The list of all accepted commands** to the client are given as:
 		**Please note that words in all caps (ie B, MODE) are to denote a verbs
 		
-		'help'			: Print all commands and how to use to the console
-		'clear'			: Clear the console output of all text
-		'close'			: Shutdown the TFTPClient currently running
-		'verbose B'		: Switch the client into verbose mode B, where B is a boolean variable.
-				  	  For example, for verbose to be set true type 'verbose true'. For verbose
-				  	  false, type 'verbose false'.
-		'testmode B'		: Switch the client to regular mode and test mode. When in test mode, client
-					  passes all communications through the host (error simulator). When NOT in
-					  test mode, client passes all communications directly to the server.
-					  To toggle test mode on, type 'testmode true'. To toggle test mode off (ie
-					  run in regular mode) type 'testmode false'.
-		'test'			: Run a simple test of UI functionally. Note that while this test is running,
-					  the UI will lose all functionality until the test is fully complete.
-		'push MODE'		: Push a file FROM the client TO the server. Ergo, send a write request to the
-					  server. This command is synonymous to 'wrq MODE'. MODE is any string input.
-		'push'			: Push a file FROM the client TO the server. Ergo, send a write request to the
-					  server. This ALWAYS sends the write request in mode ASCII.
-		'pull FILE MODE'	: Requests a file FROM the server TO the client. Ergo, send a read request for file
-					  FILE in mode MODE. Both FILE and MODE are any strings. It should be noted that
-					  FILE cannot have any spaces in it.
-		'pull FILE'		: Identical to 'pull FILE MODE'. MODE is set by default to ASCII.
-		'rrq FILE MODE'		: Identical to 'pull FILE MODE'.
-		'wrq MODE'		: Identical to 'push MODE'
+		'help'
+			Print all commands and how to use to the console
+			
+		'clear'
+			Clear the console output of all text
+			
+		'close'
+			Shutdown the TFTPClient currently running
+			
+		'verbose B'
+			Switch the client into verbose mode B, where B is a boolean variable.
+			For example, for verbose to be set true type 'verbose true'. For verbose
+			false, type 'verbose false'.
+			
+		'testmode B'
+			Switch the client to regular mode and test mode. When in test mode, client
+			passes all communications through the host (error simulator). When NOT in
+			test mode, client passes all communications directly to the server.
+			To toggle test mode on, type 'testmode true'. To toggle test mode off (ie
+			run in regular mode) type 'testmode false'.
+			
+		'test'
+			Run a simple test of UI functionally. Note that while this test is running,
+			the UI will lose all functionality until the test is fully complete.
+			
+		'push MODE'
+			Push a file FROM the client TO the server. Ergo, send a write request to the
+			server. This command is synonymous to 'wrq MODE'. MODE is any string input.
+			
+		'push'
+			Push a file FROM the client TO the server. Ergo, send a write request to the
+			server. This ALWAYS sends the write request in mode ASCII.
+			
+		'pull FILE MODE'
+			Requests a file FROM the server TO the client. Ergo, send a read request for file
+			FILE in mode MODE. Both FILE and MODE are any strings. It should be noted that
+			FILE cannot have any spaces in it.
+			
+		'pull FILE'
+			Identical to 'pull FILE MODE'. MODE is set by default to ASCII.
+			
+		'rrq FILE MODE'
+			Identical to 'pull FILE MODE'.
+			
+		'wrq MODE'
+			Identical to 'push MODE'
 	
 	
 	TFTPHost:
@@ -272,35 +352,60 @@ OPERATING INSTRUCTIONS
 		The list of all accepted commands** to the host are given as:
 		**Please note that words in all caps (ie B, PT, BN, DL) are to denote verbs
 		
-		'help'			: Print all commands and how to use to the console
-		'clear'			: Clear the console output of all text
-		'close'			: Shutdown the host, freeing up all ports
-		'verbose B'		: Switch the host into verbose mode B, where B is a boolean variable.
-				  	  For example, for verbose to be set true type 'verbose true'. For verbose
-				  	  false, type 'verbose false'.
-		'run'			: Set the host to run for one (1) complete file transfer with any and all errors
-					  simulated. If no errors were entered, host will just pass the packets through normally.
-		'test'			: Run a simple test of UI functionally. Note that while this test is running,
-					  the UI will lose all functionality until the test is fully complete.
-		'errors'		: Print the sorted stack of all inputed errors you want the host to simulate.
-		'delay PT BN DL'	: Add a delay type error to packet type PT, block number BN, delaying for DL.
-					  For instance, to delay ACK packet #2 by 1000ms, type 'delay ack 2 1000'. 
-					  Alternatively, type '0 4 2 1000'. PT can be either the integer
-					  code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
-					  written code as a string (ack, data, wrq, rrq).
-		'dup PT BN'		: Add a duplicate type error to packet type PT, block number BN
-					  For instance, to duplicate ACK packet #2 by 1000ms, type 'dup ack 2'. 
-					  Alternatively, type 'dup 4 2'. PT can be either the integer
-					  code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
-					  written code as a string (ack, data, wrq, rrq).
-		'lose PT BN'		: Add a lose type error to packet type PT, block number BN.
-					  For instance, to lose ACK packet #2, type 'lose ack 2'. 
-					  Alternatively, type '2 4 2'. PT can be either the integer
-					  code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
-					  written code as a string (ack, data, wrq, rrq).		  
-		'0 PT BN DL'		: Functions exactly the same as 'delay PT BN DL'
-		'1 PT BN'		: Functions exactly the same as 'dup PT BN'
-		'2 PT BN'		: Functions exactly the same as 'lose PT BN' 
+		'help'
+			Print all commands and how to use to the console
+			
+		'clear'
+			Clear the console output of all text
+			
+		'close'
+			Shutdown the host, freeing up all ports
+			
+		'verbose B'
+			Switch the host into verbose mode B, where B is a boolean variable.
+			For example, for verbose to be set true type 'verbose true'. For verbose
+			false, type 'verbose false'.
+			
+		'run'
+			Set the host to run for one (1) complete file transfer with any and all errors
+			simulated. If no errors were entered, host will just pass the packets through normally.
+			
+		'test'
+			Run a simple test of UI functionally. Note that while this test is running,
+			the UI will lose all functionality until the test is fully complete.
+			
+		'errors'
+			Print the sorted stack of all inputed errors you want the host to simulate.
+			
+		'delay PT BN DL'
+			Add a delay type error to packet type PT, block number BN, delaying for DL.
+			For instance, to delay ACK packet #2 by 1000ms, type 'delay ack 2 1000'. 
+			Alternatively, type '0 4 2 1000'. PT can be either the integer
+			code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
+			written code as a string (ack, data, wrq, rrq).
+			
+		'dup PT BN'
+			Add a duplicate type error to packet type PT, block number BN
+			For instance, to duplicate ACK packet #2 by 1000ms, type 'dup ack 2'. 
+			Alternatively, type 'dup 4 2'. PT can be either the integer
+			code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
+			written code as a string (ack, data, wrq, rrq).
+			
+		'lose PT BN'
+			Add a lose type error to packet type PT, block number BN.
+			For instance, to lose ACK packet #2, type 'lose ack 2'. 
+			Alternatively, type '2 4 2'. PT can be either the integer
+			code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
+			written code as a string (ack, data, wrq, rrq).	
+			
+		'0 PT BN DL'
+			Functions exactly the same as 'delay PT BN DL'
+			
+		'1 PT BN'
+			Functions exactly the same as 'dup PT BN'
+			
+		'2 PT BN'
+			Functions exactly the same as 'lose PT BN' 
 		
 		
 	TFTPServer:
@@ -308,155 +413,127 @@ OPERATING INSTRUCTIONS
 		The list of all accepted commands** to the host are given as:
 		**Please note that words in all caps (ie B, PT, BN, DL) are to denote verbs
 		
-		'help'			: Print all commands and how to use to the console
-		'clear'			: Clear the console output of all text
-		'close'			: Shutdown the server, freeing up all ports
-		'verbose B'		: Switch the server into verbose mode B, where B is a boolean variable.
-				  	  For example, for verbose to be set true type 'verbose true'. For verbose
-				  	  false, type 'verbose false'.			  
-		'test'			: Run a simple test of UI functionally. Note that while this test is running,
-					  the UI will lose all functionality until the test is fully complete.
-		'cd'			: Change the working directory for server
-		'path'			: Print the working directory for the server
+		'help'
+			Print all commands and how to use to the console
+			
+		'clear'
+			Clear the console output of all text
+			
+		'close'
+			Shutdown the server, freeing up all ports
+			
+		'verbose B'
+			Switch the server into verbose mode B, where B is a boolean variable.
+			For example, for verbose to be set true type 'verbose true'. For verbose
+			false, type 'verbose false'.			  
+			
+		'test'
+			Run a simple test of UI functionally. Note that while this test is running,
+			the UI will lose all functionality until the test is fully complete.
+			
+		'cd' 
+			Change the working directory for server
+			
+		'path'
+			Print the working directory for the server
 				
 				
-				
+			
+FILE INFORMATION:			
 ------------------------------------------------------------
-FILE INFORMATION:
 
-ServerThread.java
-
-	Abstract class designed to lay base criteria and behaviors for other
-	threads in project.
-
-
-TFTPCLient.java
-
-	Makes a read or write request to either a TFTPServer or a
-	TFTPHost. When read, sends a datagram:RRQ/WRQ, then proceeds
-	to receive datagrams:DATA from the server/host. Sends an
-	ACK to server after each datagram is received. Writes all
-	incoming data to a file.
-	Client can also make a write request to the server. It sends
-	a packet to the server, and waits for an ACK to be sent in response.
-	Loops until all data is sent. Packet specification and type can be
-	found in TFTP REFERENCE section of READ ME.
-	
-
-TFTPHost.java
-
-	Acts as an intermediate host between the server and clients. If in test 
-	mode all messages will flow through the host were they can be manipulated.
-	The intermediate host has the ability to lose, delay, duplicate. 
+	ServerThread.java
+	==============================
+		Abstract class designed to lay base criteria and behaviors for other
+		threads in project.
 
 
-TFTPReadThread.java
+	TFTPCLient.java
+	==============================
+		Makes a read or write request to either a TFTPServer or a
+		TFTPHost. When read, sends a datagram:RRQ/WRQ, then proceeds
+		to receive datagrams:DATA from the server/host. Sends an
+		ACK to server after each datagram is received. Writes all
+		incoming data to a file.
+		Client can also make a write request to the server. It sends
+		a packet to the server, and waits for an ACK to be sent in response.
+		Loops until all data is sent. Packet specification and type can be
+		found in TFTP REFERENCE section of READ ME.
+		
 
-	Is initialized by the TFTPServer to complete a read request TFTP file transfer with the client. 
-	Initially sends data to the request packet port and then waits to receive acknowledgements. Completes 
-	the read process by reading data less than the maximum size (512).  
-	
-
-TFTPReader.java
-
-	Takes a file and divides it into 512 Byte sections. Links these sections
-	together as a linked list. Used to read files and split into 512 Byte long
-	byte arrays (as according to the DATA packet type specification for TFTP). 
-
-
-TFTPServer.java
-
-	Receives requests from client(s). Can perform both read or write requests.
-	Write requests entail receiving the request from the client in the form
-	of a HEADER packet, acknowlegding said packet (sending an ACK), and then
-	alternating between receiving packets/writing said data to a file and
-	sending ACKs to the client.
-	Can also handle read requestions. Receives HEADER packet from client, procedes
-	to read a file and send client DATA packets (512B max data size), waiting
-	in between each packet for client to acknowledge (ACK).
-	
-
-TFTPWriteThread.java
-
-	Is initialized by the TFTPServer to complete a Write request TFTP file transfer 
-	with the client. Initially sends a block zero acknowledgement and waits to receive data. 
-	Completes the write process by writing data less than the maximum size (512).  
+	TFTPHost.java
+	==============================
+		Acts as an intermediate host between the server and clients. If in test 
+		mode all messages will flow through the host were they can be manipulated.
+		The intermediate host has the ability to lose, delay, duplicate. 
 
 
-TFTPWriter.java
+	TFTPReadThread.java
+	==============================
+		Is initialized by the TFTPServer to complete a read request TFTP file transfer with the client. 
+		Initially sends data to the request packet port and then waits to receive acknowledgements. 
+		Completes the read process by reading data less than the maximum size (512).  
+		
 
-	Passed byte array and file name by caller. Creates file name based off of passed 
-	info, then writes byte array to file. If the file already exits, defaults to not 
-	overwriting.
-	
-	
-ConsoleUI.java
-
-	Generates GUI. The GUI uses a JTextArea for the output and JTestField for the input. This class 
-	is thread safe through internal synchronization.
-	
-	
-UIFramework.java
-
-	Defines the basic methods a GUI must provide if we choose to implement different GUI types in the future.
-	
-	
-TestBench.java
-	
-	Launches an instance of the server, client and host for quick testing.
-
-	
-Input.java
-
-	Basic datatype to hold the maximum-of-four values used to properly simulate an error.
-	
-	
-InputStack.java
-
-	A sorted stack of all errors to simulate. Sorted in terms of ascending block number, and packet-type in the case of a tie.
+	TFTPReader.java
+	==============================
+		Takes a file and divides it into 512 Byte sections. Links these sections
+		together as a linked list. Used to read files and split into 512 Byte long
+		byte arrays (as according to the DATA packet type specification for TFTP). 
 
 
+	TFTPServer.java
+	==============================
+		Receives requests from client(s). Can perform both read or write requests.
+		Write requests entail receiving the request from the client in the form
+		of a HEADER packet, acknowlegding said packet (sending an ACK), and then
+		alternating between receiving packets/writing said data to a file and
+		sending ACKs to the client.
+		Can also handle read requestions. Receives HEADER packet from client, procedes
+		to read a file and send client DATA packets (512B max data size), waiting
+		in between each packet for client to acknowledge (ACK).
+		
 
-	
-------------------------------------------------------------
-TFTP REFERENCE
-TFTP Formats
-
-   Type   Op #     Format without header
-
-          2 bytes    string   1 byte     string   1 byte
-          -----------------------------------------------
-   RRQ/  | 01/02 |  Filename  |   0  |    Mode    |   0  |
-   WRQ    -----------------------------------------------
-          2 bytes    2 bytes       n bytes
-          ---------------------------------
-   DATA  | 03    |   Block #  |    Data    |
-          ---------------------------------
-          2 bytes    2 bytes
-          -------------------
-   ACK   | 04    |   Block #  |
-          --------------------
-          2 bytes  2 bytes        string    1 byte
-          ----------------------------------------
-   ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
-          ----------------------------------------
+	TFTPWriteThread.java
+	==============================
+		Is initialized by the TFTPServer to complete a Write request TFTP file transfer 
+		with the client. Initially sends a block zero acknowledgement and waits to receive data. 
+		Completes the write process by writing data less than the maximum size (512).  
 
 
+	TFTPWriter.java
+	==============================
+		Passed byte array and file name by caller. Creates file name based off of passed 
+		info, then writes byte array to file. If the file already exits, defaults to not 
+		overwriting.
+		
+		
+	ConsoleUI.java
+	==============================
+		Generates GUI. The GUI uses a JTextArea for the output and JTestField for the input. This class 
+		is thread safe through internal synchronization.
+		
+		
+	UIFramework.java
+	==============================
+		Defines the basic methods a GUI must provide if we choose to implement different GUI types in 
+		the future.
+		
+		
+	TestBench.java
+	==============================
+		Launches an instance of the server, client and host for quick testing.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		
+	Input.java
+	==============================
+		Basic datatype to hold the maximum-of-four values used to properly simulate an error.
+		
+		
+	InputStack.java
+	==============================
+		A sorted stack of all errors to simulate. Sorted in terms of ascending block number, and packet-type 
+		in the case of a tie.
 
 
 
