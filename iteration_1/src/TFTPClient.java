@@ -2,10 +2,10 @@
 *Class:             TFTPClient.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    21/11/2016                                              
-*Version:           2.0.1                                                      
+*Date of Update:    25/11/2016                                              
+*Version:           2.1.0                                                      
 *                                                                                   
-*Purpose:           Generates a datagram following the format of [0,R/W,STR1,0,STR2,0],
+*Purpose:           Generates a datagram following the format of [0,R/W,STR1,0,STR2,0], 
 					in which R/W signifies read (1) or write (2), STR1 is a filename,
 					and STR2 is the mode. Sends this datagram to the IntermediateHost
 					and waits for response from intermediateHost. Repeats this
@@ -15,7 +15,16 @@
 					packet. Each datagram can be 512B max
 * 
 * 
-*Update Log:		v2.0.1
+*Update Log:		v2.1.0
+*						- Fixed error code 5 handling (malformed packet)
+*						- Fixed code error message printing
+*						- Fixed error packet parsing
+*						- Fixed error packet positive feedback loop
+*					v2.0.2
+*						-Added unknown TID handling
+*						-Added Error Generation
+*						-Added error 4-5 Handling
+*					v2.0.1
 *						- DEFAULT_MODE constant replaced with standard_mode variables
 *						- standard_mode can now be set via console (NETASCII by default)
 *						- displays error packets and file transfer completion using method in ConsoleUI
@@ -81,7 +90,7 @@
 *						- name changed from 'Client' to 'TFTPClient'
 *						 (are you happy now Sarah??!?!?!?!?!)
 *					v1.0.0
-*                       - null
+*                       
 */
 
 
@@ -93,6 +102,7 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import errorhelpers.DatagramArtisan;
 //import packages
 import ui.* ;
 
@@ -118,6 +128,11 @@ public class TFTPClient extends JFrame
 	private boolean duplicateDATA = false;
 	private boolean retransmitACK = false;
 	private boolean retransmitDATA = false;
+	private DatagramArtisan datagramArtisan = new DatagramArtisan();
+	
+	//Error handling vars
+	private int serverTID;
+	private boolean establishedConnection = false;
 	
 	//INIT socket timeout variables
 	protected static final int TIMEOUT = 5; //Seconds
@@ -190,10 +205,7 @@ public class TFTPClient extends JFrame
 	public void verboseMode(boolean v)
 	{
 		verbose = v;
-		if(verbose)
-		{
-			console.print("Verbose mode set " + verbose);
-		}
+		console.print("Verbose mode set " + verbose);
 	}
 	
 	
@@ -410,12 +422,14 @@ public class TFTPClient extends JFrame
 		}
 		//change port to wherever ACK came from 
 		outPort = receivedPacket.getPort();
-		
+		serverTID = receivedPacket.getPort();
+		establishedConnection = true;
 		//send DATA
-		while ( !(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4)
+		while ( (!(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4) || retransmitDATA)
 		{
 			if(retransmitDATA)
 			{
+				System.out.println("Retransmitting");
 				sendPacket();//resend
 				retransmitDATA = false;
 			}
@@ -504,10 +518,19 @@ public class TFTPClient extends JFrame
 			console.print("Client: Checking DATA...");
 		}
 		byte[] data = receivedPacket.getData();
+		if(establishedConnection){
+	  		if(receivedPacket.getPort() != serverTID){
+	  			buildError(5,receivedPacket,verbose,"Unexpected TID");
+	  			errorFlag=true;
+				return false;
+	  		}
+  		}
 
 		//check if data
 		if(data[0] == 0 && data[1] == 3){
-
+			if(receivedPacket.getLength() > 516){
+				buildError(4,receivedPacket, verbose,"Length of the DATA packet is over 516.");
+			}
 			//Check if the blockNumber corresponds to the expected blockNumber
 			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
 				blockNum++;
@@ -533,8 +556,10 @@ public class TFTPClient extends JFrame
 		else{
 			//ITERATION 5 ERROR
 			//Invalid TFTP code
+			buildError(5,receivedPacket,verbose,"OpCode is invalid");
+			errorFlag=true;
+			return false;
 		}
-		return false;
 	}
 	
 	//receive ACK
@@ -575,10 +600,19 @@ public class TFTPClient extends JFrame
 			console.print("Client: Checking ACK...");
 		}
 		byte[] data = receivedPacket.getData();
-
+		if(establishedConnection){
+	  		if(receivedPacket.getPort() != serverTID){
+	  			buildError(5,receivedPacket,verbose,"Unexpected TID");
+	  			return false;
+	  		}
+  		}
 		//check ACK for validity
-		if(data[0] == 0 && data[1] == 4){
+		if(data[0] == 0 && data[1] == 4)
+		{
 
+			if(receivedPacket.getLength() > 4){
+				buildError(4,receivedPacket, verbose,"Length of the ACK is over 4.");
+			}
 			//Check if the blockNumber corresponds to the expected blockNumber
 			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
 				blockNum++;
@@ -601,6 +635,8 @@ public class TFTPClient extends JFrame
 			}
 			return true;
 		}
+		buildError(5,receivedPacket,verbose,"OpCode is invalid");
+		errorFlag=true;
 		return false;
 	}
 	
@@ -629,6 +665,10 @@ public class TFTPClient extends JFrame
 			while(!receiveDATA()){if(errorFlag){return;}}
 			if(retransmitACK && !receivedData1){console.print("Never Received first data. Please try again");return;}
 			if(!retransmitACK && !duplicateDATA){
+				if(!receivedData1){
+					serverTID = receivedPacket.getPort();
+					establishedConnection = true;
+				}
 
 				outPort = receivedPacket.getPort();
 
@@ -712,52 +752,19 @@ public class TFTPClient extends JFrame
 		}
 		
 		//check for errors
-		byte errorType=response[3];
-		response = receivedPacket.getData();
-		if(response[0] == 0 && response[1] == 5)
+		
+		if(!timeoutFlag)
 		{
-			/*
-			 * TODO
-			 * Should we not be printing out the message included in the error packet, instead of our own locally generated string?
-			 */
-			switch(errorType)
+			response = receivedPacket.getData();
+			if(response[0] == 0 && response[1] == 5)
 			{
-				//file not found
-		    	case 1:
-		    			console.printError(1,"File not found, please select again");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//improper rights for R/W
-		    	case 2:
-		    			console.printError(2,"You do not have the rights for this, please select again");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//drive full
-		    	case 3:
-		    			console.printError(3,"Location full, please select a new location to write to");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//file already exists
-		    	case 6:
-		    			console.printError(6,"The file already exists, please select a new file");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//unknown errorS
-		    	default:
-		    			/* TODO
-		    			 * something
-		    			 */
-		    			break;
+				errorFlag = true;
+			//extract error message for response
+			int errorType = (response[2] << 8)&0xFF | response[3]&0xFF;
+			String errorMsg = datagramArtisan.getErrorMsg(receivedPacket);
+			console.printError(errorType, errorMsg);
+				
 			}
-		}
-		//no error present
-		else
-		{
-
 		}
 	}
 	
@@ -774,6 +781,72 @@ public class TFTPClient extends JFrame
 		console.printByteArray(data, packetSize);
 		console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
 	}
+	
+	
+    //Build an Error Packet with format :
+    /*
+    2 bytes  2 bytes        string    1 byte
+    ----------------------------------------
+ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
+    ----------------------------------------
+    */
+    protected void buildError(int errorCode,DatagramPacket receivePacket, boolean verbose, String errorInfo){
+    	int errorSizeFactor = 5;
+
+    	
+    	String errorMsg = new String("Unknown Error.");
+    	switch(errorCode){
+	    	case 1:
+	    		errorCode = 1;
+	    		console.print("Server: File not found, sending error packet");
+	    		errorMsg = "File not found: " + errorInfo;
+	    		break;
+	    	case 2: 
+	    		errorCode = 2;
+	    		console.print("Server: Access violation, sending error packet");
+	    		errorMsg = "Access violation: " + errorInfo;
+	    		break;
+	    	case 3: 
+	    		errorCode = 3;
+	    		console.print("Server: Disk full or allocation exceeded, sending error packet");
+	    		errorMsg = "Disk full or allocation exceeded: " + errorInfo;
+	    		break;
+	    	case 4:
+	    		errorCode = 4;
+	    		console.print("Illegal TFTP operation");
+	    		errorMsg = "Illegal TFTP operation: " + errorInfo;
+	    		break;
+	    	case 5:
+	    		errorCode = 5;
+	    		console.print("Unknown Transfer ID");
+	    		errorMsg = "Unknown Transfer ID: " + errorInfo;
+	    		break;
+	    	case 6: 
+	    		errorCode = 6;
+	    		console.print("Server: File already exists, sending error packet");
+	    		errorMsg = "File already exists: " + errorInfo;
+	    		break;
+    	}
+    	
+    	byte[] data = new byte[errorMsg.length() + errorSizeFactor];
+    	data[0] = 0;
+    	data[1] = 5;
+    	data[2] = 0;
+    	data[3] = (byte)errorCode;
+    	for(int c = 0; c<errorMsg.length();c++){
+    		data[4+c] = errorMsg.getBytes()[c];
+    	}
+    	data[data.length-1] = 0;
+    	
+    	sentPacket = new DatagramPacket(data, data.length,
+	    		receivePacket.getAddress(), receivePacket.getPort());
+	    if(verbose){
+		   printDatagram(sentPacket);
+	    }
+
+	    sendPacket();
+    	
+    }
 	
 	
 	
@@ -795,9 +868,9 @@ public class TFTPClient extends JFrame
 		console.print("'test'                                    - runs a test for the console");
 		console.print("'mode NEWMODE'           - set the default mode to NEWMODE");
 		console.println();
-		console.print("'push MODE'                    - push a file to the server in mode MODE (ex, ASCII)");
+		console.print("'push MODE'                    - push a file to the server in mode MODE (ex, NETASCII)");
 		console.print("'push'                                - push a file to the server in default mode");
-		console.print("'pull FILENAME MODE'  - pull a file from the server in mode MODE (ex ASCII)");
+		console.print("'pull FILENAME MODE'  - pull a file from the server in mode MODE (ex NETASCII)");
 		console.print("'pull FILENAME'               - pull a file from the server in default mode");
 		console.println();
 		console.print("'rrq FILENAME MODE'    - send a read request for file FILENAME in mode MODE");
@@ -806,8 +879,11 @@ public class TFTPClient extends JFrame
 		console.println();
 		
 		/** TODO DELETE THIS*/
-		testMode(true);
-		verbose=true;
+		//==================================================
+		this.verboseMode(true);
+		this.testMode(true);
+		//==================================================
+		
 		//main input loop
 		while(runFlag)
 		{
@@ -853,7 +929,7 @@ public class TFTPClient extends JFrame
 						console.print("Closing with grace....");
 						runFlag = false;
 						this.close();
-						System.exit(0);
+						continue;
 					}
 					//run simple console test
 					else if (input[0].equals("test"))
@@ -1010,9 +1086,22 @@ public class TFTPClient extends JFrame
 					console.print("! Unknown Input !");
 					break;
 			}
+			cleanup();//clears all flag values.
 		}
 	}
 	
+	private void cleanup()
+	{
+		duplicateACK = false;
+		duplicateDATA = false;
+		retransmitACK = false;
+		retransmitDATA = false;
+		establishedConnection = false;
+		timeouts = 0;
+
+		timeoutFlag = false;
+		errorFlag = false;
+	}
 	
 	public static void main (String[] args) 
 	{

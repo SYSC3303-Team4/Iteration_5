@@ -3,7 +3,7 @@
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
 *Date of Update:    08/11/2016                                              
-*Version:           1.1.1                                                      
+*Version:           1.0.0                                                      
 *                                                                                   
 *Purpose:           Instead of launching 3 things, we launch 1 thing which launches 3 other things.
 * 
@@ -16,7 +16,7 @@
 
 
        
-public class TestBench 
+public class TestBench  
 {
 	public static void main(String[] args) 
 	{

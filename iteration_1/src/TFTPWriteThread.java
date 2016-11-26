@@ -57,18 +57,43 @@ class TFTPWriteThread extends ServerThread
     File file;
     private boolean blockFlag=true;
 
-    public static final byte[] response = {0, 4, 0, 0};
+    public final byte[] response = {0, 4, 0, 0};
     
-    private boolean initialFileCheck = false;
+    //declaring local class constants
+    private static final int ABSOLUTE_PACKET_BUFFER_SIZE = 1000;
+    private static final int DATA_PACKET_MAX_SIZE = 516;
     
-    
-
-    public TFTPWriteThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket receivePacketInfo,String thread, Boolean verboseMode,File file) {
-    	super(group,thread,transcript);
-    	requestPacket = receivePacketInfo;  
+    public TFTPWriteThread(ThreadGroup group, DatagramPacket requestPacketInfo,String thread, Boolean verboseMode,File file) {
+    	super(group,thread,new ConsoleUI("Write Thread "+thread));
+    	console.run();
+    	requestPacket = requestPacketInfo;  
         threadNumber = thread;
         verbose = verboseMode;
-        this.file = file;
+        clientTID = requestPacketInfo.getPort();
+        this.file = file; 
+        try {
+			sendReceiveSocket = new DatagramSocket();
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block    
+			e.printStackTrace();
+			console.print(e.getMessage());
+		}
+		try {
+			sendReceiveSocket.setSoTimeout(TIMEOUT*1000);
+		} catch (SocketException e) {
+			//Handle Timeout Exception
+			e.printStackTrace();
+		}
+        
+    }
+
+    public TFTPWriteThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket requestPacketInfo,String thread, Boolean verboseMode,File file) {
+    	super(group,thread,transcript);
+    	requestPacket = requestPacketInfo;  
+        threadNumber = thread;
+        verbose = verboseMode;
+        clientTID = requestPacketInfo.getPort();
+        this.file = file; 
         try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) {
@@ -86,8 +111,10 @@ class TFTPWriteThread extends ServerThread
     }
 
     public void run() {
+    	
+    	
 		   
-
+    		connectionEstablished = true;
 		   //Parsing Data for filename and mode 
 		   ByteArrayOutputStream filename = new ByteArrayOutputStream();
 		   ByteArrayOutputStream mode = new ByteArrayOutputStream();
@@ -108,9 +135,19 @@ class TFTPWriteThread extends ServerThread
 				   }
 				}
 		   }
+		   String modeString = new String(mode.toByteArray(), 
+				   	0,mode.toByteArray().length);
+		   
+		   //Check for Valid MODE
+		   if(!modeString.equalsIgnoreCase("netascii") && !modeString.equalsIgnoreCase("octet")) {
+			   buildError(4,requestPacket,verbose,"Invalid Mode");
+			   exitGraceFully();
+	    	   return; 
+		   }
+		   
 		   printReceivedPacket(requestPacket, verbose);
 		    /* Exit Gracefully if the stop is requested. */
-	       if(stopRequested){exitGraceFully();return;}
+	       if(stopRequested){exitGraceFully();return;}  
 	       if(verbose){
 	    	   console.print("Request parsed for:");
 	    	   console.print("	Filename: " + new String(filename.toByteArray(),
@@ -118,6 +155,15 @@ class TFTPWriteThread extends ServerThread
 	    	   console.print("	Mode: " + new String(mode.toByteArray(),
 				   0,mode.toByteArray().length) + "\n");
 			}
+	       
+	       //Write file to directory
+	       File fileName = new File(file.getAbsolutePath()+"/"+filename.toString());
+		   if(fileName.exists()) { 
+		    	   buildError(6,requestPacket,verbose,"");
+		    	   return;
+			}
+	
+	       
 		   //Build and send the first ACK reply in format:
 		   /*
 		  2 bytes    2 bytes
@@ -152,63 +198,60 @@ class TFTPWriteThread extends ServerThread
 		   DATA  | 03    |   Block #  |    Data    |
 			  ---------------------------------
 			*/
-			   byte[] rawData = new byte[516];
-			   receivePacket = new DatagramPacket(rawData, rawData.length);
+	    	   //set up empty packet to receive into
+			   byte[] rawData = new byte[ABSOLUTE_PACKET_BUFFER_SIZE];
+			   requestPacket = new DatagramPacket(rawData, rawData.length);
 			   
 			    /* Exit Gracefully if the stop is requested. */
 			   if(stopRequested){continue;}
 			   
 		       console.print("Server: Waiting for packet.");
 		       // Block until a datagram packet is received from receiveSocket.
-		       while(!receiveDATA()){if(errorFlag){return;}}
+		       while(!receiveDATA()){if(errorFlag){exitGraceFully();return;}}
 
 		       if(!retransmitACK){
 		       
-		    	   printReceivedPacket(receivePacket,verbose);
-			       byte[] data = new byte[receivePacket.getLength()-4];
+		    	   printReceivedPacket(requestPacket,verbose);
+			       byte[] data = new byte[requestPacket.getLength()-4];
 	
 			       //Parse data from DATA packet
-			       for(int i = 4; i < receivePacket.getLength();i++){
-			    	   data[i-4] = receivePacket.getData()[i];
+			       for(int i = 4; i < requestPacket.getLength();i++){
+			    	   data[i-4] = requestPacket.getData()[i];
 			       }
-			       
-	
-			       //Write file to directory
-			       File fileName = new File(file.getAbsolutePath()+"/"+filename.toString());
 			       
 			       
 			       TFTPWriter writer = new TFTPWriter();
-			       
-			       if(initialFileCheck){
-				       if(fileName.exists()) { 
-				    	   buildError(6,receivePacket,verbose);
-				    	   return;
-						}
-			       }
 
 			       /*
 			       if(!fileName.canWrite())
 			       {
-			    	   buildError(2,receivePacket,verbose);
+			    	   buildError(2,requestPacket,verbose);
 			    	   return;
 			       }
 			       */
 					
 			       try {
 						writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
-						initialFileCheck = false;
 					} catch (SecurityException e1) {
-						buildError(2,receivePacket,verbose);
+						buildError(2,requestPacket,verbose,"");
 						e1.printStackTrace();
+						exitGraceFully();
 						return;
 					} 
 			       catch(FileNotFoundException e2)
 			       {
-			    	   buildError(1,receivePacket,verbose);
+			    	   if(file.exists())
+			    	   {
+			    		   buildError(2,requestPacket,verbose,"");
+				    	   return;
+			    	   }
+			    	   buildError(1,requestPacket,verbose,"");
+			    	   exitGraceFully();
 			    	   return;
 			       }
 			       catch(IOException e2){
-						buildError(3,receivePacket,verbose);
+						buildError(3,requestPacket,verbose,"");
+						exitGraceFully();
 						return;
 					}
 	
@@ -228,13 +271,13 @@ class TFTPWriteThread extends ServerThread
 				  --------------------
 				*/
 	
-				   response[2]=receivePacket.getData()[2];
-				   response[3]=receivePacket.getData()[3];
+				   response[2]=requestPacket.getData()[2];
+				   response[3]=requestPacket.getData()[3];
 	
 		       }
 				   
-		       sendPacket = new DatagramPacket(response, response.length,
-		    		   requestPacket.getAddress(), requestPacket.getPort());
+		       sendPacket.setData(response);
+		       sendPacket.setLength(response.length);
 		       
 		       /* Exit Gracefully if the stop is requested. */
 		       printSendPacket(sendPacket,verbose);

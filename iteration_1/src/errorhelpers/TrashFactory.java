@@ -35,10 +35,10 @@ public class TrashFactory
 	
 	
 	//run the factory, seize the means of production later
-	public Byte[] produce(int quantity)
+	public byte[] produce(int quantity)
 	{
 		//generate an array of trash
-		Byte[] trash = new Byte[quantity];
+		byte[] trash = new byte[quantity];
 		for(int i=0; i<quantity; i++)
 		{
 			trash[i] = (byte)randomNumGen.nextInt(256);

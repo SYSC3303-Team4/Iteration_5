@@ -20,13 +20,15 @@ public abstract class ServerThread extends Thread{
 	protected int blockNum = 1;
 	protected boolean timeoutFlag = false;
 	protected DatagramPacket sendPacket;
-	protected DatagramPacket receivePacket;
+	protected DatagramPacket requestPacket;
 	protected boolean retransmitDATA;
 	protected boolean retransmitACK;
 	protected long startTime;
 	protected boolean verbose;
-	protected DatagramPacket requestPacket;
+	protected boolean connectionEstablished;
+
 	protected boolean errorFlag=false;
+	protected int clientTID; 
 	
 	public ServerThread(ThreadGroup group, String name, ConsoleUI console)
 	{
@@ -46,7 +48,7 @@ public abstract class ServerThread extends Thread{
 			sendReceiveSocket.close();
 		}
 		console.print("Server: Closing thread.");
-	}
+	} 
 	
 	protected void printReceivedPacket(DatagramPacket receivedPacket, boolean verbose){
 		console.print("Server: Received packet...");
@@ -87,7 +89,7 @@ public abstract class ServerThread extends Thread{
 				   2,2));
 	    console.print("ErrorMessage: " );
 	    console.print(new String(packet.getData(),
-				   4,packet.getData().length-1));
+				   4,packet.getLength()-1));
     }
     /* Send Data packet with no data
     2 bytes    2 bytes       0 bytes
@@ -95,7 +97,7 @@ public abstract class ServerThread extends Thread{
 DATA  | 03    |   Block #  |    Data    |
     ---------------------------------
     */
-    protected void sendNoData(DatagramPacket receivePacket,boolean verbose,int blockNumber,DatagramSocket sendReceiveSocket){
+    protected void sendNoData(DatagramPacket requestPacket,boolean verbose,int blockNumber,DatagramSocket sendReceiveSocket){
     	byte[] data = new byte[4];
     	data[0] = 0;
     	data[1] = 3;
@@ -104,7 +106,7 @@ DATA  | 03    |   Block #  |    Data    |
 		data[2]=(byte)((blockNumber >> 8)& 0xFF);
     	
     	DatagramPacket sendPacket = new DatagramPacket(data, data.length,
-			     receivePacket.getAddress(), receivePacket.getPort());
+			     requestPacket.getAddress(), requestPacket.getPort());
 	/* Exit Gracefully if the stop is requested. */
 	   if(stopRequested){exitGraceFully();}
        console.print("Server: Sending packet:");
@@ -132,7 +134,7 @@ DATA  | 03    |   Block #  |    Data    |
 ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     ----------------------------------------
     */
-    protected void buildError(int errorCode,DatagramPacket receivePacket, boolean verbose){
+    protected void buildError(int errorCode,DatagramPacket requestPacket, boolean verbose, String errorInfo){
     	int errorSizeFactor = 5;
     	
     	String errorMsg = new String("Unknown Error.");
@@ -140,22 +142,32 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 	    	case 1:
 	    		errorCode = 1;
 	    		console.print("Server: File not found, sending error packet");
-	    		errorMsg = "File not found.";
+	    		errorMsg = "File not found: " + errorInfo;
 	    		break;
 	    	case 2: 
 	    		errorCode = 2;
 	    		console.print("Server: Access violation, sending error packet");
-	    		errorMsg = "Access violation.";
+	    		errorMsg = "Access violation: " + errorInfo;
 	    		break;
 	    	case 3: 
 	    		errorCode = 3;
 	    		console.print("Server: Disk full or allocation exceeded, sending error packet");
-	    		errorMsg = "Disk full or allocation exceeded.";
+	    		errorMsg = "Disk full or allocation exceeded: " + errorInfo;
+	    		break;
+	    	case 4:
+	    		errorCode = 4;
+	    		console.print("Illegal TFTP operation");
+	    		errorMsg = "Illegal TFTP operation: " + errorInfo;
+	    		break;
+	    	case 5:
+	    		errorCode = 5;
+	    		console.print("Unknown Transfer ID");
+	    		errorMsg = "Unknown Transfer ID: " + errorInfo;
 	    		break;
 	    	case 6: 
 	    		errorCode = 6;
 	    		console.print("Server: File already exists, sending error packet");
-	    		errorMsg = "File already exists.";
+	    		errorMsg = "File already exists: " + errorInfo;
 	    		break;
     	}
     	
@@ -170,7 +182,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     	data[data.length-1] = 0;
     	
 	    DatagramPacket sendPacket = new DatagramPacket(data, data.length,
-				     receivePacket.getAddress(), receivePacket.getPort());
+				     requestPacket.getAddress(), requestPacket.getPort());
 		/* Exit Gracefully if the stop is requested. */
 		   if(stopRequested){exitGraceFully();}
 		   printSendPacket(sendPacket,verbose);
@@ -204,7 +216,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		//receive ACK
   		try {
   			//receiveDATA();
-  			sendReceiveSocket.receive(receivePacket);
+  			sendReceiveSocket.receive(requestPacket);
   			retransmit=false;
   		} catch(SocketTimeoutException e){
   			//Retransmit every timeout
@@ -227,7 +239,6 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 
 
   		} catch (IOException e) {
-  			// TODO Auto-generated catch block
   			e.printStackTrace();
   			return false;
   		} 
@@ -235,11 +246,23 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		if (verbose)
   		{
   			console.print("Client: Checking ACK...");
-  			printReceivedPacket(receivePacket, verbose);
+  			printReceivedPacket(requestPacket, verbose);
   		}
-  		byte[] data = receivePacket.getData();
-
+  		byte[] data = requestPacket.getData();
+  		if(connectionEstablished){
+	  		if(requestPacket.getPort() != clientTID){
+	  			buildError(5,requestPacket,verbose,"Unexpected TID");
+	  			console.print("Unexpected TID");
+	  			errorFlag=true;
+				return false;
+	  		}
+  		}
   		//check ACK for validity
+		if(data.length > 4){
+			buildError(4,requestPacket, verbose,"Length of the ACK is over 4.");
+			errorFlag=true;
+			return false;
+		}
   		if(data[0] == 0 && data[1] == 4){
 
   			//Check if the blockNumber corresponds to the expected blockNumber
@@ -268,9 +291,15 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				return false;
   			}
   		}
+  		else if(data[0] == 0 && data[1] == 5){
+  			printError(requestPacket, verbose);
+  			errorFlag=true;
+			return false;
+  		}
   		else{
-  			//ITERATION 5 ERROR
-  			//Invalid TFTP code
+  			buildError(5,requestPacket,verbose,"OpCode is invalid");
+  			errorFlag=true;
+			return false;
   		}
   		return true;
   	}
@@ -285,7 +314,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
   		try {
   			//receiveDATA();
-  			sendReceiveSocket.receive(receivePacket);
+  			sendReceiveSocket.receive(requestPacket);
   			retransmit=false;
   		} catch(SocketTimeoutException e){
   			//Retransmit every timeout
@@ -311,12 +340,25 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-  		//analyze ACK for format
+  		//analyze DATA for format
   		if (verbose)
   		{
   			console.print("Server: Checking DATA...");
   		}
-  		byte[] data = receivePacket.getData();
+  		byte[] data = requestPacket.getData();
+  		if(connectionEstablished){
+	  		if(requestPacket.getPort() != clientTID){
+	  			buildError(5,requestPacket,verbose,"Unexpected TID");
+	  			console.print("Unexpected TID");
+	  			errorFlag=true;
+				return false;
+	  		}
+  		}
+		if(requestPacket.getLength() > 516){
+			buildError(4,requestPacket, verbose,"Length of the DATA packet is over 516.");
+			errorFlag=true;
+			return false;
+		}
 
   		//check if data
   		if(data[0] == 0 && data[1] == 3){
@@ -331,7 +373,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				if (verbose)
   		  		{
   		  			console.print("Received Duplicate Packet: ");
-  		  			printReceivedPacket(receivePacket, verbose);
+  		  			printReceivedPacket(requestPacket, verbose);
   		  		}
   				if(System.currentTimeMillis() -startTime > TIMEOUT)
   				{
@@ -348,8 +390,15 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				return false;
   			}
   		}
+  		else if(data[0] == 0 && data[1] == 5){
+  			printError(requestPacket, verbose);
+  			errorFlag=true;
+			return false;
+  		}
   		else{
-  			return false;
+  			buildError(5,requestPacket,verbose,"OpCode is invalid");
+  			errorFlag=true;
+			return false;
   		}
   		return true;
   	}
