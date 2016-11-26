@@ -351,7 +351,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 				return false;
 	  		}
   		}
-		if(data.length > 516){
+		if(requestPacket.getLength() > 516){
 			buildError(4,requestPacket, verbose,"Length of the DATA packet is over 516.");
 			errorFlag=true;
 			return false;

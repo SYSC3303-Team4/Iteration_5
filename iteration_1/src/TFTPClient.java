@@ -2,8 +2,8 @@
 *Class:             TFTPClient.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    21/11/2016                                              
-*Version:           2.0.1                                                      
+*Date of Update:    25/11/2016                                              
+*Version:           2.1.0                                                      
 *                                                                                   
 *Purpose:           Generates a datagram following the format of [0,R/W,STR1,0,STR2,0], 
 					in which R/W signifies read (1) or write (2), STR1 is a filename,
@@ -15,7 +15,11 @@
 					packet. Each datagram can be 512B max
 * 
 * 
-*Update Log:		
+*Update Log:		v2.1.0
+*						- Fixed error code 5 handling (malformed packet)
+*						- Fixed code error message printing
+*						- Fixed error packet parsing
+*						- Fixed error packet positive feedback loop
 *					v2.0.2
 *						-Added unknown TID handling
 *						-Added Error Generation
@@ -97,6 +101,7 @@ import java.net.*;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import errorhelpers.*;
 
 //import packages
 import ui.* ;
@@ -123,6 +128,7 @@ public class TFTPClient extends JFrame
 	private boolean duplicateDATA = false;
 	private boolean retransmitACK = false;
 	private boolean retransmitDATA = false;
+	private DatagramArtisan datagramArtisan = new DatagramArtisan();
 	
 	//Error handling vars
 	private int serverTID;
@@ -600,7 +606,8 @@ public class TFTPClient extends JFrame
 	  		}
   		}
 		//check ACK for validity
-		if(data[0] == 0 && data[1] == 4){
+		if(data[0] == 0 && data[1] == 4)
+		{
 
 			if(receivedPacket.getLength() > 4){
 				buildError(4,receivedPacket, verbose,"Length of the ACK is over 4.");
@@ -627,6 +634,25 @@ public class TFTPClient extends JFrame
 			}
 			return true;
 		}
+		/*TODO delete
+		//received an error packet, stop transition
+		else if (data[0] == 0 && data[1] == 5)
+		{
+			//set flag
+  			errorFlag=true;
+  			
+  			//extract errorMsg and errorType from error packet and print
+  			String errorMsg="";
+  			int errorType = ((data[2] << 8)&0xFF | data[3]&0xFF );
+  			for(int i=0; i<data.length-1; i++)
+  			{
+  				errorMsg = errorMsg + (char)data[i];
+  			}
+  			console.printError(errorType ,errorMsg);
+  			
+			return false;
+		}
+		*/
 		buildError(5,receivedPacket,verbose,"OpCode is invalid");
 		errorFlag=true;
 		return false;
@@ -744,47 +770,14 @@ public class TFTPClient extends JFrame
 		}
 		
 		//check for errors
-		byte errorType=response[3];
 		response = receivedPacket.getData();
 		if(response[0] == 0 && response[1] == 5)
 		{
-			/*
-			 * TODO
-			 * Should we not be printing out the message included in the error packet, instead of our own locally generated string?
-			 */
-			switch(errorType)
-			{
-				//file not found
-		    	case 1:
-		    			console.printError(1,"File not found, please select again");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//improper rights for R/W
-		    	case 2:
-		    			console.printError(2,"You do not have the rights for this, please select again");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//drive full
-		    	case 3:
-		    			console.printError(3,"Location full, please select a new location to write to");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//file already exists
-		    	case 6:
-		    			console.printError(6,"The file already exists, please select a new file");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//unknown errorS
-		    	default:
-		    			/* TODO
-		    			 * something
-		    			 */
-		    			break;
-			}
+			errorFlag = true;
+			//extract error message for response
+			int errorType = (response[2] << 8)&0xFF | response[3]&0xFF;
+			String errorMsg = datagramArtisan.getErrorMsg(receivedPacket);
+			console.printError(errorType, errorMsg);
 		}
 		//no error present
 		else
@@ -806,6 +799,7 @@ public class TFTPClient extends JFrame
 		console.printByteArray(data, packetSize);
 		console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
 	}
+	
 	
     //Build an Error Packet with format :
     /*
