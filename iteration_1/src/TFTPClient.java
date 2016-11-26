@@ -419,10 +419,11 @@ public class TFTPClient extends JFrame
 		serverTID = receivedPacket.getPort();
 		establishedConnection = true;
 		//send DATA
-		while ( !(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4)
+		while ( (!(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4) || retransmitDATA)
 		{
 			if(retransmitDATA)
 			{
+				System.out.println("Retransmitting");
 				sendPacket();//resend
 				retransmitDATA = false;
 			}
@@ -446,6 +447,7 @@ public class TFTPClient extends JFrame
 			timeoutFlag = false;
 			//wait for ACK
 			while(!receiveACK()){if(errorFlag){return;}}
+			System.out.println(reader.isEmpty());
 		}
 		
 		//reset port
@@ -745,51 +747,49 @@ public class TFTPClient extends JFrame
 		
 		//check for errors
 		byte errorType=response[3];
-		response = receivedPacket.getData();
-		if(response[0] == 0 && response[1] == 5)
+		if(!timeoutFlag)
 		{
-			/*
-			 * TODO
-			 * Should we not be printing out the message included in the error packet, instead of our own locally generated string?
-			 */
-			switch(errorType)
+			response = receivedPacket.getData();
+			if(response[0] == 0 && response[1] == 5)
 			{
+				/*
+				 * TODO
+				 * Should we not be printing out the message included in the error packet, instead of our own locally generated string?
+				 */
+				switch(errorType)
+				{
 				//file not found
-		    	case 1:
-		    			console.printError(1,"File not found, please select again");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//improper rights for R/W
-		    	case 2:
-		    			console.printError(2,"You do not have the rights for this, please select again");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//drive full
-		    	case 3:
-		    			console.printError(3,"Location full, please select a new location to write to");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//file already exists
-		    	case 6:
-		    			console.printError(6,"The file already exists, please select a new file");
-		    			//start(this);
-		    			errorFlag=true;
-		    			break;
-		    	//unknown errorS
-		    	default:
-		    			/* TODO
-		    			 * something
-		    			 */
-		    			break;
+				case 1:
+					console.printError(1,"File not found, please select again");
+					//start(this);
+					errorFlag=true;
+					break;
+					//improper rights for R/W
+				case 2:
+					console.printError(2,"You do not have the rights for this, please select again");
+					//start(this);
+					errorFlag=true;
+					break;
+					//drive full
+				case 3:
+					console.printError(3,"Location full, please select a new location to write to");
+					//start(this);
+					errorFlag=true;
+					break;
+					//file already exists
+				case 6:
+					console.printError(6,"The file already exists, please select a new file");
+					//start(this);
+					errorFlag=true;
+					break;
+					//unknown errorS
+				default:
+					/* TODO
+					 * something
+					 */
+					break;
+				}
 			}
-		}
-		//no error present
-		else
-		{
-
 		}
 	}
 	

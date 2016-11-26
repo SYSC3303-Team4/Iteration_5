@@ -259,8 +259,8 @@ class TFTPWriteThread extends ServerThread
 	
 		       }
 				   
-		       sendPacket = new DatagramPacket(response, response.length,
-		    		   requestPacket.getAddress(), requestPacket.getPort());
+		       sendPacket.setData(response);
+		       sendPacket.setLength(response.length);
 		       
 		       /* Exit Gracefully if the stop is requested. */
 		       printSendPacket(sendPacket,verbose);
