@@ -28,11 +28,13 @@ TEAM LOGISTICS
 
 	Adam Staples
 		- Timing Diagram
-		- Testing
+		- Testing new iteration 4 features
+		- Improvements to server output text
 		
 	Dan Hogan
 		- Bug Fixes
-		- Testing
+		- Testing new iteration 4 features
+		- Testing old iteration 3 features 
 		- Code clean-up in server
 	
 	Jason Van Kerkhoven
@@ -47,7 +49,7 @@ TEAM LOGISTICS
 		- Implemented unknown opcode on server/client
 		- Implemented malformed payload detection on server/client
 		- Bug fixes on client and server
-		- Testing
+		- Testing new iteration 4 features
 	
 	Sarah Garlough
 		- Implemented opcode error in host
@@ -102,12 +104,11 @@ CONTENTS:
 	DIAGRAMS & FIGURES
 	==============================
 	Timing Diagrams:
-		RRQ_Error_Access_Violation.pdf
-		RRW_Error_File_Not_Found.pdf
-		RRQ_Typical_Case.pdf
-		WRQ_Error_DiskFull.pdf
-		WRQ_Error_NoPermission.pdf
-		WRQ_Typical_Case.pdf
+		ALTERED_BLOCK_NUMBER.jpg
+		ALTERED_PACKET_PORT.jpg
+		INCORRECT_MODE_AT_REQUEST.jpg
+		INCORRECT_OPCODE.jpg
+		MALFORMED_PAYLOAD
 	
 
 
