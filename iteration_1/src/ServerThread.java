@@ -291,10 +291,13 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				return false;
   			}
   		}
+  		else if(data[0] == 0 && data[1] == 5){
+  			printError(requestPacket, verbose);
+  			errorFlag=true;
+			return false;
+  		}
   		else{
-  			//ITERATION 5 ERROR
-  			//Invalid TFTP code
-  			buildError(4,requestPacket,verbose,"Not the Expected DATA packet.");
+  			buildError(5,requestPacket,verbose,"OpCode is invalid");
   			errorFlag=true;
 			return false;
   		}
