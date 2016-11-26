@@ -706,18 +706,6 @@ public class TFTPHost
 	}
 	
 	
-	/**
-	 * TODO
-	 * Implement handling of Error Types:	
-	 * 
-	 * 		- alter the mode of RRQ or WRQ to invalid			ERR_MODE (nope)
-	 *		- make data in packet over limit of 512				ERR_ADD_DATA (done)	[I've made a TrashFactory class to help]
-	 *		- alter a packet opcode to an in greater than 5		ERR_OPCODE (done)
-	 * 		- alter a packets destination port					ERR_TID (done)
-	 * 		- incorrectly change block number					ERR_BLOCKNUM (done)
-	 * 
-	 * Please remove this when implemented
-	 */
 	public void errorSimHandle()
 	{
 		int sendToPort=SERVER_RECEIVE_PORT;
@@ -819,7 +807,7 @@ public class TFTPHost
 		console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
 		console.print("'lose PT BN'                      - lose packet type PT, block number BN");						
 		console.print("'mode PT STRING'          - set the mode on either a RRQ or WRQ to STRING");					
-		console.print("'add PT BN BY'                 - add BY bytes of garbage data to PT packet BN");
+		console.print("'add PT BN NUM'                 - add NUM bytes of garbage data to PT packet BN");
 		console.print("'opcode PT BN OP'         - change packet type PT, number BN's opcode to OP");				
 		console.print("'tid PT BN TID'                 - change packet PT block number BN's destination port to TID");
 		console.print("'blocknum PT BN B2'     - change packet PT, block number BN's block number to B2");	
@@ -877,7 +865,7 @@ public class TFTPHost
 						
 						
 						console.print("'mode PT STRING'          - set the mode on either a RRQ or WRQ to STRING");					
-						console.print("'add PT BN BY'                 - add BY bytes of garbage data to PT packet BN");
+						console.print("'add PT BN NUM'                 - add NUM bytes of garbage data to PT packet BN");
 						console.print("'opcode PT BN OP'         - change packet type PT, number BN's opcode to OP");				
 						console.print("'tid PT BN TID'                 - change packet PT block number BN's destination port to TID");
 						console.print("'blocknum PT BN B2'     - change packet PT, block number BN's block number to B2");			

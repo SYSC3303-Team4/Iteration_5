@@ -288,7 +288,6 @@ public class TFTPServer implements ActionListener
 						console.print("'clear'                                  - clear screen");
 						console.print("'close'                                 - exit client, close ports, be graceful");
 						console.print("'verbose BOOL'                - toggle verbose mode as true or false");
-						console.print("'test'                                    - runs a test for the console");
 						console.print("'cd'                                      - set the directory you want server read/write from");
 						console.print("'path'                                    - print the path the server will use");
 						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
@@ -329,22 +328,10 @@ public class TFTPServer implements ActionListener
 					else if(input[0].equals("close"))
 					{
 						runFlag = false;
-						/* 
-						Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
-						while(threadSet.iterator().hasNext()){
-							Thread s = threadSet.iterator().next();
-							if(s.getThreadGroup().getName().equals(initializedThreads.getName()))
-							{
-								((ServerThread)s).interrupt();
-							}
+						if(verbose)
+						{
+							console.print("Beginning server shutdown...");
 						}
-						*/
-					}
-					//run basic console test
-					// ### THIS WILL STOP SERVER FROM DISPLAYING ANYTHING TO CONSOLE FOR DURATION OF TEST ###
-					else if(input[0].equals("test"))
-					{
-						this.console.testAll();
 					}
 					//bad input
 					else

@@ -188,6 +188,21 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 			background = Color.BLACK;
 			text = Color.GREEN;
 		}
+		else if (scheme.toLowerCase().equals("prettyinpink"))
+		{
+			background = Color.PINK;
+			text = Color.MAGENTA;
+		}
+		else if (scheme.toLowerCase().equals("halloween"))
+		{
+			background = Color.BLACK;
+			text = Color.ORANGE;
+		}
+		else if (scheme.toLowerCase().equals("xmas") || scheme.toLowerCase().equals("christmas"))
+		{
+			background = Color.RED;
+			text = Color.GREEN;
+		}
 		else
 		{
 			return false;
@@ -538,6 +553,15 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 		    this.colorScheme("matrix");
 		    Thread.sleep(750);
 		    this.colorScheme("light");
+		    Thread.sleep(750);
+		    this.colorScheme("halloween");
+		    Thread.sleep(750);
+		    this.colorScheme("prettyinpink");
+		    Thread.sleep(750);
+		    this.colorScheme("xmas");
+		    Thread.sleep(750);
+		    this.colorScheme("dark");
+		    
 		} 
 		catch(InterruptedException ex) 
 		{
