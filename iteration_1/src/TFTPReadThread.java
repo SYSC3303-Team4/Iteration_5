@@ -155,6 +155,7 @@ class TFTPReadThread  extends ServerThread
 
 	   } else {
 		   buildError(4,requestPacket,verbose,"Invalid Mode");
+		   exitGraceFully();
     	   return; 
 	   }
 

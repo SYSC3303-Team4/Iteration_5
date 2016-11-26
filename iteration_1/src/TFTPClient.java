@@ -496,6 +496,10 @@ public class TFTPClient extends JFrame
 		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
 
 		receivePacket("DATA");
+		if(errorFlag)
+		{
+			return false;
+		}
 		if(timeoutFlag)
 		{
 			if(System.currentTimeMillis() -startTime > TIMEOUT)
@@ -759,10 +763,10 @@ public class TFTPClient extends JFrame
 			if(response[0] == 0 && response[1] == 5)
 			{
 				errorFlag = true;
-			//extract error message for response
-			int errorType = (response[2] << 8)&0xFF | response[3]&0xFF;
-			String errorMsg = datagramArtisan.getErrorMsg(receivedPacket);
-			console.printError(errorType, errorMsg);
+				//extract error message for response
+				int errorType = (response[2] << 8)&0xFF | response[3]&0xFF;
+				String errorMsg = datagramArtisan.getErrorMsg(receivedPacket);
+				console.printError(errorType, errorMsg);
 				
 			}
 		}
