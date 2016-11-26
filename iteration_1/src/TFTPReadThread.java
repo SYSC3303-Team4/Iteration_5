@@ -62,7 +62,27 @@ class TFTPReadThread  extends ServerThread
 	private File serverDump;
 
 
-
+	public TFTPReadThread(ThreadGroup group, DatagramPacket requestPacketInfo, String thread, Boolean verboseMode,File path) {
+		super(group,thread,new ConsoleUI("Read Thread "+thread));
+		console.run();
+		requestPacket = requestPacketInfo;
+		threadNumber  = thread;
+		verbose = verboseMode; 
+		serverDump = path;
+		clientTID = requestPacketInfo.getPort();
+		try {
+			sendReceiveSocket = new DatagramSocket();
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block    
+			e.printStackTrace();
+		}
+		try {
+			sendReceiveSocket.setSoTimeout(TIMEOUT*1000);
+		} catch (SocketException e) {
+			//Handle Timeout Exception
+			e.printStackTrace();
+		}
+	}
 
 	public TFTPReadThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket requestPacketInfo, String thread, Boolean verboseMode,File path) {
 		super(group,thread,transcript);
@@ -246,7 +266,7 @@ class TFTPReadThread  extends ServerThread
 				}
 
 			
-			while(!receiveACK()){if(errorFlag){return;}}
+			while(!receiveACK()){if(errorFlag){exitGraceFully();return;}}
 			printReceivedPacket(requestPacket, verbose);
 			
 

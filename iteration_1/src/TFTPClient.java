@@ -447,7 +447,6 @@ public class TFTPClient extends JFrame
 			timeoutFlag = false;
 			//wait for ACK
 			while(!receiveACK()){if(errorFlag){return;}}
-			System.out.println(reader.isEmpty());
 		}
 		
 		//reset port
@@ -953,7 +952,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 						console.print("Closing with grace....");
 						runFlag = false;
 						this.close();
-						System.exit(0);
+						continue;
 					}
 					//run simple console test
 					else if (input[0].equals("test"))

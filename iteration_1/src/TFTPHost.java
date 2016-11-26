@@ -674,7 +674,19 @@ public class TFTPHost
 				inputStack.pop();
  
 			}
-			
+			/* Can't check block numbers for requests when mode changing.*/
+			else if((bytePackType[1]==receivedPacket.getData()[1] && bytePackType[0] == receivedPacket.getData()[0]) &&  bytePackType[0] == 0 && (bytePackType[1] == 1  || (bytePackType[1] == 2)))
+			{
+				//proper packet type and block num, mess with this one right here
+				if(verbose)
+				{
+					console.print("Request Match");
+				}
+				passIt(mode, delay,clientPort, genSocket);
+				//sendDatagram(clientPort, genSocket);
+				inputStack.pop();
+ 
+			}
 			else
 			{
 				if(verbose)

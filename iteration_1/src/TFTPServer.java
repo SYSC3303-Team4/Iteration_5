@@ -65,6 +65,7 @@ public class TFTPServer implements ActionListener
 			// on the local host machine. This socket will be used to
 			// receive UDP Datagram packets.
 			receiveSocket = new DatagramSocket(69);
+			receiveSocket.setSoTimeout(5000);
 		} catch (SocketException se) {
 			console.print("SOCKET BIND ERROR");
 			se.printStackTrace();
@@ -136,10 +137,14 @@ public class TFTPServer implements ActionListener
 			data = new byte[100];
 			receivePacket = new DatagramPacket(data, data.length);
 
-			console.print("Server: Waiting for packet.");
+			console.print("Server: Listening for requests...");
 			// Block until a datagram packet is received from receiveSocket.
 			try {
 				receiveSocket.receive(receivePacket);
+			}
+			catch(SocketTimeoutException e)
+			{
+				continue;
 			}
 			catch (IOException e) {
 				e.printStackTrace();
@@ -197,16 +202,19 @@ public class TFTPServer implements ActionListener
 
 			// Create a response.
 			if (req==Request.READ) { // for Read it's 0301
+				console.print("Server: Generating Read Thread");
 				threadNum++;
-				Thread readRequest =  new TFTPReadThread(initializedThreads,console, receivePacket, "Thread "+threadNum, verbose,file);
+				Thread readRequest =  new TFTPReadThread(initializedThreads, receivePacket, "Thread "+threadNum, verbose,file);
 				readRequest.start();
 				response = readResp;
 			} else if (req==Request.WRITE) { // for Write it's 0400
+				console.print("Server: Generating Write Thread");
 				threadNum++;
-				Thread writeRequest =  new TFTPWriteThread(initializedThreads,console, receivePacket,"Thread "+threadNum, verbose,file);
+				Thread writeRequest =  new TFTPWriteThread(initializedThreads, receivePacket,"Thread "+threadNum, verbose,file);
 				writeRequest.start();
 				response = writeResp; 
 			} else { // it was invalid, send 
+				console.print("Server: Illegal Request");
 	    		int errorCode = 4;
 	    		console.print("Illegal TFTP operation");
 	    		String errorMsg = "Illegal TFTP operation.";
@@ -233,7 +241,7 @@ public class TFTPServer implements ActionListener
 				
 			} 
 		}
-	System.exit(0);
+		console.print("Server Shut Down..");
 	} 
 
 	Thread[] getServerThreads( final ThreadGroup group ) {
