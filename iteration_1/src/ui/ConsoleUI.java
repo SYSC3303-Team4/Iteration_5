@@ -324,6 +324,12 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	}
 	
 	
+	public void printSyntaxError(String errorMsg)
+	{
+		print("SYNTAX ERROR - " + errorMsg);
+	}
+	
+	
 	public void printError(int errorCode, String errorMsg)
 	{
 		print("TFTP Error Type: " + errorCode + " - " + errorMsg);
@@ -334,12 +340,6 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	public void printCompletion()
 	{
 		JOptionPane.showMessageDialog(this, "File Transfer Complete!");
-	}
-	
-	
-	public void printOperandError(String errorMsg)
-	{
-		print("OPERAND ERROR:  " + errorMsg);
 	}
 	
 	
@@ -466,9 +466,9 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 		this.printError("something went wrong");
 		this.printError(5, "file not found");
 		this.printError(99, "engineer.exe has stopped caring");
-		this.printOperandError("NaN");
-		this.printOperandError("generic error text");
-		this.printOperandError("something else");
+		this.printSyntaxError("NaN");
+		this.printSyntaxError("generic error text");
+		this.printSyntaxError("something else");
 		
 		//input with waiting test
 		this.print("Running Input Test...");
