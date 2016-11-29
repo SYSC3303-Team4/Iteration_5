@@ -806,14 +806,15 @@ public class TFTPHost
 		console.print("'reset'                                 - reset the errors to be simulated");
 		console.print("'run'                                   - finalize the number of errors to simulate & start host");
 		console.println();
-		console.print("'delay PT BN DL'             - set a delay for packet type PT, block number BN for DL sec");
-		console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
-		console.print("'lose PT BN'                      - lose packet type PT, block number BN");						
-		console.print("'mode PT STRING'          - set the mode on either a RRQ or WRQ to STRING");					
-		console.print("'add PT BN NUM'                 - add NUM bytes of garbage data to PT packet BN");
-		console.print("'opcode PT BN OP'         - change packet type PT, number BN's opcode to OP");				
-		console.print("'tid PT BN TID'                 - change packet PT block number BN's destination port to TID");
-		console.print("'blocknum PT BN B2'     - change packet PT, block number BN's block number to B2");	
+		console.print("'delay PT DL'                   - set a delay for packet type PT, block number BN for DL sec");
+		console.print("'dup PT'                            - duplicate packety type PT, block number BN");
+		console.print("'lose PT'                          - lose packet type PT, block number BN");
+		console.print("'mode PT STRING'        - set the mode on either a RRQ or WRQ to STRING");					
+		console.print("'add PT.BN NUM'           - add NUM bytes of garbage data to PT data, blocknum BN");
+		console.print("'opcode PT OP'              - change packet type PT, number BN's opcode to OP");				
+		console.print("'tid PT TID'                      - change packet PT block number BN's destination port to TID");
+		console.print("'blocknum PT B2'         - change packet PT, block number BN's block number to B2");
+		console.print("'format PT'                      - corrupt the format on packet PT");	
 		/*
 		console.println();
 		console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
@@ -875,14 +876,15 @@ public class TFTPHost
 					console.print("'reset'                                 - reset the errors to be simulated");
 					console.print("'run'                                   - finalize the number of errors to simulate & start host");
 					console.println();
-					console.print("'delay PT BN DL'             - set a delay for packet type PT, block number BN for DL sec");
-					console.print("'dup PT BN '                      - duplicate packety type PT, block number BN");
-					console.print("'lose PT BN'                      - lose packet type PT, block number BN");
-					console.print("'mode PT STRING'          - set the mode on either a RRQ or WRQ to STRING");					
-					console.print("'add PT BN NUM'                 - add NUM bytes of garbage data to PT packet BN");
-					console.print("'opcode PT BN OP'         - change packet type PT, number BN's opcode to OP");				
-					console.print("'tid PT BN TID'                 - change packet PT block number BN's destination port to TID");
-					console.print("'blocknum PT BN B2'     - change packet PT, block number BN's block number to B2");			
+					console.print("'delay PT DL'                   - set a delay for packet type PT, block number BN for DL sec");
+					console.print("'dup PT'                            - duplicate packety type PT, block number BN");
+					console.print("'lose PT'                          - lose packet type PT, block number BN");
+					console.print("'mode PT STRING'        - set the mode on either a RRQ or WRQ to STRING");					
+					console.print("'add PT.BN NUM'           - add NUM bytes of garbage data to PT data, blocknum BN");
+					console.print("'opcode PT OP'              - change packet type PT, number BN's opcode to OP");				
+					console.print("'tid PT TID'                      - change packet PT block number BN's destination port to TID");
+					console.print("'blocknum PT B2'         - change packet PT, block number BN's block number to B2");
+					console.print("'format PT'                      - corrupt the format on packet PT");
 					/*
 					console.println();
 					console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
