@@ -44,7 +44,7 @@ public class TestBench
 					{
 						TFTPClient.main(null);
 					}
-				};
+				};       
 		
 		//prep host thread
 		Thread threadC = new Thread()
