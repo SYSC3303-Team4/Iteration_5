@@ -132,6 +132,7 @@ public class TFTPClient extends JFrame
 	
 	//Error handling vars
 	private int serverTID;
+	private InetAddress serverInet;
 	private boolean establishedConnection = false;
 	
 	//INIT socket timeout variables
@@ -523,11 +524,19 @@ public class TFTPClient extends JFrame
 		}
 		byte[] data = receivedPacket.getData();
 		if(establishedConnection){
-	  		if(receivedPacket.getPort() != serverTID){
-	  			buildError(5,receivedPacket,verbose,"Unexpected TID");
+			if(serverInet.equals(receivedPacket.getAddress())){
+		  		if(receivedPacket.getPort() != serverTID){
+		  			buildError(5,receivedPacket,verbose,"Unexpected TID");
+		  			errorFlag=true;
+					return false;
+		  		}
+			}  else {
+	  			buildError(5,receivedPacket,verbose,"Invalid InetAddress");
+	  			console.print("Invalid InetAddress");
 	  			errorFlag=true;
 				return false;
-	  		}
+  			}
+			
   		}
 
 		//check if data
@@ -605,10 +614,17 @@ public class TFTPClient extends JFrame
 		}
 		byte[] data = receivedPacket.getData();
 		if(establishedConnection){
-	  		if(receivedPacket.getPort() != serverTID){
-	  			buildError(5,receivedPacket,verbose,"Unexpected TID");
-	  			return false;
-	  		}
+			if(serverInet.equals(receivedPacket.getAddress())){
+		  		if(receivedPacket.getPort() != serverTID){
+		  			buildError(5,receivedPacket,verbose,"Unexpected TID");
+		  			return false;
+		  		} 
+			} else {
+	  			buildError(5,receivedPacket,verbose,"Invalid InetAddress");
+	  			console.print("Invalid InetAddress");
+	  			errorFlag=true;
+				return false;
+  			}
   		}
 		//check ACK for validity
 		if(data[0] == 0 && data[1] == 4)

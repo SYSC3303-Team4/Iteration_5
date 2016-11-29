@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Arrays;
@@ -28,7 +29,8 @@ public abstract class ServerThread extends Thread{
 	protected boolean connectionEstablished;
 
 	protected boolean errorFlag=false;
-	protected int clientTID; 
+	protected int clientTID;
+	protected InetAddress clientInet;
 	
 	public ServerThread(ThreadGroup group, String name, ConsoleUI console)
 	{
@@ -250,12 +252,20 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		}
   		byte[] data = requestPacket.getData();
   		if(connectionEstablished){
-	  		if(requestPacket.getPort() != clientTID){
-	  			buildError(5,requestPacket,verbose,"Unexpected TID");
-	  			console.print("Unexpected TID");
+  			if(clientInet.equals(requestPacket.getAddress())){
+		  		if(requestPacket.getPort() != clientTID){
+		  			buildError(5,requestPacket,verbose,"Unexpected TID");
+		  			console.print("Unexpected TID");
+		  			errorFlag=true;
+					return false;
+		  		}
+  			}
+  			else {
+	  			buildError(5,requestPacket,verbose,"Invalid InetAddress");
+	  			console.print("Invalid InetAddress");
 	  			errorFlag=true;
 				return false;
-	  		}
+  			}
   		}
   		//check ACK for validity
 		if(data.length > 4){
@@ -347,12 +357,20 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		}
   		byte[] data = requestPacket.getData();
   		if(connectionEstablished){
-	  		if(requestPacket.getPort() != clientTID){
-	  			buildError(5,requestPacket,verbose,"Unexpected TID");
-	  			console.print("Unexpected TID");
+  			if(clientInet.equals(requestPacket.getAddress())){
+		  		if(requestPacket.getPort() != clientTID){
+		  			buildError(5,requestPacket,verbose,"Unexpected TID");
+		  			console.print("Unexpected TID");
+		  			errorFlag=true;
+					return false;
+		  		}
+  			}
+  			else {
+	  			buildError(5,requestPacket,verbose,"Invalid InetAddress");
+	  			console.print("Invalid InetAddress");
 	  			errorFlag=true;
 				return false;
-	  		}
+  			}
   		}
 		if(requestPacket.getLength() > 516){
 			buildError(4,requestPacket, verbose,"Length of the DATA packet is over 516.");

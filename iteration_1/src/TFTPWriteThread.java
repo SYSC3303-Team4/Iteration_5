@@ -55,7 +55,7 @@ class TFTPWriteThread extends ServerThread
      */
     private String threadNumber;
     File file;
-    private boolean blockFlag=true;
+
 
     public final byte[] response = {0, 4, 0, 0};
     
@@ -70,11 +70,11 @@ class TFTPWriteThread extends ServerThread
         threadNumber = thread;
         verbose = verboseMode;
         clientTID = requestPacketInfo.getPort();
+		clientInet = requestPacketInfo.getAddress();
         this.file = file; 
         try {
 			sendReceiveSocket = new DatagramSocket();
-		} catch (SocketException e) {
-			// TODO Auto-generated catch block    
+		} catch (SocketException e) { 
 			e.printStackTrace();
 			console.print(e.getMessage());
 		}
@@ -84,6 +84,7 @@ class TFTPWriteThread extends ServerThread
 			//Handle Timeout Exception
 			e.printStackTrace();
 		}
+		
         
     }
 
@@ -93,6 +94,7 @@ class TFTPWriteThread extends ServerThread
         threadNumber = thread;
         verbose = verboseMode;
         clientTID = requestPacketInfo.getPort();
+        clientInet = requestPacketInfo.getAddress();
         this.file = file; 
         try {
 			sendReceiveSocket = new DatagramSocket();
@@ -145,6 +147,8 @@ class TFTPWriteThread extends ServerThread
 	    	   return; 
 		   }
 		   
+		   
+		   
 		   printReceivedPacket(requestPacket, verbose);
 		    /* Exit Gracefully if the stop is requested. */
 	       if(stopRequested){exitGraceFully();return;}  
@@ -174,6 +178,7 @@ class TFTPWriteThread extends ServerThread
 	       //NEVER RESENDS ACK 0
 		   sendPacket = new DatagramPacket(response, response.length,
 				   requestPacket.getAddress(), requestPacket.getPort());
+		   
 
 		   printSendPacket(sendPacket,verbose);
 		   
