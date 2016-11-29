@@ -16,6 +16,7 @@
 * 
 *Update Log:        v2.2.0
 *						- error input method revamped
+*						- format error added
 *					v2.1.1
 *						- removed unnecessary accessors/mutators
 *					v2.1.0
@@ -59,6 +60,7 @@ public class TFTPHost
 	public final int ERR_OPCODE		= 5;	//alter a packet opcode to an in greater than 5
 	public final int ERR_TID		= 6;	//alter a packets destination port
 	public final int ERR_BLOCKNUM	= 7;	//incorrectly change block number
+	public final int ERR_FORMAT		= 8;	//format incorrect
 	//packet type
 	public final int PACKET_RRQ		= 1;	//RRQ Packet
 	public final int PACKET_WRQ		= 2;	//WRQ Packet
@@ -934,7 +936,7 @@ public class TFTPHost
 				//BAD INPUT
 				else
 				{
-					console.print("! Unknown Input !");
+					console.print("Command not recognized");
 				}
 				break;
 				
@@ -953,9 +955,28 @@ public class TFTPHost
 					}
 					else
 					{
-						console.print("! Unknown Input !");
+						console.print("Command not recognized");
 					}
 				}
+			
+				//duplicate packet
+				else if (input[0].equals("dup") || input[0].equals("" + this.ERR_DUPLICATE))
+				{
+					handleModePt(ERR_DUPLICATE, input);
+				}
+			
+				//lose packet
+				else if (input[0].equals("lose") || input[0].equals("" + this.ERR_LOSE))
+				{
+					handleModePt(ERR_LOSE, input);
+				}
+			
+				//corrupt packet format
+				else if (input[0].equals("format") || input[0].equals("" + this.ERR_FORMAT))
+				{
+					handleModePt(ERR_FORMAT, input);
+				}
+			
 				//alter color scheme
 				else if (input[0].equals("color") || input[0].equals("colour"))
 				{
@@ -975,32 +996,25 @@ public class TFTPHost
 				//BAD INPUT
 				else
 				{
-					console.print("! Unknown Input !");
+					console.print("Command not recognized");
 				}
 				break;
-			
-				/*
- 					try
-					{
-						//convert strings to ints
-						blockNum = Integer.parseInt(input[2]);
-						extraInt = Integer.parseInt(input[3]);
-					
-						inputStack.push(ERR_ADD_DATA, PACKET_DATA, blockNum, extraInt, null);
-					}
-					catch (NumberFormatException nfe)
-					{
-						console.printError("Error 2 - NAN");
-					}
-				 */
+		
 			case(3):
 				//delay a packet
 				if (input[0].equals("delay") || input[0].equals("" + this.ERR_DELAY))
 				{
+					handleModePtInt(ERR_DELAY, input);
+				}
+			
+				//add garbage bytes to a data packet
+				else if (input[0].equals("add") || input[0].equals("" + this.ERR_ADD_DATA))
+				{
+					int pt;
 					//get packet type
 					try
 					{
-						packetType = PTStringToInt(input[1]);
+						pt = PTStringToInt(input[1]);
 					}
 					catch (NumberFormatException nfe)
 					{
@@ -1008,68 +1022,226 @@ public class TFTPHost
 						return;
 					}
 					
-					//delay a rrq/wrq/error type
-					if(packetType == this.PACKET_RRQ || packetType == this.PACKET_WRQ || packetType == this.PACKET_ERR)
+					//check if packet is of type data
+					if (pt == this.PACKET_DATA)
 					{
-						//get delay quantity
-						try
-						{
-							extraInt = Integer.parseInt(input[2]);
-						}
-						catch (NumberFormatException nfe)
-						{
-							console.printSyntaxError("NaN (parameter 2)");
-							return;
-						}
-						blockNum = 0;
-						extraStr = null;
+						handleModePtInt(ERR_ADD_DATA, input);
 					}
-					//delay a data/ack
-					else if (packetType == this.PACKET_DATA || packetType == this.PACKET_ACK)
+					else
 					{
-						//get block number
-						try
-						{
-							//get blockNum substring
-							int dotPos = input[1].indexOf('.');
-							String substr = input[1].substring(dotPos+1, input[1].length());
-							
-							//convert to int
-							blockNum = Integer.parseInt(substr);
-						}
-						catch (NumberFormatException nfe)
-						{
-							console.printSyntaxError("NaN (parameter 1)");
-							return;
-						}
-						
-						//get delay quantity
-						try
-						{
-							extraInt = Integer.parseInt(input[2]);
-						}
-						catch (NumberFormatException nfe)
-						{
-							console.printSyntaxError("NaN (parameter 2)");
-							return;
-						}
-						extraStr = null;
+						console.printSyntaxError("Packet must be of type data (parameter 1)");
+					}
+				}
+			
+				//mess around with opcode
+				else if (input[0].equals("opcode") || input[0].equals("" + this.ERR_OPCODE))
+				{
+					handleModePtInt(ERR_OPCODE, input);
+				}
+			
+				//alter the tid
+				else if (input[0].equals("tid") || input[0].equals("" + this.ERR_TID))
+				{
+					handleModePtInt(ERR_TID, input);
+				}
+			
+				//alter the block num of a DATA or ACK
+				else if (input[0].equals("blocknum") || input[0].equals("" + this.ERR_BLOCKNUM))
+				{
+					int pt;
+					//get packet type
+					try
+					{
+						pt = PTStringToInt(input[1]);
+					}
+					catch (NumberFormatException nfe)
+					{
+						console.printSyntaxError("Unrecognized packet type (parameter 1)");
+						return;
 					}
 					
-					//add to stack
-					inputStack.push(ERR_DELAY, packetType, blockNum, extraInt, extraStr);
+					//check if packet is of type data
+					if (pt == this.PACKET_DATA || pt == this.PACKET_ACK)
+					{
+						handleModePtInt(ERR_BLOCKNUM, input);
+					}
+					else
+					{
+						console.printSyntaxError("Packet must be of type data (parameter 1)");
+					}
+				}
+			
+				//change mode of RRQ or WRQ
+				else if (input[0].equals("mode") || input[0].equals("" + this.ERR_MODE))
+				{
+					//get packet type
+					int pt = PTStringToInt(input[1]);
+					
+					//check that packet type is WRQ or RRQ
+					if (pt == this.PACKET_RRQ || pt == this.PACKET_WRQ)
+					{
+						//add to stack
+						try
+						{
+							inputStack.push(ERR_MODE, pt, 0, 0, input[2]);
+						}
+						catch (InputStackException ise)
+						{
+							console.printError(ise.getMessage());
+						}
+					}
+					else
+					{
+						console.printSyntaxError("Packet must be of type rrq/wrq (parameter 1)");
+					}
+				}
+				
+				//BAD INPUT
+				else
+				{
+					console.print("Command not recognized");
 				}
 				break;
 				
 			case(4):
 				break;
 			default:
-				console.print("! Unknown Input !");
+				console.print("Command not recognized");
 				break;
 		}
 	}
 	
 	
+	//generic input of form MODE PT
+	private void handleModePt(int errorType, String input[])
+	{
+		int packetType = 0;
+		int blockNum = 0;
+		
+		//get packet type
+		try
+		{
+			packetType = PTStringToInt(input[1]);
+		}
+		catch (NumberFormatException nfe)
+		{
+			console.printSyntaxError("Unrecognized packet type (parameter 1)");
+			return;
+		}
+		
+		//delay a rrq/wrq/error type
+		if(packetType == this.PACKET_RRQ || packetType == this.PACKET_WRQ || packetType == this.PACKET_ERR)
+		{
+			blockNum = 0;
+		}
+		//delay a data/ack
+		else if (packetType == this.PACKET_DATA || packetType == this.PACKET_ACK)
+		{
+			//get block number
+			try
+			{
+				//get blockNum substring
+				int dotPos = input[1].indexOf('.');
+				String substr = input[1].substring(dotPos+1, input[1].length());
+				
+				//convert to int
+				blockNum = Integer.parseInt(substr);
+			}
+			catch (NumberFormatException nfe)
+			{
+				console.printSyntaxError("NaN (parameter 1)");
+				return;
+			}
+		}
+		
+		//add to stack
+		try
+		{
+			inputStack.push(errorType, packetType, blockNum, 0, null);
+		}
+		catch (InputStackException ise)
+		{
+			console.printError(ise.getMessage());
+		}
+	}
+	
+	
+	//generic input of form MODE PT INT
+	private void handleModePtInt(int errorType, String input[])
+	{
+		int packetType = 0;
+		int blockNum = 0;
+		int extraInt = 0;
+		
+		//get packet type
+		try
+		{
+			packetType = PTStringToInt(input[1]);
+		}
+		catch (NumberFormatException nfe)
+		{
+			console.printSyntaxError("Unrecognized packet type (parameter 1)");
+			return;
+		}
+		
+		//delay a rrq/wrq/error type
+		if(packetType == this.PACKET_RRQ || packetType == this.PACKET_WRQ || packetType == this.PACKET_ERR)
+		{
+			//get delay quantity
+			try
+			{
+				extraInt = Integer.parseInt(input[2]);
+			}
+			catch (NumberFormatException nfe)
+			{
+				console.printSyntaxError("NaN (parameter 2)");
+				return;
+			}
+			blockNum = 0;
+		}
+		//delay a data/ack
+		else if (packetType == this.PACKET_DATA || packetType == this.PACKET_ACK)
+		{
+			//get block number
+			try
+			{
+				//get blockNum substring
+				int dotPos = input[1].indexOf('.');
+				String substr = input[1].substring(dotPos+1, input[1].length());
+				
+				//convert to int
+				blockNum = Integer.parseInt(substr);
+			}
+			catch (NumberFormatException nfe)
+			{
+				console.printSyntaxError("NaN (parameter 1)");
+				return;
+			}
+			
+			//get delay quantity
+			try
+			{
+				extraInt = Integer.parseInt(input[2]);
+			}
+			catch (NumberFormatException nfe)
+			{
+				console.printSyntaxError("NaN (parameter 2)");
+				return;
+			}
+		}
+		
+		//add to stack
+		try
+		{
+			inputStack.push(errorType, packetType, blockNum, extraInt, null);
+		}
+		catch (InputStackException ise)
+		{
+			console.printError(ise.getMessage());
+		}
+	}
+	
+
 	//return numerical packet type based on string input for packet type
 	private int PTStringToInt(String input) throws NumberFormatException
 	{
