@@ -414,6 +414,7 @@ public class TFTPClient extends JFrame
 		//change port to wherever ACK came from 
 		outPort = receivedPacket.getPort();
 		serverTID = receivedPacket.getPort();
+		serverInet = receivedPacket.getAddress();
 		establishedConnection = true;
 		//send DATA
 		while ( (!(reader.isEmpty())  || lastDATAPacketLength == MAX_SIZE+4) || retransmitDATA)
@@ -604,6 +605,8 @@ public class TFTPClient extends JFrame
 		}
 		byte[] data = receivedPacket.getData();
 		if(establishedConnection){
+			System.out.println("serverInet: " + serverInet);
+			System.out.println("receivedPacket.getAddress: " + receivedPacket.getAddress());
 			if(serverInet.equals(receivedPacket.getAddress())){
 		  		if(receivedPacket.getPort() != serverTID){
 		  			buildError(5,receivedPacket,verbose,"Unexpected TID");
@@ -677,6 +680,9 @@ public class TFTPClient extends JFrame
 			if(!retransmitACK && !duplicateDATA){
 				if(!receivedData1){
 					serverTID = receivedPacket.getPort();
+
+					serverInet = receivedPacket.getAddress();
+					System.out.println("serverInet: " + serverInet);
 					establishedConnection = true;
 				}
 
@@ -1201,4 +1207,6 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		//run
 		client.ClientMain();
 	}
+		
+	
 }
