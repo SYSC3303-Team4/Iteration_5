@@ -1061,7 +1061,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 							}
 							else
 							{
-								console.printOperandError("color scheme not found");
+								console.printSyntaxError("color scheme not found");
 							}
 						}
 					}

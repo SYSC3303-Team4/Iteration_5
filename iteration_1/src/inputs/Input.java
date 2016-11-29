@@ -34,6 +34,7 @@ public class Input
 	public static final int ERR_OPCODE		= 5;	//alter a packet opcode to an in greater than 5
 	public static final int ERR_TID			= 6;	//alter a packets destination port
 	public static final int ERR_BLOCKNUM	= 7;	//incorrectly change block number
+	public static final int ERR_FORMAT		= 8;	//format incorrect
 	//packet type
 	public static final int PACKET_RRQ		= 1;	//RRQ Packet
 	public static final int PACKET_WRQ		= 2;	//WRQ Packet
@@ -160,19 +161,22 @@ public class Input
 				printable = printable + "LOSE ";
 				break;
 			case(ERR_MODE):
-				printable = printable + "ALTER MODE of ";
+				printable = printable + "alter MODE of ";
 				break;
 			case(ERR_ADD_DATA):
-				printable = printable + "ADD DATA to ";
+				printable = printable + "ADD data to ";
 				break;
 			case(ERR_OPCODE):
-				printable = printable + "ALTER OPCODE for ";
+				printable = printable + "alter OPCODE for ";
 				break;
 			case(ERR_TID):
-				printable = printable + "ALTER TID for ";
+				printable = printable + "alter TID for ";
 				break;
 			case(ERR_BLOCKNUM):
-				printable = printable + "ALTER BLOCKNUM for ";
+				printable = printable + "alter BLOCKNUM for ";
+				break;
+			case(ERR_FORMAT):
+				printable = printable + "corrupt FORMAT for ";
 				break;
 			default:
 				printable = printable + "!BAD MODE! ";
@@ -181,16 +185,16 @@ public class Input
 		switch(packetType)
 		{
 			case(PACKET_RRQ):
-				printable = printable + "RRQ packet";
+				printable = printable + "RRQ packet ";
 				break;
 			case(PACKET_WRQ):
 				printable = printable + "WRQ packet ";
 				break;
 			case(PACKET_DATA):
-				printable = printable + "DATA packet ";
+				printable = printable + "DATA packet " + blockNum +  " ";
 				break;
 			case(PACKET_ACK):
-				printable = printable + "ACK packet ";
+				printable = printable + "ACK packet " + blockNum +  " ";
 				break;
 			case(PACKET_ERR):
 				printable = printable + "ERROR packet ";
@@ -199,7 +203,6 @@ public class Input
 				printable = printable + "!BAD PT! ";
 				break;
 		}
-		printable = printable + blockNum + " ";
 		switch(mode)
 		{
 			case(ERR_DELAY):
@@ -225,6 +228,9 @@ public class Input
 				break;
 			case(ERR_BLOCKNUM):
 				printable = printable + "to " + extraInt;
+				break;
+			case(ERR_FORMAT):
+				//do nothing, but not an error
 				break;
 			default:
 				printable = printable + "!BAD MODE! ";

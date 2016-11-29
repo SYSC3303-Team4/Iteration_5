@@ -371,7 +371,7 @@ public class TFTPServer implements ActionListener
 							}
 							else
 							{
-								console.printOperandError("color scheme not found");
+								console.printSyntaxError("color scheme not found");
 							}
 						}
 					}

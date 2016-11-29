@@ -2,13 +2,22 @@
 *Class:             InputStack.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    15/11/2016                                              
-*Version:           2.0.0                                                      
+*Date of Update:    28/11/2016                                              
+*Version:           2.1.0                                                      
 *                                                                                   
-*Purpose:           Sorted stack of input strings. Sorted in terms of block num
+*Purpose:           Sorted stack of input strings. Sorted in terms of block num.
+*					Really more of a sorted list now but laissez faire ce qu'ils font.
 * 
 * 
-*Update Log:		v2.0.0
+*Update Log:		v2.1.0
+*						- sorting hierarchy patched to include errors and rrq/wrq
+*						 		\-->assumes RRQ or WRQ are first
+*						 		 \-->assumes ERROR packet are last
+*						- throw an error if more than one RRQ/WRQ
+*						- throw an error if more than one ERROR packet
+*						- robust error detection added
+*						- prints clearer
+*					v2.0.0
 *						- sorting now occurs after entire stack is created
 *						- sorting based on RRQ or WRQ
 *						- clear method
@@ -31,6 +40,8 @@ public class InputStack
 	//Declaring local instance variables
 	private LinkedList<Input> pseudoStack;
 	private int length;
+	private boolean RWRQPresent;
+	private boolean ERRPresent;
 	
 	
 	//generic constructor
@@ -38,6 +49,8 @@ public class InputStack
 	{
 		pseudoStack = new LinkedList<Input>();
 		length = 0;
+		RWRQPresent = false;
+		ERRPresent = false;
 	}
 	
 	
@@ -52,6 +65,8 @@ public class InputStack
 	{
 		pseudoStack.clear();
 		length = 0;
+		RWRQPresent = false;
+		ERRPresent = false;
 	}
 	
 	
@@ -114,31 +129,65 @@ public class InputStack
 	
 	
 	//push to stack with sort (tie conditions not guaranteed)
-	public void push(int mode, int packetType, int blockNum, int extraInt, String extraStr)
+	public void push(int mode, int packetType, int blockNum, int extraInt, String extraStr) throws InputStackException
 	{
 		//create Input
 		Input newInput = new Input(mode, packetType, blockNum, extraInt, extraStr);
 		
+		
+		//adding a RRQ/WRQ
+		if (newInput.getPacketType() == Input.PACKET_RRQ || newInput.getPacketType() == Input.PACKET_WRQ)
+		{
+			if(!RWRQPresent)
+			{
+				pseudoStack.addFirst(newInput);
+				length++;
+				RWRQPresent = true;
+			}
+			else
+			{
+				throw new InputStackException("Only one RRQ/WRQ type error can exist at a time");
+			}
+		}
+		//if of type ERROR
+		else if (newInput.getPacketType() == Input.PACKET_ERR)
+		{
+			if(!ERRPresent)
+			{
+				pseudoStack.addLast(newInput);
+				//length++;
+				ERRPresent = true;
+			}
+			else
+			{
+				throw new InputStackException("Only one ERROR type error can exist at a time");
+			}
+		}
 		//nothing in stack, add to front
-		if (length == 0)
+		else if (pseudoStack.size() == 0)
 		{
 			pseudoStack.addFirst(newInput);
 			length++;
 		}
-		//something in stack, have to sort through it
+		//something in else list, have to iterate through it
 		else
 		{
 			//declaring Input to represent current Input in list
 			Input inputInList;
 			
-			//iterate through list to determine where to put it
+			//iterate through list to determine where to put it 
 			for(int i=0; i<length; i++)
 			{
 				//get current input at index i
 				inputInList = pseudoStack.get(i);
 				
+				//if duplicate found during push
+				if(newInput.getBlockNum() == inputInList.getBlockNum() && newInput.getPacketType() == inputInList.getPacketType())
+				{
+					throw new InputStackException("Simulating error on packet type ["+ newInput.getPacketType() + "], blocknum ["+ newInput.getBlockNum() + "] already exists");
+				}
 				//new input should come before input in list
-				if(newInput.getBlockNum() < inputInList.getBlockNum())
+				else if(newInput.getBlockNum() < inputInList.getBlockNum())
 				{
 					pseudoStack.add(i, newInput);
 					length++;
@@ -169,7 +218,7 @@ public class InputStack
 	//pop top entry from stack
 	public Input pop()
 	{
-		if (length != 0)
+		if (pseudoStack.size() != 0)
 		{
 			length--;
 			return pseudoStack.removeFirst();
@@ -212,13 +261,13 @@ public class InputStack
 		String printable = "";
 		
 		//make returnable object
-		if(length == 0)
+		if(pseudoStack.size() == 0)
 		{
 			printable = "EMPTY";
 		}
 		else
 		{
-			for(int i=0; i<length; i++)
+			for(int i=0; i<pseudoStack.size(); i++)
 			{
 				printable = printable + "ITEM: " + i + " --> " + pseudoStack.get(i).toFancyString() + "\n" + "    ";
 			}
