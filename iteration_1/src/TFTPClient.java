@@ -2,7 +2,7 @@
 *Class:             TFTPClient.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    25/11/2016                                              
+*Date of Update:    29/11/2016                                              
 *Version:           2.1.0                                                      
 *                                                                                   
 *Purpose:           Generates a datagram following the format of [0,R/W,STR1,0,STR2,0], 
@@ -15,7 +15,9 @@
 					packet. Each datagram can be 512B max
 * 
 * 
-*Update Log:		v2.1.0
+*Update Log:		v2.1.1
+*						- Added switching for ipOut addresses
+*					v2.1.0
 *						- Fixed error code 5 handling (malformed packet)
 *						- Fixed code error message printing
 *						- Fixed error packet parsing
@@ -38,7 +40,7 @@
 *						- commond line help updated
 *					v1.2.0
 *						- UI implemented
-*						- now should support multiple instances
+*						- now should support multipOutle instances
 *						- new commands added for UI
 *					v1.1.5
 *						- recieve method implimented
@@ -90,7 +92,7 @@
 *						- name changed from 'Client' to 'TFTPClient'
 *						 (are you happy now Sarah??!?!?!?!?!)
 *					v1.0.0
-*                       
+*                       - null
 */
 
 
@@ -129,6 +131,7 @@ public class TFTPClient extends JFrame
 	private boolean retransmitACK = false;
 	private boolean retransmitDATA = false;
 	private DatagramArtisan datagramArtisan = new DatagramArtisan();
+	private InetAddress ipOut;
 	
 	//Error handling vars
 	private int serverTID;
@@ -182,6 +185,16 @@ public class TFTPClient extends JFrame
 		reader = new TFTPReader();
 		//make an empty writer
 		writer = new TFTPWriter();
+		
+		//set ipOut to local address by default
+		try
+		{
+			ipOut = InetAddress.getLocalHost();
+		}
+		catch (Exception e)
+		{
+			console.printError("Cannot get local ipOut Address");
+		}
 		
 		//make and run the UI
 		console = new ConsoleUI("TFTPClient.java");
@@ -273,18 +286,10 @@ public class TFTPClient extends JFrame
 		}
 		
 		//generate and save datagram packet
-		try
+		sentPacket = new DatagramPacket(toSend, toSend.length, ipOut, outPort);
+		if(verbose)
 		{
-			sentPacket = new DatagramPacket(toSend, toSend.length, InetAddress.getLocalHost(), outPort);
-			if(verbose)
-			{
-				console.print("Client: Packet successfully created");
-			}
-		}
-		catch(UnknownHostException e)
-		{
-			e.printStackTrace();
-			System.exit(1);
+			console.print("Client: Packet successfully created");
 		}
 	}
 	
@@ -316,19 +321,12 @@ public class TFTPClient extends JFrame
 		ack[3] = ACKNum[1];
 		
 		//generate and save datagram packet
-		try
+		sentPacket = new DatagramPacket(ack, ack.length, ipOut, outPort);
+		if(verbose)
 		{
-			sentPacket = new DatagramPacket(ack, ack.length, InetAddress.getLocalHost(), outPort);
-			if(verbose)
-			{
-				console.print("Client: ACK successfully created");
-			}
+			console.print("Client: ACK successfully created");
 		}
-		catch(UnknownHostException e)
-		{
-			e.printStackTrace();
-			System.exit(1);
-		}
+
 		
 	}
 	
@@ -373,18 +371,10 @@ public class TFTPClient extends JFrame
 			
 		
 		//generate and save datagram packet
-		try
+		sentPacket = new DatagramPacket(data, data.length, ipOut, outPort);
+		if(verbose)
 		{
-			sentPacket = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), outPort);
-			if(verbose)
-			{
-				console.print("Client: Packet successfully created");
-			}
-		}
-		catch(UnknownHostException e)
-		{
-			e.printStackTrace();
-			System.exit(1);
+			console.print("Client: Packet successfully created");
 		}
 	}
 	
@@ -870,11 +860,12 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 		console.print("'testmode BOOL'             - if set true, sends to Host. If set false, sends to Server directly");
 		console.print("'test'                                    - runs a test for the console");
+		console.print("'ip NEWipOut'                          - change the outgoing packet ipOutAddress to NEWipOut");
 		console.print("'mode NEWMODE'           - set the default mode to NEWMODE");
 		console.println();
-		console.print("'push MODE'                    - push a file to the server in mode MODE (ex, NETASCII)");
+		console.print("'push MODE'                    - push a file to the server in mode MODE (ex, ASCII)");
 		console.print("'push'                                - push a file to the server in default mode");
-		console.print("'pull FILENAME MODE'  - pull a file from the server in mode MODE (ex NETASCII)");
+		console.print("'pull FILENAME MODE'  - pull a file from the server in mode MODE (ex ASCII)");
 		console.print("'pull FILENAME'               - pull a file from the server in default mode");
 		console.println();
 		console.print("'rrq FILENAME MODE'    - send a read request for file FILENAME in mode MODE");
@@ -910,6 +901,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 						console.print("'verbose BOOL'                - toggle verbose mode as true or false");
 						console.print("'testmode BOOL'             - if set true, sends to Host. If set false, sends to Server directly");
 						console.print("'test'                                    - runs a test for the console");
+						console.print("'ip NEWipOut'                          - change the outgoing packet ipOutAddress to NEWipOut");
 						console.print("'mode NEWMODE'           - set the default mode to NEWMODE");
 						console.println();
 						console.print("'push MODE'                    - push a file to the server in mode MODE (ex, ASCII)");
@@ -921,6 +913,37 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 						console.print("'wrq MODE'                       - send a write request in mode MODE");
 						console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 						console.println();
+					}
+					//show verbose
+					else if (input[0].equals("verbose"))
+					{
+						console.print("Verbose: " + verbose);
+					}
+					//show testmode
+					else if (input[0].equals("testmode"))
+					{
+						if(outPort == this.IN_PORT_HOST)
+						{
+							console.print("Testmode: true");
+						}
+						else if (outPort == this.IN_PORT_SERVER)
+						{
+							console.print("Testmode: false");
+						}
+						else
+						{
+							console.printError("outPort in unknown state");
+						}
+					}
+					//show mode
+					else if (input[0].equals("mode"))
+					{
+						console.print("Standard mode: " + standardMode);
+					}
+					//show ipOutAddress
+					else if (input[0].equals("ip"))
+					{
+						console.print("ip Address: " + ipOut.toString());
 					}
 					//clear console
 					else if (input[0].equals("clear"))
@@ -1001,6 +1024,53 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 						else
 						{
 							console.print("! Unknown Input !");
+						}
+					}
+					//change default ipOut
+					else if (input[0].equals("ip"))
+					{
+						if(input[1].equals("local"))
+						{
+							try
+							{
+								ipOut = InetAddress.getLocalHost();
+							}
+							catch(Exception e)
+							{
+								console.printError("Cannot asertain local InetAddress");
+							}
+						}
+						else
+						{
+							try
+							{
+								//declaring temporary method variables
+								String host;
+								byte[] addr;
+								String seperateAtSlash[];
+								String subStrBytes[];
+								
+								//parse host
+								seperateAtSlash = input[1].split("/");
+								host = seperateAtSlash[0];
+								
+								//parse addr
+								subStrBytes = (seperateAtSlash[1]).split("\\.");
+								
+								addr = new byte[subStrBytes.length];
+								for(int i=0; i<subStrBytes.length; i++)
+								{
+									addr[i] = (byte)Integer.parseInt(subStrBytes[i]);
+								}
+								
+								//try to set ip
+								ipOut = InetAddress.getByAddress(host, addr);
+							}
+							catch (Exception e)
+							{
+								console.printSyntaxError("Invalid IPAddress - must be of form 'host/nnn.nnn.nnn.nnn'");
+							}
+
 						}
 					}
 					//set standard mode

@@ -190,7 +190,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 		}
 		else if (scheme.toLowerCase().equals("prettyinpink"))
 		{
-			background = Color.PINK;
+			background = Color.BLACK;
 			text = Color.MAGENTA;
 		}
 		else if (scheme.toLowerCase().equals("halloween"))
