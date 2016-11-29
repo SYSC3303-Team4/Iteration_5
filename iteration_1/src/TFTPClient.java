@@ -194,7 +194,7 @@ public class TFTPClient extends JFrame
 		}
 		catch (Exception e)
 		{
-			console.printError("Cannot get local ipOut Address");
+			console.printError("Cannot get local IPAddress");
 		}
 		
 		//make and run the UI

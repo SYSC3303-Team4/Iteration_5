@@ -58,7 +58,7 @@ public class TFTPServer implements ActionListener
 		//make and run the UI
 		console = new ConsoleUI(title, this);
 		console.run();
-		console.colorScheme("dark");
+		console.colorScheme("halloween");
 		
 		try {
 			// Construct a datagram socket and bind it to port 69

@@ -124,6 +124,16 @@ public class TFTPHost
 		console = new ConsoleUI("Error Simulator");
 		console.run();
 		console.colorScheme("prettyinpink");
+		
+		//set default IP
+		try
+		{
+			sendToIP = InetAddress.getLocalHost();
+		}
+		catch (Exception e)
+		{
+			console.printError("Cannot get local IPAddress");
+		}
 	}
 	
 	
@@ -910,6 +920,12 @@ public class TFTPHost
 				{
 					console.clear();
 				}
+				//show ipOutAddress
+				else if (input[0].equals("ip"))
+				{
+					console.print("ip Address: " + sendToIP.toString());
+				}
+				//reset inputStack
 				else if (input[0].equals("reset"))
 				{
 					inputStack.clear();
@@ -954,6 +970,54 @@ public class TFTPHost
 					else
 					{
 						console.print("Command not recognized");
+					}
+				}
+			
+				//change default sendToIP
+				else if (input[0].equals("ip"))
+				{
+					if(input[1].equals("local"))
+					{
+						try
+						{
+							sendToIP = InetAddress.getLocalHost();
+						}
+						catch(Exception e)
+						{
+							console.printError("Cannot asertain local InetAddress");
+						}
+					}
+					else
+					{
+						try
+						{
+							//declaring temporary method variables
+							String host;
+							byte[] addr;
+							String seperateAtSlash[];
+							String subStrBytes[];
+							
+							//parse host
+							seperateAtSlash = input[1].split("/");
+							host = seperateAtSlash[0];
+							
+							//parse addr
+							subStrBytes = (seperateAtSlash[1]).split("\\.");
+							
+							addr = new byte[subStrBytes.length];
+							for(int i=0; i<subStrBytes.length; i++)
+							{
+								addr[i] = (byte)Integer.parseInt(subStrBytes[i]);
+							}
+							
+							//try to set ip
+							sendToIP = InetAddress.getByAddress(host, addr);
+						}
+						catch (Exception e)
+						{
+							console.printSyntaxError("Invalid IPAddress - must be of form 'host/nnn.nnn.nnn.nnn'");
+						}
+
 					}
 				}
 			
