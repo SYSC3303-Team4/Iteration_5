@@ -108,7 +108,7 @@ class TFTPWriteThread extends ServerThread
 		} catch (SocketException e) {
 			//Handle Timeout Exception
 			e.printStackTrace();
-		}
+		} 
         
     }
 

@@ -472,7 +472,7 @@ public class TFTPClient extends JFrame
 		console.print("Client: Sending packet...");
 		if(verbose)
 		{
-			printDatagram(sentPacket);
+			printDatagram(sentPacket); 
 		}
 		//send packet
 		try

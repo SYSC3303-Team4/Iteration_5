@@ -129,7 +129,7 @@ class TFTPReadThread  extends ServerThread
 				}
 				else{
 					mode.write(requestPacket.getData()[i]);
-				}
+				} 
 			}
 			if(requestPacket.getData()[i]!=0){
 				if(requestPacket.getData()[i+1] == 0){

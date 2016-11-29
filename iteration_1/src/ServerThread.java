@@ -265,7 +265,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 	  			console.print("Invalid InetAddress");
 	  			errorFlag=true;
 				return false;
-  			}
+  			} 
   		}
   		//check ACK for validity
 		if(data.length > 4){
