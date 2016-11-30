@@ -2,14 +2,17 @@
 *Class:             InputStack.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    28/11/2016                                              
-*Version:           2.1.0                                                      
+*Date of Update:    30/11/2016                                              
+*Version:           2.1.1                                                      
 *                                                                                   
 *Purpose:           Sorted stack of input strings. Sorted in terms of block num.
 *					Really more of a sorted list now but laissez faire ce qu'ils font.
 * 
 * 
-*Update Log:		v2.1.0
+*Update Log:		v2.1.1
+*						- length() renamed size()
+*						- packet type ERROR sorting patched
+*					v2.1.0
 *						- sorting hierarchy patched to include errors and rrq/wrq
 *						 		\-->assumes RRQ or WRQ are first
 *						 		 \-->assumes ERROR packet are last
@@ -54,9 +57,9 @@ public class InputStack
 	}
 	
 	
-	public int length()
+	public int size()
 	{
-		return length;
+		return pseudoStack.size();
 	}
 	
 	
@@ -134,7 +137,6 @@ public class InputStack
 		//create Input
 		Input newInput = new Input(mode, packetType, blockNum, extraInt, extraStr);
 		
-		
 		//adding a RRQ/WRQ
 		if (newInput.getPacketType() == Input.PACKET_RRQ || newInput.getPacketType() == Input.PACKET_WRQ)
 		{
@@ -146,7 +148,7 @@ public class InputStack
 			}
 			else
 			{
-				throw new InputStackException("Only one RRQ/WRQ type error can exist at a time");
+				throw new InputStackException("Only one RRQ/WRQ type error can be simulated at a time");
 			}
 		}
 		//if of type ERROR
@@ -160,11 +162,11 @@ public class InputStack
 			}
 			else
 			{
-				throw new InputStackException("Only one ERROR type error can exist at a time");
+				throw new InputStackException("Only one ERROR type error can be simulated at a time");
 			}
 		}
 		//nothing in stack, add to front
-		else if (pseudoStack.size() == 0)
+		else if (length == 0)
 		{
 			pseudoStack.addFirst(newInput);
 			length++;

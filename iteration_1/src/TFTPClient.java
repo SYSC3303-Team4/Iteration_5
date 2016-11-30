@@ -194,7 +194,7 @@ public class TFTPClient extends JFrame
 		}
 		catch (Exception e)
 		{
-			console.printError("Cannot get local IPAddress");
+			console.printError("Unknown Host Error","Cannot get local IPAddress");
 		}
 		
 		//make and run the UI
@@ -450,8 +450,7 @@ public class TFTPClient extends JFrame
 		//reset port
 		outPort = oldPort;
 		blockNum = 0;
-		console.print("----------------------WRQ COMPLETE----------------------");
-		console.printCompletion();
+		console.printCompletion("wrq");
 	}
 	
 	
@@ -734,8 +733,7 @@ public class TFTPClient extends JFrame
 			timeoutFlag = false;
 		}
 		
-		console.print("----------------------RRQ COMPLETE----------------------");
-		console.printCompletion();
+		console.printCompletion("rrq");
 		outPort = oldPort;
 	}
 	
@@ -778,7 +776,7 @@ public class TFTPClient extends JFrame
 				//extract error message for response
 				int errorType = (response[2] << 8)&0xFF | response[3]&0xFF;
 				String errorMsg = datagramArtisan.getErrorMsg(receivedPacket);
-				console.printError(errorType, errorMsg);
+				console.printTFTPError(errorType, errorMsg);
 				
 			}
 		}
@@ -954,7 +952,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 						}
 						else
 						{
-							console.printError("outPort in unknown state");
+							console.printError("Port Assignment Error","outPort in unknown state");
 						}
 					}
 					//show mode
@@ -1059,7 +1057,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 							}
 							catch(Exception e)
 							{
-								console.printError("Cannot asertain local InetAddress");
+								console.printError("Unknown Host Error","Cannot asertain local InetAddress");
 							}
 						}
 						else
@@ -1090,7 +1088,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 							}
 							catch (Exception e)
 							{
-								console.printSyntaxError("Invalid IPAddress - must be of form 'host/nnn.nnn.nnn.nnn'");
+								console.printSyntaxError("Invalid IPAddress (must be of form 'host/nnn.nnn.nnn.nnn')");
 							}
 
 						}

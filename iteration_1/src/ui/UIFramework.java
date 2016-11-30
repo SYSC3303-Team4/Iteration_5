@@ -34,7 +34,7 @@ interface UIFramework
 	public abstract void printByteArray(byte[] b, int size);
 	
 	//print error to screen
-	public abstract void printError(String printable);
+	public abstract void printError(String errorType, String errorMsg);
 
 	//generic method to take in user input
 	public abstract String getInput(boolean wait);

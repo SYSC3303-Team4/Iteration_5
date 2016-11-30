@@ -132,7 +132,7 @@ public class TFTPHost
 		}
 		catch (Exception e)
 		{
-			console.printError("Cannot get local IPAddress");
+			console.printError("UnknownHost","Cannot get local IPAddress");
 		}
 	}
 	
@@ -171,7 +171,7 @@ public class TFTPHost
 		}
 		catch (IOException e)
 		{
-			console.printError("Incoming socket timed out");
+			console.printError("IOEception","Incoming socket timed out");
 		}
 		
 		
@@ -191,7 +191,7 @@ public class TFTPHost
 		}
 		catch (SocketException ioe)
 		{
-			console.printError("Cannot set socket timeout");
+			console.printError("Socket Exception","Cannot set socket timeout");
 		}
 		
 		//wait for incoming data
@@ -222,7 +222,7 @@ public class TFTPHost
 		}
 		catch (SocketException ioe)
 		{
-			console.printError("Cannot set socket timeout");
+			console.printError("Socket Excpetion","Cannot set socket timeout");
 		}
 		
 		//wait for incoming data
@@ -244,7 +244,7 @@ public class TFTPHost
 		}
 		catch (SocketException ioe)
 		{
-			console.printError("Cannot set socket timeout");
+			console.printError("Socket Exception","Cannot set socket timeout");
 		}
 	}
 	
@@ -494,7 +494,7 @@ public class TFTPHost
 		
 		else
 		{
-			console.printError("INCORRECT MODE");
+			console.printError("Mode","INCORRECT MODE");
 		}
 	}
 	
@@ -543,7 +543,7 @@ public class TFTPHost
 					}
 					catch (SocketException see)
 					{
-						console.printError("SOTIMEOUT SET RETURN ERRROR: Add coherent comments");
+						console.printError("SocketException", "SOTIMEOUT SET RETURN ERRROR: Add coherent comments");
 						return;
 					}
 					catch (IOException ioe)//timeout, did not receive data, should delay packet
@@ -583,7 +583,7 @@ public class TFTPHost
 		}
 		catch(IOException timeout)
 		{
-			console.printError("HOST TIMEOUT WAITING FOR CLIENT TO TRANSMIT");
+			console.printError("IOException","HOST TIMEOUT WAITING FOR CLIENT TO TRANSMIT");
 			return;
 		}
 		
@@ -779,7 +779,7 @@ public class TFTPHost
 					}
 					catch (SocketException ioe)
 					{
-						console.printError("Cannot set socket timeout");
+						console.printError("SocketException","Cannot set socket timeout");
 					}
 				}
 			}
@@ -931,7 +931,7 @@ public class TFTPHost
 					inputStack.clear();
 					if(verbose)
 					{
-						console.print("Errors to Simulate: " + inputStack.length());
+						console.print("Errors to Simulate: " + inputStack.size());
 					}
 				}
 				//close console with grace
@@ -984,7 +984,7 @@ public class TFTPHost
 						}
 						catch(Exception e)
 						{
-							console.printError("Cannot asertain local InetAddress");
+							console.printError("UnknownHost","Cannot asertain local InetAddress");
 						}
 					}
 					else
@@ -1149,7 +1149,7 @@ public class TFTPHost
 						}
 						catch (InputStackException ise)
 						{
-							console.printError(ise.getMessage());
+							console.printError("Input",ise.getMessage());
 						}
 					}
 					else
@@ -1223,7 +1223,7 @@ public class TFTPHost
 		}
 		catch (InputStackException ise)
 		{
-			console.printError(ise.getMessage());
+			console.printError("Input",ise.getMessage());
 		}
 	}
 	
@@ -1299,7 +1299,7 @@ public class TFTPHost
 		}
 		catch (InputStackException ise)
 		{
-			console.printError(ise.getMessage());
+			console.printError("Input",ise.getMessage());
 		}
 	}
 	

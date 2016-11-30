@@ -391,7 +391,7 @@ public class TFTPServer implements ActionListener
 		before this instance */
 		else
 		{
-			this.console.printError("ISR called prematurely");
+			this.console.printError("ISR","ISR called prematurely");
 		}
 	}
 }

@@ -317,10 +317,16 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	
 	
 	@Override
-	public void printError(String errorMsg)
+	public void printError(String errorType, String errorMsg)
 	{
-		print("ERROR:  " + errorMsg);
-		JOptionPane.showMessageDialog(this, errorMsg);
+		//print("ERROR: " + errorMsg);
+		//JOptionPane.showMessageDialog(this, errorMsg);
+		printPopUp(
+					errorMsg,
+					errorType + " Error",
+					JOptionPane.ERROR_MESSAGE,
+					("ERROR: " + errorMsg)
+					);
 	}
 	
 	
@@ -330,16 +336,34 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	}
 	
 	
-	public void printError(int errorCode, String errorMsg)
+	public void printTFTPError(int errorCode, String errorMsg)
 	{
-		print("TFTP Error Type: " + errorCode + " - " + errorMsg);
-		JOptionPane.showMessageDialog(this, "TFTP Error Type: " + errorCode + "\n" + errorMsg);
+		//print("TFTP ERROR Type: " + errorCode + " - " + errorMsg);
+		//JOptionPane.showMessageDialog(this, "TFTP Error Type: " + errorCode + "\n" + errorMsg);
+		printPopUp(
+					"TFTP Error Type: " + errorCode + "\n" + errorMsg, 
+					"TFTP Error", 
+					JOptionPane.ERROR_MESSAGE,
+					"TFTP ERROR Type: " + errorCode + " - " + errorMsg
+					);
+		
 	}
 	
 	
-	public void printCompletion()
+	private synchronized void printPopUp(String message, String title, int messageType, String consolePrint)
 	{
-		JOptionPane.showMessageDialog(this, "File Transfer Complete!");
+		if (consolePrint != null)
+		{
+			print(consolePrint);
+		}
+		JOptionPane.showMessageDialog(this, message, title, messageType);
+	}
+	
+	
+	public void printCompletion(String transferType)
+	{
+		printPopUp("File Transfer Complete!", "", JOptionPane.INFORMATION_MESSAGE, 
+				"---------------------- " + transferType.toUpperCase() + "COMPLETE ----------------------");
 	}
 	
 	
@@ -463,9 +487,9 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 		this.println();
 		
 		//error message test
-		this.printError("something went wrong");
-		this.printError(5, "file not found");
-		this.printError(99, "engineer.exe has stopped caring");
+		this.printError("title","something went wrong");
+		this.printTFTPError(5, "file not found");
+		this.printTFTPError(99, "engineer.exe has stopped caring");
 		this.printSyntaxError("NaN");
 		this.printSyntaxError("generic error text");
 		this.printSyntaxError("something else");
