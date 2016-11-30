@@ -99,7 +99,6 @@ public class TFTPHost
 
 
 
-
 	
 	//generic constructor
 	public TFTPHost()
@@ -859,13 +858,6 @@ public class TFTPHost
 	//parse input based on number of params
 	private void handleInput(String input[])
 	{
-		//temp variables to make code more readable
-		int packetType = 0;
-		int blockNum = 0;
-		int extraInt = 0;
-		String extraStr = null;
-		
-		//handle input based on number of params
 		switch(input.length)
 		{
 			case(1):

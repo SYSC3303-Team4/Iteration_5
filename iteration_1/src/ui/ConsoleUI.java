@@ -3,17 +3,26 @@
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
 *Date of Update:    16/11/2016                                              
-*Version:           1.2.1                                                      
+*Version:           1.2.1                               
 *                                                                                   
-*Purpose:           Generic console for basic output/inputs
+*Purpose:           Generic console for basic plain text output/inputs.
+*					Guaranteed thread-safe. Lots of neat methods that should make everyone's
+*					life easier. Tailor-made for Carleton University SYSC3303 TFTP Project.
 * 
 * 
-*Update Log:		v1.2.1
+*Update Log:		v2.1.1
+*						- added some NEW LIT colors & color demo
+*						- prettier error popups
+*						- error method refactor
+*							\--> generalized error popup method that all popups are generated from
+*							 \--> error popup thread safe with external synchronization
+*							  \--> console error printing now handled internally
+*					v2.1.0
 *						- console can run in either dark or light mode
 *						- really just a vanity update
 *						- standard operand error method added
 *						- standard error method altered to generate thread-safe popup
-*					v1.2.0
+*					v2.0.0
 *						- console clears inputLine after each input rather than select all text
 *						- keypress based ISRs added
 *						- Able to use keys to scroll through previous inputs
@@ -93,7 +102,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	
 	
 	//generic constructor
-	//### NOTE THIS SHOULD IMPLIMENT ConsoleUI(String, ActionListener) EVENTUALLY ###
+	//TODO ### NOTE THIS SHOULD IMPLIMENT ConsoleUI(String, ActionListener) EVENTUALLY ###
 	public ConsoleUI(String name)
 	{
 		//set up layout, save ID, initialize
@@ -165,43 +174,110 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	//return true if valid color scheme
 	public boolean colorScheme(String scheme)
 	{
-		Color background;
-		Color text;
+		Color background = null;
+		Color text = null;
+		scheme = scheme.toLowerCase();
 		
-		if(scheme.toLowerCase().equals("light"))
+		if (scheme.equals("demo") || scheme.equals("all"))
+		{
+			try
+			{
+				this.colorScheme("dark");
+				this.print("'color dark'");
+			    Thread.sleep(750);
+			    
+			    this.colorScheme("ocean");
+			    this.print("'color ocean'");
+			    Thread.sleep(750);
+			    
+			    this.colorScheme("matrix");
+			    this.print("'color matrix'");
+			    Thread.sleep(750);
+			    
+			    this.colorScheme("light");
+			    this.print("'color light'");
+			    Thread.sleep(750);
+			    
+			    this.colorScheme("halloween");
+			    this.print("'color halloween'");
+			    Thread.sleep(750);
+			    
+			    this.colorScheme("prettyinpink");
+			    this.print("'color prettyinpink'");
+			    Thread.sleep(750);
+			    
+			    this.colorScheme("xmas");
+			    this.print("'color xmas'");
+			    Thread.sleep(750);
+			    
+			    this.colorScheme("bumblebee");
+			    this.print("'color bumblebee'");
+			    Thread.sleep(750);
+			    
+			    this.colorScheme("bluescreen");
+			    this.print("'color bluesceen'");
+			    Thread.sleep(750);
+			    
+			    this.colorScheme("50shades");
+			    this.print("'color 50shades'");
+			    Thread.sleep(750);
+			    
+			    this.colorScheme("dark");
+			}
+			catch(InterruptedException ie)
+			{
+				this.printError("Interrupted Exception", "Error putting thread to sleep");
+			}
+		}
+		else if(scheme.equals("light"))
 		{
 			background = Color.WHITE;
 			text = Color.BLACK;
 		}
-		else if (scheme.toLowerCase().equals("dark"))
+		else if (scheme.equals("dark"))
 		{
 			background = Color.BLACK;
 			text = Color.WHITE;
 		}
-		else if (scheme.toLowerCase().equals("ocean"))
+		else if (scheme.equals("ocean"))
 		{
 			background = Color.CYAN;
 			text = Color.DARK_GRAY;
 		}
-		else if (scheme.toLowerCase().equals("matrix"))
+		else if (scheme.equals("matrix"))
 		{
 			background = Color.BLACK;
 			text = Color.GREEN;
 		}
-		else if (scheme.toLowerCase().equals("prettyinpink"))
+		else if (scheme.equals("prettyinpink"))
 		{
 			background = Color.BLACK;
 			text = Color.MAGENTA;
 		}
-		else if (scheme.toLowerCase().equals("halloween"))
+		else if (scheme.equals("halloween"))
 		{
 			background = Color.BLACK;
 			text = Color.ORANGE;
 		}
-		else if (scheme.toLowerCase().equals("xmas") || scheme.toLowerCase().equals("christmas"))
+		else if (scheme.equals("xmas") || scheme.toLowerCase().equals("christmas"))
 		{
 			background = Color.RED;
 			text = Color.GREEN;
+		}
+		else if (scheme.equals("bumblebee"))
+		{
+			background = Color.BLACK;
+			text = Color.YELLOW;
+		}
+		else if (scheme.equals("feelingblue") || scheme.equals("bluescreen"))
+		{
+			background = Color.BLUE;
+			text = Color.WHITE;
+		}
+		else if (scheme.equals("50shades"))
+		{
+			background = Color.DARK_GRAY;
+			text = Color.LIGHT_GRAY;
 		}
 		else
 		{
@@ -568,29 +644,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 		
 		//test color set
 		this.print("Running color scheme test...");
-		try 
-		{
-			this.colorScheme("dark");
-		    Thread.sleep(750);
-		    this.colorScheme("ocean");
-		    Thread.sleep(750);
-		    this.colorScheme("matrix");
-		    Thread.sleep(750);
-		    this.colorScheme("light");
-		    Thread.sleep(750);
-		    this.colorScheme("halloween");
-		    Thread.sleep(750);
-		    this.colorScheme("prettyinpink");
-		    Thread.sleep(750);
-		    this.colorScheme("xmas");
-		    Thread.sleep(750);
-		    this.colorScheme("dark");
-		    
-		} 
-		catch(InterruptedException ex) 
-		{
-		    Thread.currentThread().interrupt();
-		}
+		this.colorScheme("demo");
 		this.println();
 		
 		this.print("Test Complete");
@@ -599,10 +653,12 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	
 	
 	//for testing
+	/*
 	public static void main (String[] args) 
 	{	
 		ConsoleUI console = new ConsoleUI("Test Console UI");
 		console.run();
 		console.testAll();
 	}
+	*/
 }
