@@ -8,14 +8,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*; 
 import java.net.*;
-import java.util.*;
 
-import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import ui.ConsoleUI;
@@ -25,29 +20,17 @@ public class TFTPServer implements ActionListener
 
 	// types of requests we can receive
 	public static enum Request { READ, WRITE, ERROR};
-	// responses for valid requests
-	public static final byte[] readResp = {0, 3, 0, 1};
-	public static final byte[] writeResp = {0, 4, 0, 0};
 
 	// UDP datagram packets and sockets used to send / receive
-	private DatagramPacket sendPacket, receivePacket;
+	private DatagramPacket receivePacket;
 	private DatagramSocket receiveSocket, sendSocket;
 	private static boolean verbose = false;
-	private static Scanner scan= new Scanner(System.in);
 	private ConsoleUI console;
-    private JTextArea fileChooserFrame;
 	private File file;
 	private JFileChooser fileChooser;
-    private String path= "DEFAULT_TEST_WRITE";
     
     private boolean runFlag  = true;
 
-	/**
-	 * JTextArea for the thread executing main().
-	 */
-	private JTextArea status;
-
-	private JTextArea commandLine;
 
 	/**
 	 * Build the GUI.
@@ -66,21 +49,14 @@ public class TFTPServer implements ActionListener
 			// receive UDP Datagram packets.
 			receiveSocket = new DatagramSocket(69);
 			receiveSocket.setSoTimeout(5000);
-		} catch (SocketException se) {
-			console.print("SOCKET BIND ERROR");
-			se.printStackTrace();
-			System.exit(1);
-		}
-		try{
 			sendSocket = new DatagramSocket();
-		} catch (SocketException se){
+		} catch (SocketException se) {
 			console.print("SOCKET BIND ERROR");
 			se.printStackTrace();
 			System.exit(1);
 		}
 		while(file == null)
 		{
-			fileChooserFrame = new JTextArea(5,40);
 			fileChooser = new JFileChooser();
 			fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
 			FileNameExtensionFilter filter = new FileNameExtensionFilter("Directories","*");
@@ -94,15 +70,16 @@ public class TFTPServer implements ActionListener
 		}
 	}
 	
-
-	public void receiveAndSendTFTP() throws Exception
+	/**
+	 * Description: This method will wait for a request on port 69 and create 
+	 * the corresponding request thread. 
+	 * @throws Exception
+	 */
+	public void serverMain() throws Exception
 	{
-		byte[] data,
-		response = new byte[4];
+		byte[] data;
 
 		Request req; // READ, WRITE or ERROR
-		ArrayList currentThreads;
-		String filename, mode;
 		int len, j=0, k=0;
 		int threadNum = 0;
 		ThreadGroup initializedThreads = new ThreadGroup("ServerThread");
@@ -172,9 +149,9 @@ public class TFTPServer implements ActionListener
 			// If it's a read, send back DATA (03) block 1
 			// If it's a write, send back ACK (04) block 0
 			// Otherwise, ignore it
-			if (data[0]!=0) req = Request.ERROR; // bad
-			else if (data[1]==1) req = Request.READ; // could be read
-			else if (data[1]==2) req = Request.WRITE; // could be write
+			
+			if (data[0]==0 && data[1]==1) req = Request.READ; // could be read
+			else if (data[0]==0 && data[1]==2) req = Request.WRITE; // could be write
 			else req = Request.ERROR; // bad
 
 			if (req!=Request.ERROR) { // check for filename
@@ -184,8 +161,6 @@ public class TFTPServer implements ActionListener
 				}
 				if (j==len) req=Request.ERROR; // didn't find a 0 byte
 				if (j==2) req=Request.ERROR; // filename is 0 bytes long
-				// otherwise, extract filename
-				filename = new String(data,2,j-2);
 			}
 
 			if(req!=Request.ERROR) { // check for mode
@@ -195,7 +170,6 @@ public class TFTPServer implements ActionListener
 				}
 				if (k==len) req=Request.ERROR; // didn't find a 0 byte
 				if (k==j+1) req=Request.ERROR; // mode is 0 bytes long
-				mode = new String(data,j,k-j-1);
 			}
 
 			if(k!=len-1) req=Request.ERROR; // other stuff at end of packet        
@@ -206,23 +180,19 @@ public class TFTPServer implements ActionListener
 				threadNum++;
 				Thread readRequest =  new TFTPReadThread(initializedThreads, receivePacket, "Thread "+threadNum, verbose,file);
 				readRequest.start();
-				response = readResp;
 			} else if (req==Request.WRITE) { // for Write it's 0400
 				console.print("Server: Generating Write Thread");
 				threadNum++;
 				Thread writeRequest =  new TFTPWriteThread(initializedThreads, receivePacket,"Thread "+threadNum, verbose,file);
 				writeRequest.start();
-				response = writeResp; 
 			} else { // it was invalid, send 
 				console.print("Server: Illegal Request");
-	    		int errorCode = 4;
 	    		console.print("Illegal TFTP operation");
 	    		String errorMsg = "Illegal TFTP operation.";
-	    		byte[] dataError = new byte[errorMsg.length() + 5];
 	        	data[0] = 0;
 	        	data[1] = 5;
 	        	data[2] = 0;
-	        	data[3] = (byte)errorCode;
+	        	data[3] = 4;
 	        	for(int c = 0; c<errorMsg.length();c++){
 	        		data[4+c] = errorMsg.getBytes()[c];
 	        	}
@@ -244,25 +214,12 @@ public class TFTPServer implements ActionListener
 		console.print("Server Shut Down..");
 	} 
 
-	Thread[] getServerThreads( final ThreadGroup group ) {
-		if ( group == null )
-			throw new NullPointerException( "Null thread group" );
-		int nAlloc = group.activeCount( );
-		int n = 0;
-		Thread[] threads;
-		do {
-			nAlloc *= 2;
-			threads = new Thread[ nAlloc ];
-			n = group.enumerate( threads );
-		} while ( n == nAlloc );
-		return java.util.Arrays.copyOf( threads, n );
-	}
 
 	public static void main( String args[] ) throws Exception
 	{
 
 		TFTPServer c = new TFTPServer("TFTP Server");
-		c.receiveAndSendTFTP();
+		c.serverMain();
 	}
 
 
@@ -307,7 +264,6 @@ public class TFTPServer implements ActionListener
 					else if (input[0].equals("cd"))
 					{
 						//get new path
-						fileChooserFrame = new JTextArea(5,40);
 						fileChooser = new JFileChooser();
 						fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
 						FileNameExtensionFilter filter = new FileNameExtensionFilter("Directories","*");
