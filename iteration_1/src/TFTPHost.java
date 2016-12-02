@@ -3,8 +3,8 @@
 *Class:             TFTPHost.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    28/11/2016                                              
-*Version:           2.2.0                                                      
+*Date of Update:    02/12/2016                                              
+*Version:           2.2.1                                                      
 *                                                                                    
 *Purpose:           Receives packet from Client, sends packet to Server and waits
 *					for Server response. Sends Server response back to Client. Repeats
@@ -14,7 +14,9 @@
 *					all 3 verb inputs. However, in order to check that user noun input is valid, they are in separate if statements.
 * 
 * 
-*Update Log:        v2.2.0
+*Update Log:        v2.2.1
+*						- now able to enter filename errors to be simulated
+*					v2.2.0
 *						- error input method revamped
 *						- format error added
 *					v2.1.1
@@ -61,6 +63,7 @@ public class TFTPHost
 	public final int ERR_TID		= 6;	//alter a packets destination port
 	public final int ERR_BLOCKNUM	= 7;	//incorrectly change block number
 	public final int ERR_FORMAT		= 8;	//format incorrect
+	public final int ERR_FILENAME	= 9;	//mess up file name
 	//packet type
 	public final int PACKET_RRQ		= 1;	//RRQ Packet
 	public final int PACKET_WRQ		= 2;	//WRQ Packet
@@ -820,6 +823,7 @@ public class TFTPHost
 		console.print("'tid PT TID'                      - change packet PT block number BN's destination port to TID");
 		console.print("'blocknum PT B2'         - change packet PT, block number BN's block number to B2");
 		console.print("'format PT'                      - corrupt the format on packet PT");	
+		console.print("'filename PT'                  - corrupt the filename on RRQ/WRQ packet PT");
 		/*
 		console.println();
 		console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
@@ -883,6 +887,7 @@ public class TFTPHost
 					console.print("'tid PT TID'                      - change packet PT block number BN's destination port to TID");
 					console.print("'blocknum PT B2'         - change packet PT, block number BN's block number to B2");
 					console.print("'format PT'                      - corrupt the format on packet PT");
+					console.print("'filename PT'                  - corrupt the filename on RRQ/WRQ packet PT");
 					/*
 					console.println();
 					console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
@@ -1007,7 +1012,7 @@ public class TFTPHost
 						}
 						catch (Exception e)
 						{
-							console.printSyntaxError("Invalid IPAddress - must be of form 'host/nnn.nnn.nnn.nnn'");
+							console.printSyntaxError("Invalid IPAddress - must be of form 'host/xxx.xxx.xxx.xxx'");
 						}
 
 					}
@@ -1031,6 +1036,12 @@ public class TFTPHost
 					handleModePt(ERR_FORMAT, input);
 				}
 			
+				//corrupt filename
+				else if (input[0].equals("filename") || input[0].equals("" + this.ERR_FILENAME))
+				{
+					handleModePt(ERR_FILENAME, input);
+				}
+				
 				//alter color scheme
 				else if (input[0].equals("color") || input[0].equals("colour"))
 				{
@@ -1183,12 +1194,12 @@ public class TFTPHost
 			return;
 		}
 		
-		//delay a rrq/wrq/error type
+		//rrq/wrq/error type set blocknum 0
 		if(packetType == this.PACKET_RRQ || packetType == this.PACKET_WRQ || packetType == this.PACKET_ERR)
 		{
 			blockNum = 0;
 		}
-		//delay a data/ack
+		//parse out blocknum
 		else if (packetType == this.PACKET_DATA || packetType == this.PACKET_ACK)
 		{
 			//get block number

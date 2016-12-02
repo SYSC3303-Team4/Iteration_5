@@ -2,14 +2,16 @@
 *Class:             Input.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    15/11/2016                                              
-*Version:           1.1.0                                                      
+*Date of Update:    02/12/2016                                              
+*Version:           1.1.1                                                      
 *                                                                                   
 *Purpose:           Store values associated with error-related inputs
 * 
 * 
-*Update Log:		v1.1.0
-*						- added new possible error modes
+*Update Log:		v1.1.1
+*						- added new error mode (ERR_FILENAME)
+*					v1.1.0
+*						- added error modes (ERR_FILENAME)
 *						- print method updated
 *						- numerical modes replaced with nice constants
 *						- constructor+accesors updated
@@ -35,6 +37,7 @@ public class Input
 	public static final int ERR_TID			= 6;	//alter a packets destination port
 	public static final int ERR_BLOCKNUM	= 7;	//incorrectly change block number
 	public static final int ERR_FORMAT		= 8;	//format incorrect
+	public static final int ERR_FILENAME	= 9;	//mess up file name
 	//packet type
 	public static final int PACKET_RRQ		= 1;	//RRQ Packet
 	public static final int PACKET_WRQ		= 2;	//WRQ Packet
@@ -107,6 +110,7 @@ public class Input
 	
 	@Override
 	//print as string
+	//TODO update this for additonal errors
 	public String toString()
 	{
 		String printable = "";
@@ -178,6 +182,9 @@ public class Input
 			case(ERR_FORMAT):
 				printable = printable + "corrupt FORMAT for ";
 				break;
+			case(ERR_FILENAME):
+				printable = printable + "corrupt FILENAME for ";
+				break;
 			default:
 				printable = printable + "!BAD MODE! ";
 				break;
@@ -230,6 +237,9 @@ public class Input
 				printable = printable + "to " + extraInt;
 				break;
 			case(ERR_FORMAT):
+				//do nothing, but not an error
+				break;
+			case(ERR_FILENAME):
 				//do nothing, but not an error
 				break;
 			default:
