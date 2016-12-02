@@ -81,8 +81,8 @@ public class TFTPHost
 	private DatagramArtisan dataArt=new DatagramArtisan();
 	boolean runFlag = true;
 	
-	private InetAddress serverIP=null;
-	private InetAddress clientIP=null;
+	private InetAddress serverIP;
+	private InetAddress clientIP;
 	private int serverPort=0;
 	private InetAddress sendToIP;
 	    
@@ -127,7 +127,7 @@ public class TFTPHost
 		//set default IP
 		try
 		{
-			sendToIP = InetAddress.getLocalHost();
+			serverIP = InetAddress.getLocalHost();
 		}
 		catch (Exception e)
 		{
@@ -733,15 +733,16 @@ public class TFTPHost
 		//save port 
 		clientPort = receivedPacket.getPort();
 		serverPort=0;
+		sendToIP=serverIP;
 		//CHANGE WITH INPUT
 		try{
 		clientIP=InetAddress.getLocalHost();
-		sendToIP=InetAddress.getLocalHost();
+		//sendToIP=InetAddress.getLocalHost();
 		}
 		
 		catch(Exception e){};
 		
-		serverIP=clientIP;
+		//serverIP=clientIP;
 	
 		while (true)
 		{
@@ -752,7 +753,6 @@ public class TFTPHost
 				if(serverPort==0)
 				{
 					serverPort=receivedPacket.getPort();
-					serverIP=receivedPacket.getAddress();	
 					console.print("ServerIP= "+ serverIP);
 				}
 				
@@ -915,7 +915,7 @@ public class TFTPHost
 				//show ipOutAddress
 				else if (input[0].equals("ip"))
 				{
-					console.print("ip Address: " + sendToIP.toString());
+					console.print("ip Address: " + serverIP.toString());
 				}
 				//reset inputStack
 				else if (input[0].equals("reset"))
@@ -972,7 +972,7 @@ public class TFTPHost
 					{
 						try
 						{
-							sendToIP = InetAddress.getLocalHost();
+							serverIP = InetAddress.getLocalHost();
 						}
 						catch(Exception e)
 						{
@@ -1003,7 +1003,7 @@ public class TFTPHost
 							}
 							
 							//try to set ip
-							sendToIP = InetAddress.getByAddress(host, addr);
+							serverIP = InetAddress.getByAddress(host, addr);
 						}
 						catch (Exception e)
 						{
