@@ -17,6 +17,7 @@
 * 
 *Update Log:		v2.1.1
 *						- Added switching for ipOut addresses
+*						- Added comments
 *					v2.1.0
 *						- Fixed error code 5 handling (malformed packet)
 *						- Fixed code error message printing
@@ -149,6 +150,7 @@ public class TFTPClient extends JFrame
 	private static final int IN_PORT_SERVER = 69;
 	private static final int MAX_SIZE = 512;
 	private static final int DATA_OFFSET = 4;
+	private static final int ABSOLUTE_BUFFER = 2000;
 	private static final byte[] OPCODE_RRQ =  {0,1}; 
 	private static final byte[] OPCODE_WRQ =  {0,2};
 	private static final byte[] OPCODE_DATA = {0,3};
@@ -259,7 +261,7 @@ public class TFTPClient extends JFrame
 	//type: DATA
 	private void generateDATAMaster(int blockNum, byte[] data)
 	{
-		//prep for block num
+		//encode blockNum into a byte array
 		byte[] blockNumArr = new byte[2];
 		blockNumArr[1]=(byte)(blockNum & 0xFF);
 		blockNumArr[0]=(byte)((blockNum >> 8)& 0xFF);
@@ -271,7 +273,7 @@ public class TFTPClient extends JFrame
 		
 		//construct array to hold data
 		//byte[] data = reader.pop();
-		byte[] toSend = new byte[data.length + 4];
+		byte[] toSend = new byte[data.length + DATA_OFFSET];
 		
 		//construct array
 		for(int i=0; i<2; i++)
@@ -347,7 +349,7 @@ public class TFTPClient extends JFrame
 		byte[] modeBA = mode.getBytes();
 			
 		//compute length of data being sent (metadata include) and create byte array
-		byte[] data = new byte[fileNameBA.length + modeBA.length + 4];
+		byte[] data = new byte[fileNameBA.length + modeBA.length + DATA_OFFSET];
 		int i = 2;
 			
 		//add first 2 bytes of opcode
@@ -422,7 +424,6 @@ public class TFTPClient extends JFrame
 		{
 			if(retransmitDATA)
 			{
-				System.out.println("Retransmitting");
 				sendPacket();//resend
 				retransmitDATA = false;
 			}
@@ -479,6 +480,13 @@ public class TFTPClient extends JFrame
 	}
 	
 	//receive ACK
+	/**
+	 * 
+	 *@return 	boolean
+	 *			True if:	-The client has received a valid DATA packet
+	 *			False if:	-An error is encountered
+	 *						-Socket time occurs
+	 **/
 	public boolean receiveDATA()
 	{	
 
@@ -488,12 +496,16 @@ public class TFTPClient extends JFrame
 		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
 
 		receivePacket("DATA");
+		
 		if(errorFlag)
 		{
 			return false;
 		}
+		
+		//Check if the receiveSocket has timed out in 'receivePacket'
 		if(timeoutFlag)
-		{
+		{	//Verify the overall timeout condition
+			//Timeouts every TIMEOUT period, eg. 5 seconds
 			if(System.currentTimeMillis() -startTime > TIMEOUT)
 			{
 				timeouts++;
@@ -605,8 +617,6 @@ public class TFTPClient extends JFrame
 		}
 		byte[] data = receivedPacket.getData();
 		if(establishedConnection){
-			System.out.println("serverInet: " + serverInet);
-			System.out.println("receivedPacket.getAddress: " + receivedPacket.getAddress());
 			if(serverInet.equals(receivedPacket.getAddress())){
 		  		if(receivedPacket.getPort() != serverTID){
 		  			buildError(5,receivedPacket,verbose,"Unexpected TID");
@@ -682,7 +692,6 @@ public class TFTPClient extends JFrame
 					serverTID = receivedPacket.getPort();
 
 					serverInet = receivedPacket.getAddress();
-					System.out.println("serverInet: " + serverInet);
 					establishedConnection = true;
 				}
 
@@ -743,7 +752,7 @@ public class TFTPClient extends JFrame
 	public void receivePacket(String type)
 	{	
 		//prep for response
-		byte[] response = new byte[MAX_SIZE+4];
+		byte[] response = new byte[ABSOLUTE_BUFFER];
 		receivedPacket = new DatagramPacket(response, response.length);
 		
 		//wait for response
@@ -1136,13 +1145,12 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 						fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
 						FileNameExtensionFilter filter = new FileNameExtensionFilter("Directories","*");
 						fileChooser.setFileFilter(filter);
-						fileChooser.setDialogTitle("Choose a directory to dump to on the server");
+						fileChooser.setDialogTitle("Choose a directory in which to store the file.");
 						fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 						int result = fileChooser.showOpenDialog(fileChooser);
 						if (result == JFileChooser.APPROVE_OPTION) {//file is found
 							File file = new File(fileChooser.getSelectedFile().getAbsolutePath() + "/Received"+input[1]);
 							clientDump = file;
-							System.out.println(clientDump.getAbsolutePath());
 							if(file.exists())
 							{
 								console.print("File already exist.");

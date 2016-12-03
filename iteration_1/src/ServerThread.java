@@ -328,7 +328,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			retransmit=false;
   		} catch(SocketTimeoutException e){
   			//Retransmit every timeout
-  			//Quite after 5 timeouts
+  			//Quit after 5 timeouts
 
   			if(System.currentTimeMillis() -startTime > TIMEOUT)
   			{
