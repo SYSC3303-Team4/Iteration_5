@@ -82,12 +82,12 @@ class TFTPWriteThread extends ServerThread
 		TFTPWriter writer = new TFTPWriter();		   
 		/* Check for Valid MODE. */
 		if(!mode.equalsIgnoreCase("netascii") && !mode.equalsIgnoreCase("octet")) {
-			buildError(4,requestPacket,verbose,"Invalid Mode");
+			buildError(4,requestPacket,"Invalid Mode");
 			exitGraceFully();
 			return; 
 		}
 
-		printReceivedPacket(requestPacket, verbose);
+		printReceivedPacket(requestPacket);
 		if(verbose){
 			console.print("Request parsed for:");
 			console.print("	Filename: " + fileName);
@@ -99,14 +99,14 @@ class TFTPWriteThread extends ServerThread
 		
 		/* File already exists error. */
 		if(file.exists()) { 
-			buildError(6,requestPacket,verbose,"");
+			buildError(6,requestPacket,"");
 			return;
 		}
 		
 		/* File permission error. */
 		if(!file.canWrite())
 		{
-			buildError(2,requestPacket,verbose,"");
+			buildError(2,requestPacket,"");
 			return;
 		}
 
@@ -124,7 +124,7 @@ class TFTPWriteThread extends ServerThread
 				clientInet, clientTID);
 
 
-		printSendPacket(sendPacket,verbose);
+		printSendPacket(sendPacket);
 
 		try {
 			sendReceiveSocket.send(sendPacket);
@@ -154,7 +154,7 @@ class TFTPWriteThread extends ServerThread
 			/* If you received valid data and do not wish to retransmit the last packet. */
 			if(!retransmitACK){
 
-				printReceivedPacket(receivePacket,verbose);
+				printReceivedPacket(receivePacket);
 				byte[] data = new byte[receivePacket.getLength()-4];
 
 				/* Parse data from DATA packet. */
@@ -166,7 +166,7 @@ class TFTPWriteThread extends ServerThread
 				try {
 					writer.write(data,file.getAbsolutePath()+"/"+fileName.toString());
 				} catch (SecurityException e1) {
-					buildError(2,receivePacket,verbose,"");
+					buildError(2,receivePacket,"");
 					e1.printStackTrace();
 					exitGraceFully();
 					return;
@@ -175,15 +175,15 @@ class TFTPWriteThread extends ServerThread
 				{
 					if(file.exists())
 					{
-						buildError(2,receivePacket,verbose,"");
+						buildError(2,receivePacket,"");
 						return;
 					}
-					buildError(1,receivePacket,verbose,"");
+					buildError(1,receivePacket,"");
 					exitGraceFully();
 					return;
 				}
 				catch(IOException e2){
-					buildError(3,receivePacket,verbose,"");
+					buildError(3,receivePacket,"");
 					exitGraceFully();
 					return;
 				}
@@ -215,7 +215,7 @@ class TFTPWriteThread extends ServerThread
 			sendPacket.setLength(response.length);
 
 			
-			printSendPacket(sendPacket,verbose);
+			printSendPacket(sendPacket);
 
 			/* Send response. */
 			try {

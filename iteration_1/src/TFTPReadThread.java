@@ -86,7 +86,7 @@ class TFTPReadThread  extends ServerThread
 
 	public void run() {
 		
-		printReceivedPacket(requestPacket, verbose);
+		printReceivedPacket(requestPacket);
 		if(verbose){
 			console.print("Request parsed for:");
 			console.print("	Filename: " + fileName + "\n");
@@ -95,7 +95,7 @@ class TFTPReadThread  extends ServerThread
 
 		/* Check for Valid MODE. */
 		if(!mode.equalsIgnoreCase("netascii") && !mode.equalsIgnoreCase("octet")) {
-			buildError(4,requestPacket,verbose,"Invalid Mode");
+			buildError(4,requestPacket,"Invalid Mode");
 			exitGraceFully();
 			return; 
 		}
@@ -107,14 +107,14 @@ class TFTPReadThread  extends ServerThread
 		/* File already exists error. */
 		if(!file.exists())
 		{
-			buildError(1,requestPacket,verbose,"");
+			buildError(1,requestPacket,"");
 			return;
 		}
 
 		/* File permission error. */
 		if(!file.canRead())
 		{
-			buildError(2,requestPacket,verbose,"");
+			buildError(2,requestPacket,"");
 			return;
 		}
 		
@@ -126,13 +126,13 @@ class TFTPReadThread  extends ServerThread
 		} catch (FileNotFoundException e1) {
 			if(file.exists())
 			{
-				buildError(2,requestPacket,verbose,"");
+				buildError(2,requestPacket,"");
 				return;
 			}
-			buildError(1,requestPacket,verbose,"");
+			buildError(1,requestPacket,"");
 			return;
 		} catch (IOException e) {
-			buildError(2,requestPacket,verbose,"");
+			buildError(2,requestPacket,"");
 			return;
 		}
 		byte[] rawData = new byte[4];
@@ -158,13 +158,13 @@ class TFTPReadThread  extends ServerThread
 				/* If there's no more data to be read exit. */
 				if(data == null){
 					if(sendZeroDataPacket == true){
-						sendNoData(requestPacket,verbose, blockNum,sendReceiveSocket);
+						sendNoData(requestPacket, blockNum,sendReceiveSocket);
 						//Waiting to receive final ACK
 						byte[] finalACK = new byte[4];
 						DatagramPacket finalACKPacket = new DatagramPacket(finalACK, finalACK.length);
 						startTime = System.currentTimeMillis();
 						while(!receiveACK()){if(errorFlag){exitGraceFully();return;}}
-						printReceivedPacket(finalACKPacket, verbose);
+						printReceivedPacket(finalACKPacket);
 					}
 					console.print("Read Request has completed.");
 					requestStop();
@@ -185,7 +185,7 @@ class TFTPReadThread  extends ServerThread
 				sendPacket = new DatagramPacket(dataPrime, dataPrime.length,
 						clientInet, clientTID);
 			}
-			printSendPacket(sendPacket, verbose);
+			printSendPacket(sendPacket);
 
 			/* Send the datagram packet to the client via a new socket. */
 			try {
@@ -201,7 +201,7 @@ class TFTPReadThread  extends ServerThread
 
 			startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data (this is used for retransmits).
 			while(!receiveACK()){if(errorFlag){exitGraceFully();return;}}//When this method returns it will either signal we have data, should retransmit or should exit with an error
-			printReceivedPacket(requestPacket, verbose);
+			printReceivedPacket(requestPacket);
 
 
 		}
