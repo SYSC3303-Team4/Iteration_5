@@ -38,6 +38,8 @@
 
 
 //imports
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.*;
 import java.net.*;
 
@@ -50,7 +52,7 @@ import errorhelpers.*;
 
 
 
-public class TFTPHost 
+public class TFTPHost implements KeyListener
 {
 	//declaring class-wise constants
 	//error modes
@@ -82,7 +84,9 @@ public class TFTPHost
 	private ConsoleUI console;
 	private InputStack inputStack = new InputStack();
 	private DatagramArtisan dataArt=new DatagramArtisan();
-	boolean runFlag = true;
+	private boolean runFlag = true;
+	private boolean haltRequested = false;
+	private int resetCount = 0;
 	
 	private InetAddress serverIP;
 	private InetAddress clientIP;
@@ -123,7 +127,7 @@ public class TFTPHost
 		verbose = false;
 		
 		//run UI
-		console = new ConsoleUI("Error Simulator");
+		console = new ConsoleUI("Error Simulator", this);
 		console.run();
 		console.colorScheme("prettyinpink");
 		
@@ -156,12 +160,23 @@ public class TFTPHost
 	
 	
 	//receive packet on inPort
-	public void receiveDatagram(DatagramSocket inputSocket)
+	public void receiveDatagram(DatagramSocket inputSocket)	
 	{
 		//construct an empty datagram packet for receiving purposes
 		byte[] arrayholder = new byte[MAX_SIZE];
 		receivedPacket = new DatagramPacket(arrayholder, arrayholder.length);
 		lastReceivedPacket=receivedPacket;
+		
+		//set delay
+		try
+		{
+			inputSocket.setSoTimeout(0);
+		}
+		catch (SocketException ioe)
+		{
+			console.printError("Socket Exception","Cannot set socket timeout");
+		}
+		
 		//wait for incoming data
 		if(verbose)
 		{
@@ -175,10 +190,31 @@ public class TFTPHost
 		{
 			console.printError("IOEception","Incoming socket timed out");
 		}
-		
-		
-		//deconstruct packet and print contents
 	}
+	
+	
+	//receive packet on inPort
+	public void receiveDatagramTimed(DatagramSocket inputSocket) throws IOException				//TODO
+	{
+		//construct an empty datagram packet for receiving purposes
+		byte[] arrayholder = new byte[MAX_SIZE];
+		receivedPacket = new DatagramPacket(arrayholder, arrayholder.length);
+		lastReceivedPacket=receivedPacket;
+		
+		//set delay
+		try
+		{
+			inputSocket.setSoTimeout(500);
+		}
+		catch (SocketException ioe)
+		{
+			console.printError("Socket Exception","Cannot set socket timeout");
+		}
+		
+		//wait for incoming data
+		inputSocket.receive(receivedPacket);
+	}
+	
 	
 	public DatagramPacket receive(DatagramSocket inputSocket, int timeOut) throws IOException
 	{
@@ -747,41 +783,60 @@ public class TFTPHost
 		
 		//serverIP=clientIP;
 	
-		while (true)					//TODO possile mod
+		while (!haltRequested)					//TODO possible mod
 		{
-					
 			if(!needSend)
 			{
-				receiveDatagram(genSocket);
-				if(serverPort==0)
-				{
-					serverPort=receivedPacket.getPort();
-					console.print("ServerIP= "+ serverIP);
-				}
-				
-				if(receivedPacket.getPort()==clientPort)
-				{
-					sendToPort=serverPort;
-					sendToIP=serverIP;
-					needSend=true;
-				}
-				
-				else if(receivedPacket.getPort()==serverPort)
-				{
-					sendToPort=clientPort;
-					sendToIP=clientIP;
-					needSend=true;
-				}
-				
-				else
+				//receive for 1/2 sec then check to see if host has been terminated via user command
+				boolean timeout = true;
+				while(!haltRequested && timeout)
 				{
 					try
 					{
-						genSocket.setSoTimeout(0);
+						receiveDatagramTimed(genSocket);
+						//packet received, do not loop
+						timeout = false;
 					}
-					catch (SocketException ioe)
+					catch (IOException ioe)
 					{
-						console.printError("SocketException","Cannot set socket timeout");
+						//no packet received, try again
+						timeout = true;
+					}
+				}
+				
+				//exit
+				if (!haltRequested)
+				{
+					if(serverPort==0)
+					{
+						serverPort=receivedPacket.getPort();
+						console.print("ServerIP= "+ serverIP);
+					}
+					
+					if(receivedPacket.getPort()==clientPort)
+					{
+						sendToPort=serverPort;
+						sendToIP=serverIP;
+						needSend=true;
+					}
+					
+					else if(receivedPacket.getPort()==serverPort)
+					{
+						sendToPort=clientPort;
+						sendToIP=clientIP;
+						needSend=true;
+					}
+					
+					else
+					{
+						try
+						{
+							genSocket.setSoTimeout(0);
+						}
+						catch (SocketException ioe)
+						{
+							console.printError("SocketException","Cannot set socket timeout");
+						}
 					}
 				}
 			}
@@ -794,6 +849,17 @@ public class TFTPHost
 			}
 		}
 		
+		//reset host flags
+		console.print("reseting console...");
+		haltRequested = false;
+		inputStack.clear();
+		nextGram = null;
+		needSend = true;
+		serverPort = 0;
+		resetCount++;
+		console.println();
+		console.print("---------------------- RESET " + resetCount + "----------------------");
+		console.println();
 	}
 	
 	public void mainPassingLoop()
@@ -1351,5 +1417,32 @@ public class TFTPHost
 		//run
 		host.mainPassingLoop();
 	}
+
+
+	@Override
+	//tab pressed
+	public void keyPressed(KeyEvent e) 
+	{
+		//declaring local method variables
+	    int keyCode = e.getKeyCode();
+	    
+	    //keycode handler
+	    switch(keyCode)
+	    {
+	    	//ESC key pressed
+	    	case (KeyEvent.VK_ESCAPE):
+	    		console.print("Requesting reset...");
+	    		haltRequested = true;
+	    		break;
+	    }
+	}
+
+
+	@Override
+	public void keyReleased(KeyEvent arg0) {}
+
+
+	@Override
+	public void keyTyped(KeyEvent arg0) {}
 
 }

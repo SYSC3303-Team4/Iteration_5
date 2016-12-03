@@ -2,15 +2,17 @@
 *Class:             Console.java
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
-*Date of Update:    16/11/2016                                              
-*Version:           1.2.1                               
+*Date of Update:    03/12/2016                                              
+*Version:           2.2.1                               
 *                                                                                   
 *Purpose:           Generic console for basic plain text output/inputs.
 *					Guaranteed thread-safe. Lots of neat methods that should make everyone's
 *					life easier. Tailor-made for Carleton University SYSC3303 TFTP Project.
 * 
 * 
-*Update Log:		v2.1.1
+*Update Log:		v2.2.0
+*						- constructor for externally handled keypress based ISR added
+*					v2.1.1
 *						- added some NEW LIT colors & color demo
 *						- prettier error popups
 *						- error method refactor
@@ -101,7 +103,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	private boolean inputReady;
 	
 	
-	//generic constructor
+	//generic constructor (used for client)
 	//TODO ### NOTE THIS SHOULD IMPLIMENT ConsoleUI(String, ActionListener) EVENTUALLY ###
 	public ConsoleUI(String name)
 	{
@@ -136,7 +138,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	}
 	
 	
-	//constructor for ISR based input
+	//constructor for ISR based input (used for server)
 	public ConsoleUI(String name, ActionListener listener)
 	{
 		//set up layout, save ID, initialize
@@ -169,6 +171,40 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
         add(inputLine, c);
 	}
 	
+	
+	//constructor for externally handled key-press triggered ISRs added (used for host)
+	public ConsoleUI(String name, KeyListener listener)
+	{
+		//set up layout, save ID, initialize
+		super(new GridBagLayout());
+		ID = name;
+		inputReady = false;
+		input = null;
+		inputBuffer = new CappedBuffer(25);
+		
+		//create text fields inputs
+		inputLine = new JTextField(45);
+		inputLine.addActionListener(this);
+		inputLine.addKeyListener(listener);
+		inputLine.addKeyListener(this);
+		
+		//set text fields for output
+		outputArea = new JTextArea(35,45);
+		outputArea.setEditable(false);
+		outputArea.setLineWrap(true);			//horizontal word wrap true
+		outputArea.setWrapStyleWord(true);		//horizontal word wrap true
+		JScrollPane scrollPane = new JScrollPane(outputArea);
+
+        //Add text areas in gridlayout
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        add(scrollPane, c);
+        c.fill = GridBagConstraints.BOTH;
+        c.weightx = 5.0;
+        c.weighty = 5.0;
+        add(inputLine, c);
+	}
 	
 	//swap color schemes
 	//return true if valid color scheme
@@ -525,11 +561,6 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	        	{
 	        		inputLine.setText(bufferReturn);
 	        	}
-	        	break;
-	        	
-	        //tab key pressed
-	        case (KeyEvent.VK_TAB):
-	        	
 	        	break;
 	     }
 	}
