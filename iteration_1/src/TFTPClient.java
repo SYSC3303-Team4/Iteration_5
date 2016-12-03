@@ -203,7 +203,7 @@ public class TFTPClient extends JFrame
 		//make and run the UI
 		console = new ConsoleUI("TFTPClient.java");
 		console.run();
-		console.colorScheme("dark");
+		console.colorScheme("bumblebee");
 	}
 	
 	
@@ -520,7 +520,7 @@ public class TFTPClient extends JFrame
 			}
 			return false;
 		}
-		//analyze ACK for format
+		//analyze DATA for format
 		if (verbose)
 		{
 			console.print("Client: Checking DATA...");
@@ -529,12 +529,12 @@ public class TFTPClient extends JFrame
 		if(establishedConnection){
 			if(serverInet.equals(receivedPacket.getAddress())){
 		  		if(receivedPacket.getPort() != serverTID){
-		  			buildError(5,receivedPacket,verbose,"Unexpected TID");
+		  			buildError(5,receivedPacket,"Unexpected TID");
 		  			errorFlag=true;
 					return false;
 		  		}
 			}  else {
-	  			buildError(5,receivedPacket,verbose,"Invalid InetAddress");
+	  			buildError(5,receivedPacket,"Invalid InetAddress");
 	  			console.print("Invalid InetAddress");
 	  			errorFlag=true;
 				return false;
@@ -543,9 +543,13 @@ public class TFTPClient extends JFrame
   		}
 
 		//check if data
-		if(data[0] == 0 && data[1] == 3){
-			if(receivedPacket.getLength() > 516){
-				buildError(4,receivedPacket, verbose,"Length of the DATA packet is over 516.");
+		if(data[0] == 0 && data[1] == 3)
+		{
+			if(receivedPacket.getLength() > 516)
+			{
+				buildError(4,receivedPacket,"Length of the DATA packet is over 516.");
+				errorFlag = true;
+				return false;
 			}
 			//Check if the blockNumber corresponds to the expected blockNumber
 			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
@@ -572,7 +576,7 @@ public class TFTPClient extends JFrame
 		else{
 			//ITERATION 5 ERROR
 			//Invalid TFTP code
-			buildError(5,receivedPacket,verbose,"OpCode is invalid");
+			buildError(5,receivedPacket,"OpCode is invalid");
 			errorFlag=true;
 			return false;
 		}
@@ -619,11 +623,11 @@ public class TFTPClient extends JFrame
 		if(establishedConnection){
 			if(serverInet.equals(receivedPacket.getAddress())){
 		  		if(receivedPacket.getPort() != serverTID){
-		  			buildError(5,receivedPacket,verbose,"Unexpected TID");
+		  			buildError(5,receivedPacket,"Unexpected TID");
 		  			return false;
 		  		} 
 			} else {
-	  			buildError(5,receivedPacket,verbose,"Invalid InetAddress");
+	  			buildError(5,receivedPacket,"Invalid InetAddress");
 	  			console.print("Invalid InetAddress");
 	  			errorFlag=true;
 				return false;
@@ -634,7 +638,7 @@ public class TFTPClient extends JFrame
 		{
 
 			if(receivedPacket.getLength() > 4){
-				buildError(4,receivedPacket, verbose,"Length of the ACK is over 4.");
+				buildError(4,receivedPacket,"Length of the ACK is over 4.");
 			}
 			//Check if the blockNumber corresponds to the expected blockNumber
 			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
@@ -658,7 +662,7 @@ public class TFTPClient extends JFrame
 			}
 			return true;
 		}
-		buildError(5,receivedPacket,verbose,"OpCode is invalid");
+		buildError(5,receivedPacket,"OpCode is invalid");
 		errorFlag=true;
 		return false;
 	}
@@ -814,7 +818,7 @@ public class TFTPClient extends JFrame
 ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     ----------------------------------------
     */
-    protected void buildError(int errorCode,DatagramPacket receivePacket, boolean verbose, String errorInfo){
+    private void buildError(int errorCode,DatagramPacket receivePacket, String errorInfo){
     	int errorSizeFactor = 5;
 
     	
@@ -868,8 +872,8 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		   printDatagram(sentPacket);
 	    }
 
+	    System.out.println("Length of Error is " + sentPacket.getLength());
 	    sendPacket();
-    	
     }
 	
 	

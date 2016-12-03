@@ -747,7 +747,7 @@ public class TFTPHost
 		
 		//serverIP=clientIP;
 	
-		while (true)
+		while (true)					//TODO possile mod
 		{
 					
 			if(!needSend)
