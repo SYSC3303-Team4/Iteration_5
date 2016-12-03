@@ -18,12 +18,14 @@ import ui.ConsoleUI;
 public class TFTPServer implements ActionListener
 {
 
-	// types of requests we can receive
+	/* Types of requests we can receive. */
 	public static enum Request { READ, WRITE, ERROR};
 
-	// UDP datagram packets and sockets used to send / receive
+	/* UDP datagram packets and sockets used to send / receive. */
 	private DatagramPacket receivePacket;
 	private DatagramSocket receiveSocket, sendSocket;
+	
+	/* UI. */
 	private static boolean verbose = false;
 	private ConsoleUI console;
 	private File file;
@@ -33,20 +35,20 @@ public class TFTPServer implements ActionListener
 
 
 	/**
-	 * Build the GUI.
+	 * Build the Server UI and initialize sockets.
 	 */
 
 	public TFTPServer(String title)
 	{
-		//make and run the UI
+		/* Make and run the UI. */
 		console = new ConsoleUI(title, this);
 		console.run();
 		console.colorScheme("halloween");
 		
 		try {
-			// Construct a datagram socket and bind it to port 69
-			// on the local host machine. This socket will be used to
-			// receive UDP Datagram packets.
+			/* Construct a datagram socket and bind it to port 69
+			* on the local host machine. This socket will be used to
+			* receive UDP Datagram packets.*/
 			receiveSocket = new DatagramSocket(69);
 			receiveSocket.setSoTimeout(5000);
 			sendSocket = new DatagramSocket();
@@ -55,6 +57,7 @@ public class TFTPServer implements ActionListener
 			se.printStackTrace();
 			System.exit(1);
 		}
+		/* Initialize Server Dump. */
 		while(file == null)
 		{
 			fileChooser = new JFileChooser();
@@ -84,7 +87,7 @@ public class TFTPServer implements ActionListener
 		int threadNum = 0;
 		ThreadGroup initializedThreads = new ThreadGroup("ServerThread");
 		
-		//print starting text
+		/* Print starting text. */
 		console.print("TFTPServer running");
 		console.print("type 'help' for command list");
 		console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
@@ -104,86 +107,81 @@ public class TFTPServer implements ActionListener
 		console.print("Verbose mode set " + verbose);
 		//==================================================
 		
-		//main input loop
+		/* Main loop */
 		while(runFlag) 
 		{	
-			// loop forever
-			// Construct a DatagramPacket for receiving packets up
-			// to 100 bytes long (the length of the byte array).
+		   /* Loop until instructed to close.
+			* Construct a DatagramPacket for receiving packets up
+			* to 100 bytes long (the length of the byte array).*/
 
 			data = new byte[100];
 			receivePacket = new DatagramPacket(data, data.length);
 
 			console.print("Server: Listening for requests...");
-			// Block until a datagram packet is received from receiveSocket.
 			try {
 				receiveSocket.receive(receivePacket);
 			}
 			catch(SocketTimeoutException e)
 			{
-				continue;
+				continue;// Timeout to see if the state of the runFlag has changed.
 			}
 			catch (IOException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
-
-			// Process the received datagram.
+			/* Print the received datagram. */
 			console.print("Server: Packet received:");
 			console.print("From host: " + receivePacket.getAddress());
 			console.print("Host port: " + receivePacket.getPort());
 			len = receivePacket.getLength();
 			console.print("Length: " + len);
 
-			int packetSize = receivePacket.getLength();
+			console.printByteArray(data, len);
+			console.printIndent("Cntn:  " + (new String(data,0,len)));
 
-			console.printByteArray(data, packetSize);
-			console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
-
-			// Form a String from the byte array.
-			String received = new String(data,0,len);
+			String received = new String(data,0,len);// Form a String from the byte array.
 			console.print(received);
 			
+			/* Process the received datagram. */
 			
-
 			// If it's a read, send back DATA (03) block 1
 			// If it's a write, send back ACK (04) block 0
 			// Otherwise, ignore it
-			ByteArrayOutputStream fileName = new ByteArrayOutputStream();
-			ByteArrayOutputStream mode = new ByteArrayOutputStream();
-			if (data[0]==0 && data[1]==1) req = Request.READ; // could be read
-			else if (data[0]==0 && data[1]==2) req = Request.WRITE; // could be write
-			else req = Request.ERROR; // bad
+			String fileName = "";
+			String mode = "";
+			if (data[0]==0 && data[1]==1) req = Request.READ; // Request is Read
+			else if (data[0]==0 && data[1]==2) req = Request.WRITE; // Request is Write
+			else req = Request.ERROR; // Request is Bad
 
 			if (req!=Request.ERROR) { // check for filename
-				// search for next all 0 byte
-				fileName.write(data[j]);
+				/* Search for next all 0 byte. */
 				for(j=2;j<len;j++) {
 					if (data[j] == 0) break;
 				}
 				if (j==len) req=Request.ERROR; // didn't find a 0 byte
 				if (j==2) req=Request.ERROR; // filename is 0 bytes long
+				fileName = new String(data,2,j-2);
 			}
 
 			if(req!=Request.ERROR) { // check for mode
-				// search for next all 0 byte
-				mode.write(data[k]);
+				/* Search for next all 0 byte. */
 				for(k=j+1;k<len;k++) { 
 					if (data[k] == 0) break;
 				}
 				if (k==len) req=Request.ERROR; // didn't find a 0 byte
 				if (k==j+1) req=Request.ERROR; // mode is 0 bytes long
+				mode = new String(data,j,k-j-1);
 			}
 
 			if(k!=len-1) req=Request.ERROR; // other stuff at end of packet        
 
-			// Create a response.
-			if (req==Request.READ) { // for Read it's 0301
+			/* Create a response. */
+			if (req==Request.READ) { 
 				console.print("Server: Generating Read Thread");
 				threadNum++;
 				Thread readRequest =  new TFTPReadThread(initializedThreads, receivePacket, "Thread "+threadNum, verbose,file, mode,fileName);
 				readRequest.start();
-			} else if (req==Request.WRITE) { // for Write it's 0400
+			} else if (req==Request.WRITE) { 
 				console.print("Server: Generating Write Thread");
 				threadNum++;
 				Thread writeRequest =  new TFTPWriteThread(initializedThreads, receivePacket,"Thread "+threadNum, verbose,file, mode,fileName);
@@ -220,21 +218,21 @@ public class TFTPServer implements ActionListener
 
 	public static void main( String args[] ) throws Exception
 	{
-
 		TFTPServer c = new TFTPServer("TFTP Server");
 		c.serverMain();
 	}
 
 
 	@Override
-	//ISR. Called whenever user has new input, interrupts current process *WHENEVER* new input
+	/**
+	 * ISR. Called whenever user has new input, interrupts current process *WHENEVER* new input
+	 */
 	public void actionPerformed(ActionEvent e) 
 	{
-		//get input. Do not wait (in case ISR called prematurely we dont want to cause server lag)
-		console.actionPerformed(e);
+		console.actionPerformed(e);//get input. Do not wait (in case ISR called prematurely we dont want to cause server lag)
 		String[] input = console.getParsedInput(false);
 		
-		//process input, handle inputs based on param number
+		/* Process input, handle inputs based on param number. */
 		if(input != null)
 		{
 			switch (input.length)

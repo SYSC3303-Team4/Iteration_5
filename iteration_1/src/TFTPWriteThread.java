@@ -31,7 +31,6 @@
  *                		-Refactored printing code 
  */
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -46,14 +45,13 @@ class TFTPWriteThread extends ServerThread
 	/**
 	 * The text area where this thread's output will be displayed.
 	 */
-	private String threadNumber;
 
 	public final byte[] response = {0, 4, 0, 0};
 
 	//declaring local class constants
 	private static final int ABSOLUTE_PACKET_BUFFER_SIZE = 1000;
 
-	public TFTPWriteThread(ThreadGroup group, DatagramPacket requestPacketInfo,String thread, Boolean verboseMode,File serverDump,ByteArrayOutputStream fileName, ByteArrayOutputStream mode) {
+	public TFTPWriteThread(ThreadGroup group, DatagramPacket requestPacketInfo,String thread, Boolean verboseMode,File serverDump,String fileName, String mode) {
 		super(group,thread,new ConsoleUI("Write Thread "+thread));
 		console.run();
 		requestPacket = requestPacketInfo;  
@@ -81,11 +79,9 @@ class TFTPWriteThread extends ServerThread
 	}
 
 	public void run() {
-		TFTPWriter writer = new TFTPWriter();
-		connectionEstablished = true;
-		String modeString = mode.toString();		   
+		TFTPWriter writer = new TFTPWriter();		   
 		//Check for Valid MODE
-		if(!modeString.equalsIgnoreCase("netascii") && !modeString.equalsIgnoreCase("octet")) {
+		if(!mode.equalsIgnoreCase("netascii") && !mode.equalsIgnoreCase("octet")) {
 			buildError(4,requestPacket,verbose,"Invalid Mode");
 			exitGraceFully();
 			return; 
@@ -95,9 +91,8 @@ class TFTPWriteThread extends ServerThread
 		printReceivedPacket(requestPacket, verbose);
 		if(verbose){
 			console.print("Request parsed for:");
-			console.print("	Filename: " + fileName.toString());
-			console.print("	Mode: " + new String(mode.toByteArray(),
-					0,mode.toByteArray().length) + "\n");
+			console.print("	Filename: " + fileName);
+			console.print("	Mode: " + mode + "\n");
 		}
 
 		//Write file to directory
@@ -133,8 +128,7 @@ class TFTPWriteThread extends ServerThread
 		}
 
 		while(!stopRequested){
-			//Wait for next DATA datagram in format:
-			startTime = System.currentTimeMillis();
+			//Wait for next DATA datagram in format
 			/*
 			  2 bytes    2 bytes       n bytes
 			  ---------------------------------
@@ -147,6 +141,7 @@ class TFTPWriteThread extends ServerThread
 
 			console.print("Server: Waiting for packet.");
 			// Block until a datagram packet is received from receiveSocket.
+			startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data (this is used for retransmits).
 			while(!receiveDATA()){if(errorFlag){exitGraceFully();return;}}
 
 			if(!retransmitACK){
@@ -231,7 +226,6 @@ class TFTPWriteThread extends ServerThread
 			}
 
 		}
-		console.print("Server: thread closing.");
 		exitGraceFully();
 	}
 
