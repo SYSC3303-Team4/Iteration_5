@@ -71,24 +71,25 @@ public class TFTPHost
 	//declaring local instance variables
 	private DatagramPacket sentPacket;
 	private DatagramPacket receivedPacket;
-	private DatagramPacket lastReceivedPacket;
-	private DatagramSocket inSocket;
+	private DatagramPacket lastReceivedPacket;//used in the delay packet, or order to know what to resend
+	private DatagramSocket inSocket;//initial sending socket
 	private DatagramSocket genSocket;
-	private int clientPort;
+	
+	
+	private int clientPort;//client port to send to
 	private boolean verbose;
 	private ConsoleUI console;
 	private InputStack inputStack = new InputStack();
 	private DatagramArtisan dataArt=new DatagramArtisan();
 	boolean runFlag = true;
 	
-	private InetAddress serverIP=null;
-	private InetAddress clientIP=null;
-	private int serverPort=0;
-	private InetAddress sendToIP;
+	private InetAddress serverIP=null; //IP for server computer, local by default
+	private InetAddress clientIP=null;// IP for client computer, local by default
+	private int serverPort=0;//Set to relevant value after first packet received from server
+	private InetAddress sendToIP;//swap value for where to send packet
 	    
-	//sarah var
-	DatagramPacket nextGram=null;
-	private boolean needSend=true;
+	private boolean needSend=true;//used to flip between listening and sending
+	
 	//declaring local class constants
 	private static final int CLIENT_RECEIVE_PORT = 23;
 	private static final int SERVER_RECEIVE_PORT = 69;
@@ -98,8 +99,6 @@ public class TFTPHost
 	private static final int MAX_DELAY_SEGMENTS = 10000;
 
 
-
-	
 	//generic constructor
 	public TFTPHost()
 	{
@@ -123,6 +122,7 @@ public class TFTPHost
 		console = new ConsoleUI("Error Simulator");
 		console.run();
 		console.colorScheme("prettyinpink");
+		
 		
 		//set default IP
 		try
@@ -174,7 +174,7 @@ public class TFTPHost
 		}
 		
 		
-		//deconstruct packet and print contents
+		//Deconstruct packet and print contents
 	}
 	
 	public DatagramPacket receive(DatagramSocket inputSocket, int timeOut) throws IOException
@@ -209,6 +209,7 @@ public class TFTPHost
 
 	}
 	
+	// try to receive data during delay loops
 	public void tryReceive(DatagramSocket inputSocket,int timeOut) throws IOException
 	{
 		byte[] arrayholder = new byte[MAX_SIZE];
@@ -278,17 +279,17 @@ public class TFTPHost
 		console.print("Packet successfully sent");
 		
 	}
-	
-	public void changeMode(int outPort, DatagramSocket socket,InetAddress sIP)//netsci ascii
+	//change mode to anything
+	public void changeMode(int outPort, DatagramSocket socket,InetAddress sIP)
 	{
 		console.print("Change mode selected, changing mode to"+ inputStack.peek().getNewMode());
 		
-		
+		//conver int to byte
 		byte newOP[] = new byte[2];
-	
 		newOP[1] = (byte)(receivedPacket.getData()[1] & 0xFF);
 		newOP[0] = (byte)((receivedPacket.getData()[0] >> 8)& 0xFF);
 		
+		//create new packet
 		receivedPacket=dataArt.produceRWRQ(newOP,dataArt.getFileName(receivedPacket),inputStack.peek().getNewMode(), sIP, outPort);
 		
 		sendDatagram(outPort,socket,sIP);
@@ -309,7 +310,6 @@ public class TFTPHost
 		byte[] opCode = da.getOpCode(receivedPacket);
 		int blockNum = da.getBlockNum(receivedPacket);
 		byte[] data = da.getData(receivedPacket);
-		InetAddress address = receivedPacket.getAddress();
 		int packetPort = receivedPacket.getPort();
 		
 		//tack on garbage in dataWithTrash[]
@@ -331,13 +331,13 @@ public class TFTPHost
 		needSend=false;
 	}
 	
-	
-	public void changeType(int outPort, DatagramSocket socket,InetAddress sIP)//change OP
+	//change OP code of packet
+	public void changeType(int outPort, DatagramSocket socket,InetAddress sIP)
 	{
 		console.print("Changeing Type to" +inputStack.peek().getOpcode());
 		
+		//convert int to byte 
 		byte newOP[] = new byte[2];
-		
 		newOP[1] = (byte)(inputStack.peek().getOpcode());
 		newOP[0] = (byte)(0);
 		
@@ -345,18 +345,28 @@ public class TFTPHost
 		if(receivedPacket.getData()[1]==1 ||receivedPacket.getData()[1]==2)
 		{
 			receivedPacket=dataArt.produceRWRQ(newOP,dataArt.getFileName(receivedPacket),dataArt.getMode(receivedPacket), sIP, outPort);
-			console.print("change read/write rrq");
+			if(verbose)
+			{
+				console.print("change read/write rrq");
+		
+			}
 		}
 		
 		else if (receivedPacket.getData()[1]==3)
 		{
-			console.print("change data");
+			if(verbose)
+			{
+				console.print("change data");
+			}
 			receivedPacket=dataArt.produceDATA(newOP, dataArt.getBlockNum(receivedPacket), dataArt.getData(receivedPacket), sIP,outPort);
 		}
 		
 		else if (receivedPacket.getData()[1]==4)
 		{
-			console.print("change ack");
+			if(verbose)
+			{
+				console.print("change ack");
+			}
 			receivedPacket=dataArt.produceACK(newOP, dataArt.getBlockNum(receivedPacket), sIP,outPort);
 		}
 		
@@ -371,6 +381,8 @@ public class TFTPHost
 		
 	}
 	
+	
+	//send to input port
 	public void changePort(int outPort, DatagramSocket socket, InetAddress sIP)
 	{
 		console.print("Sending Data to"+ inputStack.peek().getTID());
@@ -378,13 +390,14 @@ public class TFTPHost
 		needSend=false;
 	}
 	
+	
+	//change block number
 	public void changeBlock(int outPort, DatagramSocket socket,InetAddress sIP)
 	{
 		console.print("Change Block slected, changing block number to "+inputStack.peek().getAlteredBlockNum());
 		
-		
+		//conver into to byte
 		byte newOP[] = new byte[2];
-		
 		newOP[1] = (byte)(receivedPacket.getData()[1] & 0xFF);
 		newOP[0] = (byte)((receivedPacket.getData()[0] >> 8)& 0xFF);
 		
@@ -414,6 +427,7 @@ public class TFTPHost
 		
 	}
 	
+	//determine how to mess with packet, if at all
 	public void passIt(int mode,int delay,int clientPort,DatagramSocket genSocket, InetAddress sIP)
 	{
 		if(mode==0)//delay
@@ -438,7 +452,7 @@ public class TFTPHost
 		{
 			if(verbose)
 			{
-				console.print("lose try");
+				console.print("Lose Packet");
 			}
 			losePack( clientPort, genSocket,sIP);
 		}
@@ -497,24 +511,32 @@ public class TFTPHost
 		}
 	}
 	
+	//delay packet
 	public void delayPack(int delay, int clientPort,DatagramSocket  genSocket, InetAddress sIP)
 	{
 		int[] delayArray = new int[MAX_DELAY_SEGMENTS];
+		
 		if(verbose)
 		{
 			console.print("IN DELAY PACKET "+delay);
 		}
-		for(int k = 0; delay != 0; k++){
-			if(delay < CLIENT_SERVER_TIMEOUT){
+		
+		//puts length of time <Timeout into an array, until contents adds up to delay
+		for(int k = 0; delay != 0; k++)
+		{
+			if(delay < CLIENT_SERVER_TIMEOUT)
+			{
 				delayArray[k] = delay;
 				delay = 0;
 			}
-			else	{
+			else	
+			{
 				delayArray[k] = CLIENT_SERVER_TIMEOUT;
 				delay = delay - CLIENT_SERVER_TIMEOUT;
 			}
 		}
 		
+		//iterated throught delay array, poping out between each time out, to receive new data. if any
 		for(int i = 0; i < delayArray.length; i++ )
 		{
 			if(delayArray[i]>0)
@@ -528,15 +550,16 @@ public class TFTPHost
 						}
 						tryReceive(genSocket, delayArray[i]);//receive something random	
 						
+						//Handling received data
 						if(receivedPacket.getPort()==clientPort)
 						{
-							sendDatagram(serverPort, genSocket,sIP);
+							sendDatagram(serverPort, genSocket,serverIP);
 							needSend=false;
 						}
 						
 						else if(receivedPacket.getPort()==serverPort)
 						{
-							sendDatagram(clientPort, genSocket,sIP);
+							sendDatagram(clientPort, genSocket,clientIP);
 							needSend=false;
 						}
 					}
@@ -545,7 +568,7 @@ public class TFTPHost
 						console.printError("SocketException", "SOTIMEOUT SET RETURN ERRROR: Add coherent comments");
 						return;
 					}
-					catch (IOException ioe)//timeout, did not receive data, should delay packet
+					catch (IOException ioe)//timeout, did not receive data, should send delayed packet
 					{
 						if(delayArray[i+1]==0)
 						{
@@ -566,6 +589,7 @@ public class TFTPHost
 		}
 		return;
 	}
+	
 	
 	public void duplicatePack( int cPort,DatagramSocket  genSocket, InetAddress sIP)
 	{
@@ -621,16 +645,17 @@ public class TFTPHost
 		}
 	}
 	
-	
+	//lose Packet, dont need to actually do anything
 	public void losePack( int clientPort,DatagramSocket  genSocket, InetAddress sIP)
 	{
 		if(verbose)
 		{
 			console.print("Data Lost");
 		}
-		needSend=false;//new add
+		needSend=false;
 	}
 	
+	//determin
 	public void maybeSend(int clientPort,DatagramSocket genSocket,DatagramPacket receivedPacket, InetAddress sIP )
 	{    
 		if(inputStack.peek()!=null)	
@@ -644,6 +669,8 @@ public class TFTPHost
 			int mode=inputStack.peek().getMode();
 			int delay=(inputStack.peek().getDelay())*1000;
 			int packType=inputStack.peek().getPacketType();
+			
+			//converting ints to byte[]
 			byte bytePackType[] = new byte[2];
 			
 			bytePackType[1] = (byte)(packType & 0xFF);
@@ -652,14 +679,7 @@ public class TFTPHost
 			byteBlockNum[1] = (byte)(bNum & 0xFF);
 			byteBlockNum[0] = (byte)((bNum >> 8)& 0xFF);
 			
-			/*
-			console.print("bytePackType[0]: "+ bytePackType[0]);
-			console.print("bytePackType[1]: "+bytePackType[1]);
-			
-			console.print("receivedPacket.getData()[0]: "+ receivedPacket.getData()[0]);
-			console.print("receivedPacket.getData()[1]: "+receivedPacket.getData()[1]);
-			*/
-			
+			//packet type and number match, need to alter packet
 			if(bytePackType[1]==receivedPacket.getData()[1] && bytePackType[0] == receivedPacket.getData()[0] && byteBlockNum[1]==receivedPacket.getData()[3] && byteBlockNum[0]==receivedPacket.getData()[2])
 			{
 				//proper packet type and block num, mess with this one right here
@@ -685,6 +705,7 @@ public class TFTPHost
 				inputStack.pop();
  
 			}
+			//regular running
 			else
 			{
 				if(verbose)
@@ -706,6 +727,7 @@ public class TFTPHost
 	public void errorSimHandle()
 	{
 		int sendToPort=SERVER_RECEIVE_PORT;
+		
 		//wait for original RRQ/WRQ from client
 		receiveDatagram(inSocket);
 		console.print("First Packet Recieved");
@@ -733,10 +755,13 @@ public class TFTPHost
 		//save port 
 		clientPort = receivedPacket.getPort();
 		serverPort=0;
-		//CHANGE WITH INPUT
-		try{
-		clientIP=InetAddress.getLocalHost();
-		sendToIP=InetAddress.getLocalHost();
+		
+		
+		//setting default IP's
+		try
+		{
+			clientIP=InetAddress.getLocalHost();
+			sendToIP=InetAddress.getLocalHost();
 		}
 		
 		catch(Exception e){};
@@ -746,9 +771,12 @@ public class TFTPHost
 		while (true)
 		{
 					
+			//waiting to receieve Packet
 			if(!needSend)
 			{
 				receiveDatagram(genSocket);
+				
+				//first packet from server, set up default values
 				if(serverPort==0)
 				{
 					serverPort=receivedPacket.getPort();
@@ -756,6 +784,7 @@ public class TFTPHost
 					console.print("ServerIP= "+ serverIP);
 				}
 				
+				//Received packet came from client, send to server
 				if(receivedPacket.getPort()==clientPort)
 				{
 					sendToPort=serverPort;
@@ -763,6 +792,7 @@ public class TFTPHost
 					needSend=true;
 				}
 				
+				//Received packet came from server, send to client
 				else if(receivedPacket.getPort()==serverPort)
 				{
 					sendToPort=clientPort;
