@@ -17,14 +17,13 @@ public abstract class ServerThread extends Thread{
 	protected static final int TIMEOUT = 5; //Seconds
 	protected static final int MAX_TIMEOUTS = 5;
 	protected int timeouts = 0;
-	protected boolean retransmit = false;
 	protected int blockNum = 1;
 	protected boolean timeoutFlag = false;
 	protected DatagramPacket sendPacket;
 	protected DatagramPacket requestPacket;
 	protected DatagramPacket receivePacket;
-	protected boolean retransmitDATA;
-	protected boolean retransmitACK;
+	protected boolean retransmitDATA = false;
+	protected boolean retransmitACK = false;
 	protected long startTime;
 	protected boolean verbose;
 	protected String fileName;
@@ -213,7 +212,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		/* Receive ACK. */
   		try {
   			sendReceiveSocket.receive(receivePacket);
-  			retransmit=false;
+  			retransmitDATA=false;
   		} catch(SocketTimeoutException e){
   			//Retransmit every timeout
   			//Quit after 5 timeouts
@@ -330,7 +329,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		/* Receive Data. */
   		try {
   			sendReceiveSocket.receive(requestPacket);
-  			retransmit=false;
+  			retransmitACK=false;
   		} catch(SocketTimeoutException e){
   			//Retransmit every timeout
   			//Quite after 5 timeouts
