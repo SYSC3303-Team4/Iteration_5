@@ -123,6 +123,7 @@ public class TFTPClient extends JFrame
 	private static Scanner scan= new Scanner(System.in);
 	private static JTextArea fileChooserFrame;
 	private File file;
+	private File clientDump;
 	private JFileChooser fileChooser;
 	private ConsoleUI console;
 	private int blockNum;
@@ -701,7 +702,7 @@ public class TFTPClient extends JFrame
 				//save data
 				try
 				{
-					writer.write(procData,"Received"+file);
+					writer.write(procData,clientDump.getAbsolutePath());
 				}
 				catch(FileNotFoundException e)
 				{
@@ -1129,14 +1130,27 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 					//pull in default mode
 					else if (input[0].equals("pull"))
 					{
-						File file = new File("Received"+input[1]);
-						if(file.exists())
-						{
-							console.print("File already exist.");
-						}
-						else
-						{
-							sendRRQ(input[1], standardMode);
+						//get user file
+						fileChooserFrame = new JTextArea(5,40);
+						fileChooser = new JFileChooser();
+						fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+						FileNameExtensionFilter filter = new FileNameExtensionFilter("Directories","*");
+						fileChooser.setFileFilter(filter);
+						fileChooser.setDialogTitle("Choose a directory to dump to on the server");
+						fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+						int result = fileChooser.showOpenDialog(fileChooser);
+						if (result == JFileChooser.APPROVE_OPTION) {//file is found
+							File file = new File(fileChooser.getSelectedFile().getAbsolutePath() + "/Received"+input[1]);
+							clientDump = file;
+							System.out.println(clientDump.getAbsolutePath());
+							if(file.exists())
+							{
+								console.print("File already exist.");
+							}
+							else
+							{
+								sendRRQ(input[1], standardMode);
+							}
 						}
 					}
 					//alter color scheme
