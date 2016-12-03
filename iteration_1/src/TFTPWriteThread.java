@@ -142,14 +142,14 @@ class TFTPWriteThread extends ServerThread
 		   
 		   //Check for Valid MODE
 		   if(!modeString.equalsIgnoreCase("netascii") && !modeString.equalsIgnoreCase("octet")) {
-			   buildError(4,requestPacket,verbose,"Invalid Mode");
+			   buildError(4,requestPacket,"Invalid Mode");
 			   exitGraceFully();
 	    	   return; 
 		   }
 		   
 		   
 		   
-		   printReceivedPacket(requestPacket, verbose);
+		   printReceivedPacket(requestPacket);
 		    /* Exit Gracefully if the stop is requested. */
 	       if(stopRequested){exitGraceFully();return;}  
 	       if(verbose){
@@ -163,7 +163,7 @@ class TFTPWriteThread extends ServerThread
 	       //Write file to directory
 	       File fileName = new File(file.getAbsolutePath()+"/"+filename.toString());
 		   if(fileName.exists()) { 
-		    	   buildError(6,requestPacket,verbose,"");
+		    	   buildError(6,requestPacket,"");
 		    	   return;
 			}
 	
@@ -180,7 +180,7 @@ class TFTPWriteThread extends ServerThread
 				   requestPacket.getAddress(), requestPacket.getPort());
 		   
 
-		   printSendPacket(sendPacket,verbose);
+		   printSendPacket(sendPacket);
 		   
 	       try {
 	    	   sendReceiveSocket.send(sendPacket);
@@ -216,7 +216,7 @@ class TFTPWriteThread extends ServerThread
 
 		       if(!retransmitACK){
 		       
-		    	   printReceivedPacket(requestPacket,verbose);
+		    	   printReceivedPacket(requestPacket);
 			       byte[] data = new byte[requestPacket.getLength()-4];
 	
 			       //Parse data from DATA packet
@@ -238,7 +238,7 @@ class TFTPWriteThread extends ServerThread
 			       try {
 						writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
 					} catch (SecurityException e1) {
-						buildError(2,requestPacket,verbose,"");
+						buildError(2,requestPacket,"");
 						e1.printStackTrace();
 						exitGraceFully();
 						return;
@@ -247,15 +247,15 @@ class TFTPWriteThread extends ServerThread
 			       {
 			    	   if(file.exists())
 			    	   {
-			    		   buildError(2,requestPacket,verbose,"");
+			    		   buildError(2,requestPacket,"");
 				    	   return;
 			    	   }
-			    	   buildError(1,requestPacket,verbose,"");
+			    	   buildError(1,requestPacket,"");
 			    	   exitGraceFully();
 			    	   return;
 			       }
 			       catch(IOException e2){
-						buildError(3,requestPacket,verbose,"");
+						buildError(3,requestPacket,"");
 						exitGraceFully();
 						return;
 					}
@@ -285,7 +285,7 @@ class TFTPWriteThread extends ServerThread
 		       sendPacket.setLength(response.length);
 		       
 		       /* Exit Gracefully if the stop is requested. */
-		       printSendPacket(sendPacket,verbose);
+		       printSendPacket(sendPacket);
 
 		       try {
 		    	   sendReceiveSocket.send(sendPacket);

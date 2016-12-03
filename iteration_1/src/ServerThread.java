@@ -52,21 +52,21 @@ public abstract class ServerThread extends Thread{
 		console.print("Server: Closing thread.");
 	} 
 	
-	protected void printReceivedPacket(DatagramPacket receivedPacket, boolean verbose){
+	protected void printReceivedPacket(DatagramPacket packet){
 		console.print("Server: Received packet...");
 		if(verbose){
-			byte[] data = receivedPacket.getData();
-			int packetSize = receivedPacket.getLength();
+			byte[] data = packet.getData();
+			int packetSize = packet.getLength();
 	
-			console.printIndent("Source: " + receivedPacket.getAddress());
-			console.printIndent("Port:      " + receivedPacket.getPort());
+			console.printIndent("Source: " + packet.getAddress());
+			console.printIndent("Port:      " + packet.getPort());
 			console.printIndent("Bytes:   " + packetSize);
 			console.printByteArray(data, packetSize);
 			console.printIndent("Cntn:  " + (new String(data,0,packetSize)));
 		}
 	}
 	
-	protected void printSendPacket(DatagramPacket sendPacket, boolean verbose){
+	protected void printSendPacket(DatagramPacket sendPacket){
 		console.print("Server: Sending packet...");
 		if(verbose)
 		{
@@ -82,16 +82,18 @@ public abstract class ServerThread extends Thread{
 		}
 	}
 	
-    protected void printError(DatagramPacket packet,boolean verbose){
+    protected void printError(DatagramPacket packet){
+		byte[] data = packet.getData();
+		int packetSize = packet.getLength();
+		
     	console.print("Server: Error packet received");
     	console.print("From client: " + packet.getAddress());
     	console.print("From client port: " + packet.getPort());
-	    console.print("Length: " + packet.getLength());
-	    console.print("Error Code: " + new String(packet.getData(),
+	    console.print("Length: " + packetSize);
+	    console.print("Error Code: " + new String(data,
 				   2,2));
 	    console.print("ErrorMessage: " );
-	    console.print(new String(packet.getData(),
-				   4,packet.getLength()-1));
+	    console.print(new String(data,4,packetSize-4));
     }
     /* Send Data packet with no data
     2 bytes    2 bytes       0 bytes
@@ -99,7 +101,7 @@ public abstract class ServerThread extends Thread{
 DATA  | 03    |   Block #  |    Data    |
     ---------------------------------
     */
-    protected void sendNoData(DatagramPacket requestPacket,boolean verbose,int blockNumber,DatagramSocket sendReceiveSocket){
+    protected void sendNoData(DatagramPacket requestPacket,int blockNumber,DatagramSocket sendReceiveSocket){
     	byte[] data = new byte[4];
     	data[0] = 0;
     	data[1] = 3;
@@ -112,7 +114,7 @@ DATA  | 03    |   Block #  |    Data    |
 	/* Exit Gracefully if the stop is requested. */
 	   if(stopRequested){exitGraceFully();}
        console.print("Server: Sending packet:");
-       printSendPacket(sendPacket, verbose);
+       printSendPacket(sendPacket);
 
       	try {
       		sendReceiveSocket.send(sendPacket);
@@ -136,7 +138,7 @@ DATA  | 03    |   Block #  |    Data    |
 ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     ----------------------------------------
     */
-    protected void buildError(int errorCode,DatagramPacket requestPacket, boolean verbose, String errorInfo){
+    protected void buildError(int errorCode,DatagramPacket requestPacket, String errorInfo){
     	int errorSizeFactor = 5;
     	
     	String errorMsg = new String("Unknown Error.");
@@ -187,7 +189,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 				     requestPacket.getAddress(), requestPacket.getPort());
 		/* Exit Gracefully if the stop is requested. */
 		   if(stopRequested){exitGraceFully();}
-		   printSendPacket(sendPacket,verbose);
+		   printSendPacket(sendPacket);
 
 	       	try {
 	       		sendReceiveSocket.send(sendPacket);
@@ -220,6 +222,8 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			//receiveDATA();
   			sendReceiveSocket.receive(requestPacket);
   			retransmit=false;
+  			
+  			console.print("requestPacket Length: " + requestPacket.getLength());
   		} catch(SocketTimeoutException e){
   			//Retransmit every timeout
   			//Quite after 5 timeouts
@@ -247,33 +251,34 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		//analyze ACK for format
   		if (verbose)
   		{
-  			console.print("Client: Checking ACK...");
-  			printReceivedPacket(requestPacket, verbose);
+  			console.print("Server: Checking assumed ACK...");
+  			printReceivedPacket(requestPacket);
   		}
   		byte[] data = requestPacket.getData();
   		if(connectionEstablished){
   			if(clientInet.equals(requestPacket.getAddress())){
 		  		if(requestPacket.getPort() != clientTID){
-		  			buildError(5,requestPacket,verbose,"Unexpected TID");
+		  			buildError(5,requestPacket,"Unexpected TID");
 		  			console.print("Unexpected TID");
 		  			errorFlag=true;
 					return false;
 		  		}
   			}
   			else {
-	  			buildError(5,requestPacket,verbose,"Invalid InetAddress");
+	  			buildError(5,requestPacket,"Invalid InetAddress");
 	  			console.print("Invalid InetAddress");
 	  			errorFlag=true;
 				return false;
   			} 
   		}
-  		//check ACK for validity
-		if(data.length > 4){
-			buildError(4,requestPacket, verbose,"Length of the ACK is over 4.");
-			errorFlag=true;
-			return false;
-		}
+
   		if(data[0] == 0 && data[1] == 4){
+  	  		//check ACK for validity
+  			if(requestPacket.getLength() > 4){
+  				buildError(4,requestPacket,"Length of the ACK is over 4.");
+  				errorFlag=true;
+  				return false;
+  			}
 
   			//Check if the blockNumber corresponds to the expected blockNumber
   			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
@@ -302,12 +307,12 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			}
   		}
   		else if(data[0] == 0 && data[1] == 5){
-  			printError(requestPacket, verbose);
+  			printError(requestPacket);
   			errorFlag=true;
 			return false;
   		}
   		else{
-  			buildError(5,requestPacket,verbose,"OpCode is invalid");
+  			buildError(5,requestPacket,"OpCode is invalid");
   			errorFlag=true;
 			return false;
   		}
@@ -359,21 +364,21 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		if(connectionEstablished){
   			if(clientInet.equals(requestPacket.getAddress())){
 		  		if(requestPacket.getPort() != clientTID){
-		  			buildError(5,requestPacket,verbose,"Unexpected TID");
+		  			buildError(5,requestPacket,"Unexpected TID");
 		  			console.print("Unexpected TID");
 		  			errorFlag=true;
 					return false;
 		  		}
   			}
   			else {
-	  			buildError(5,requestPacket,verbose,"Invalid InetAddress");
+	  			buildError(5,requestPacket,"Invalid InetAddress");
 	  			console.print("Invalid InetAddress");
 	  			errorFlag=true;
 				return false;
   			}
   		}
 		if(requestPacket.getLength() > 516){
-			buildError(4,requestPacket, verbose,"Length of the DATA packet is over 516.");
+			buildError(4,requestPacket,"Length of the DATA packet is over 516.");
 			errorFlag=true;
 			return false;
 		}
@@ -391,7 +396,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				if (verbose)
   		  		{
   		  			console.print("Received Duplicate Packet: ");
-  		  			printReceivedPacket(requestPacket, verbose);
+  		  			printReceivedPacket(requestPacket);
   		  		}
   				if(System.currentTimeMillis() -startTime > TIMEOUT)
   				{
@@ -409,12 +414,12 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			}
   		}
   		else if(data[0] == 0 && data[1] == 5){
-  			printError(requestPacket, verbose);
+  			printError(requestPacket);
   			errorFlag=true;
 			return false;
   		}
   		else{
-  			buildError(5,requestPacket,verbose,"OpCode is invalid");
+  			buildError(5,requestPacket,"OpCode is invalid");
   			errorFlag=true;
 			return false;
   		}
