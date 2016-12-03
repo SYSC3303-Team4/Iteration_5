@@ -34,20 +34,15 @@
  *                 		-
  *  
  */
-import java.io.ByteArrayOutputStream;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.nio.file.AccessDeniedException;
 import java.util.*;
 
-import javax.swing.JTextArea;
 
 import ui.ConsoleUI;
 
@@ -56,125 +51,74 @@ class TFTPReadThread  extends ServerThread
 	//INIT general variables
 	boolean sendZeroDataPacket = false;
 	boolean duplicateACK = false;
-	private String threadNumber;
 	public final byte[] response = {0, 3, 0, 0};
-	private boolean terminate = false;
 	private File serverDump;
 
-	public TFTPReadThread(ThreadGroup group, DatagramPacket requestPacketInfo, String thread, Boolean verboseMode,File path) {
+	public TFTPReadThread(ThreadGroup group, DatagramPacket requestPacketInfo, String thread, Boolean verboseMode,File path,String fileName, String mode) {
 		super(group,thread,new ConsoleUI("Read Thread "+thread));
 		console.run();
+		
 		requestPacket = requestPacketInfo;
 		threadNumber  = thread;
 		verbose = verboseMode; 
 		serverDump = path;
 		clientTID = requestPacketInfo.getPort();
 		clientInet = requestPacketInfo.getAddress();
+		this.fileName=fileName;
+		this.mode=mode;
+		
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) {
-			// TODO Auto-generated catch block    
 			e.printStackTrace();
+			System.exit(0);
 		}
+		
 		try {
 			sendReceiveSocket.setSoTimeout(TIMEOUT*1000);
 		} catch (SocketException e) {
 			//Handle Timeout Exception
 			e.printStackTrace();
+			System.exit(0);
 		}
 	}
-
-	public TFTPReadThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket requestPacketInfo, String thread, Boolean verboseMode,File path) {
-		super(group,thread,transcript);
-		requestPacket = requestPacketInfo;
-		threadNumber  = thread;
-		verbose = verboseMode; 
-		serverDump = path;
-		clientTID = requestPacketInfo.getPort();
-		clientInet = requestPacketInfo.getAddress();
-		try {
-			sendReceiveSocket = new DatagramSocket();
-		} catch (SocketException e) {
-			// TODO Auto-generated catch block    
-			e.printStackTrace();
-		}
-		try {
-			sendReceiveSocket.setSoTimeout(TIMEOUT*1000);
-		} catch (SocketException e) {
-			//Handle Timeout Exception
-			e.printStackTrace();
-		}
-	}
-	
-	
 
 
 	public void run() {
-
-		connectionEstablished = true;
 		
 		printReceivedPacket(requestPacket, verbose);
-
-		/* Exit Gracefully if the stop is requested. */
-		if(isInterrupted()){exitGraceFully();return;}
-		//Parsing Data for filename
-		ByteArrayOutputStream filename = new ByteArrayOutputStream();
-		ByteArrayOutputStream mode = new ByteArrayOutputStream();
-		boolean change = false; 
-		for(int i = 2; i<requestPacket.getData().length;i++){
-			if(isInterrupted()){exitGraceFully();return;}
-			if(requestPacket.getData()[i]>=32){
-				if(change == false){
-					filename.write(requestPacket.getData()[i]);
-				}
-				else{
-					mode.write(requestPacket.getData()[i]);
-				} 
-			}
-			if(requestPacket.getData()[i]!=0){
-				if(requestPacket.getData()[i+1] == 0){
-					change = true;//switch to parse mode
-					i++;
-				}
-			}
-		}
-
-
-		/* Exit Gracefully if the stop is requested. */
-		if(isInterrupted()){exitGraceFully();return;}
 		if(verbose){
 			console.print("Request parsed for:");
-			console.print("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
-			console.print("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
+			console.print("	Filename: " + fileName + "\n");
+			console.print("	Mode: " + mode + "\n");
 		}
-		
-	   String modeString = new String(mode.toByteArray(), 
-			   	0,mode.toByteArray().length);
-	   //Check for Valid MODE
-	   if((modeString.equalsIgnoreCase("netascii"))){
 
-	   }
-	   else if((modeString.equalsIgnoreCase("octet"))){
+		/* Check for Valid MODE. */
+		if(!mode.equalsIgnoreCase("netascii") && !mode.equalsIgnoreCase("octet")) {
+			buildError(4,requestPacket,verbose,"Invalid Mode");
+			exitGraceFully();
+			return; 
+		}
 
-	   } else {
-		   buildError(4,requestPacket,verbose,"Invalid Mode");
-		   exitGraceFully();
-    	   return; 
-	   }
-
+		/* Find File. */
 		String absolutePath = serverDump.getAbsolutePath();
-		File file = new File(absolutePath + "/" +filename.toString());
+		File file = new File(absolutePath + "/" +fileName);
+		
+		/* File already exists error. */
 		if(!file.exists())
 		{
 			buildError(1,requestPacket,verbose,"");
 			return;
 		}
 
+		/* File permission error. */
 		if(!file.canRead())
 		{
 			buildError(2,requestPacket,verbose,"");
 			return;
 		}
+		
+		/* Split the data into block in the reader . */
 		TFTPReader reader = new TFTPReader();
 		try {
 			reader.readAndSplit(file.toString());
@@ -189,29 +133,23 @@ class TFTPReadThread  extends ServerThread
 			return;
 		} catch (IOException e) {
 			buildError(2,requestPacket,verbose,"");
-			//e.printStackTrace();
 			return;
 		}
 		byte[] rawData = new byte[4];
-		int port = requestPacket.getPort();
-		InetAddress address = requestPacket.getAddress();
-		requestPacket = new DatagramPacket(rawData, rawData.length);
-		requestPacket.setPort(port);
-		requestPacket.setAddress(address);
+		receivePacket = new DatagramPacket(rawData, rawData.length);
+		receivePacket.setPort(clientTID);
+		receivePacket.setAddress(clientInet);
 		while(!stopRequested()){
 
 			if(!retransmitDATA){
-				//Encode the block number into the response block 
+				/* Encode the block number into the response block. */
 				response[3]=(byte)(blockNum & 0xFF);
 				response[2]=(byte)((blockNum >> 8)& 0xFF);
 
-
-				//Building datagram		
-
-
-				byte[] data = reader.pop();
-				//Check if the server needs to send a data Packet with 0 bytes
-				if(data!=null){
+				byte[] data = reader.pop();// Get the next blocks of data
+				
+				/* Check if the server needs to send a data Packet with 0 bytes. */
+				if(data != null){
 					if(data.length==512 && reader.peek()==null){
 						sendZeroDataPacket = true;
 					}
@@ -224,58 +162,49 @@ class TFTPReadThread  extends ServerThread
 						//Waiting to receive final ACK
 						byte[] finalACK = new byte[4];
 						DatagramPacket finalACKPacket = new DatagramPacket(finalACK, finalACK.length);
-						try {
-							sendReceiveSocket.receive(finalACKPacket);
-						} catch (IOException e) {
-							e.printStackTrace();
-							System.exit(1);
-						} 
-
+						startTime = System.currentTimeMillis();
+						while(!receiveACK()){if(errorFlag){exitGraceFully();return;}}
 						printReceivedPacket(finalACKPacket, verbose);
 					}
 					console.print("Read Request has completed.");
-					exitGraceFully();
-					return;
-				}	
-				//Builds the datagram in format
-				/*
-						2 bytes    2 bytes       n bytes 
-						---------------------------------
-					 DATA  | 03    |   Block #  |    Data    |
-						---------------------------------
+					requestStop();
+					continue;
+				}
+				
+				/* Builds the datagram in format
+				 *
+				 *		    2 bytes   2 bytes      n bytes 
+				 *  		---------------------------------
+				 *	 DATA  | 03    |   Block #  |    Data    |
+				 *	    	---------------------------------
 				 */
 
 				byte dataPrime[] = Arrays.copyOf(response, response.length + data.length); 
 				System.arraycopy(data, 0, dataPrime, response.length, data.length);
 
-				/* Exit Gracefully if the stop is requested. */
-				if(stopRequested()){continue;}
 				sendPacket = new DatagramPacket(dataPrime, dataPrime.length,
-						requestPacket.getAddress(), requestPacket.getPort());
+						clientInet, clientTID);
 			}
-				printSendPacket(sendPacket, verbose);
+			printSendPacket(sendPacket, verbose);
 
-				// Send the datagram packet to the client via a new socket.
-				try {
-					sendReceiveSocket.send(sendPacket);
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.exit(1); 
-				}
-				startTime = System.currentTimeMillis();
-				/* Exit Gracefully if the stop is requested. */
-				if(stopRequested()){continue;}
-				if(verbose){
-					console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
-				}
-
+			/* Send the datagram packet to the client via a new socket. */
+			try {
+				sendReceiveSocket.send(sendPacket);
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1); 
+			}
 			
-			while(!receiveACK()){if(errorFlag){exitGraceFully();return;}}
+			if(verbose){
+				console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"/n");
+			}
+
+			startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data (this is used for retransmits).
+			while(!receiveACK()){if(errorFlag){exitGraceFully();return;}}//When this method returns it will either signal we have data, should retransmit or should exit with an error
 			printReceivedPacket(requestPacket, verbose);
-			
+
 
 		}
-		console.print("Server: thread closing.");
 		exitGraceFully();
 	}
 

@@ -1,10 +1,10 @@
+
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Arrays;
 
 import ui.ConsoleUI;
 
@@ -17,16 +17,19 @@ public abstract class ServerThread extends Thread{
 	protected static final int TIMEOUT = 5; //Seconds
 	protected static final int MAX_TIMEOUTS = 5;
 	protected int timeouts = 0;
-	protected boolean retransmit = false;
 	protected int blockNum = 1;
 	protected boolean timeoutFlag = false;
 	protected DatagramPacket sendPacket;
 	protected DatagramPacket requestPacket;
-	protected boolean retransmitDATA;
-	protected boolean retransmitACK;
+	protected DatagramPacket receivePacket;
+	protected boolean retransmitDATA = false;
+	protected boolean retransmitACK = false;
 	protected long startTime;
 	protected boolean verbose;
-	protected boolean connectionEstablished;
+	protected String fileName;
+	protected String mode;
+	protected File serverDump;
+	protected String threadNumber;
 
 	protected boolean errorFlag=false;
 	protected int clientTID;
@@ -49,7 +52,7 @@ public abstract class ServerThread extends Thread{
 		{
 			sendReceiveSocket.close();
 		}
-		console.print("Server: Closing thread.");
+		console.print("Server: thread"+threadNumber+" closing.");
 	} 
 	
 	protected void printReceivedPacket(DatagramPacket receivedPacket, boolean verbose){
@@ -108,21 +111,15 @@ DATA  | 03    |   Block #  |    Data    |
 		data[2]=(byte)((blockNumber >> 8)& 0xFF);
     	
     	DatagramPacket sendPacket = new DatagramPacket(data, data.length,
-			     requestPacket.getAddress(), requestPacket.getPort());
-	/* Exit Gracefully if the stop is requested. */
-	   if(stopRequested){exitGraceFully();}
+			     clientInet, clientTID);
        console.print("Server: Sending packet:");
        printSendPacket(sendPacket, verbose);
-
       	try {
       		sendReceiveSocket.send(sendPacket);
       	} catch (IOException e) {
       		e.printStackTrace();
       		System.exit(1);
       	}
-      	long startTime = System.currentTimeMillis();
-      	/* Exit Gracefully if the stop is requested. */
-      	if(stopRequested){exitGraceFully();}
       	if(verbose){
       		console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
       	}
@@ -142,32 +139,26 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     	String errorMsg = new String("Unknown Error.");
     	switch(errorCode){
 	    	case 1:
-	    		errorCode = 1;
 	    		console.print("Server: File not found, sending error packet");
 	    		errorMsg = "File not found: " + errorInfo;
 	    		break;
 	    	case 2: 
-	    		errorCode = 2;
 	    		console.print("Server: Access violation, sending error packet");
 	    		errorMsg = "Access violation: " + errorInfo;
 	    		break;
 	    	case 3: 
-	    		errorCode = 3;
 	    		console.print("Server: Disk full or allocation exceeded, sending error packet");
 	    		errorMsg = "Disk full or allocation exceeded: " + errorInfo;
 	    		break;
 	    	case 4:
-	    		errorCode = 4;
 	    		console.print("Illegal TFTP operation");
 	    		errorMsg = "Illegal TFTP operation: " + errorInfo;
 	    		break;
 	    	case 5:
-	    		errorCode = 5;
 	    		console.print("Unknown Transfer ID");
 	    		errorMsg = "Unknown Transfer ID: " + errorInfo;
 	    		break;
 	    	case 6: 
-	    		errorCode = 6;
 	    		console.print("Server: File already exists, sending error packet");
 	    		errorMsg = "File already exists: " + errorInfo;
 	    		break;
@@ -185,44 +176,46 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
     	
 	    DatagramPacket sendPacket = new DatagramPacket(data, data.length,
 				     requestPacket.getAddress(), requestPacket.getPort());
-		/* Exit Gracefully if the stop is requested. */
-		   if(stopRequested){exitGraceFully();}
-		   printSendPacket(sendPacket,verbose);
 
-	       	try {
-	       		sendReceiveSocket.send(sendPacket);
-	       	} catch (IOException e) {
-	       		e.printStackTrace();
-	       		System.exit(1);
-	       	}
-	       	/* Exit Gracefully if the stop is requested. */
-	       	if(stopRequested){exitGraceFully();}
-	       	if(verbose){
-	       		console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
-	       	}
-    	
+	    printSendPacket(sendPacket,verbose);
+
+	    try {
+	    	sendReceiveSocket.send(sendPacket);
+	    } catch (IOException e) {
+	    	e.printStackTrace();
+	    	System.exit(1);
+	    }
+	    if(verbose){
+	    	console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
+	    }
+
     }
     
    
-  //receive ACK
+    /**
+     *  This method is used for receiving acknowledgement datagram's.
+     *  It will also verify that the packet is in the correct format.
+     *   
+     * @return A boolean that represents the state of the receive. 
+     *			If True - Receive successful
+     * 			If False - Receive unsuccessful possibly try again or flag error.
+     */
   	public boolean receiveACK()
   	{	
   		timeoutFlag=false;
-  		//Encode the block number into the response block 
+  		/* Encode the block number into the response block. */ 
   		byte[] blockArray = new byte[2];
   		blockArray[1]=(byte)(blockNum & 0xFF);
   		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
   		console.print("Server: Waiting to receive packet");
-
-
-  		//receive ACK
+  		
+  		/* Receive ACK. */
   		try {
-  			//receiveDATA();
-  			sendReceiveSocket.receive(requestPacket);
-  			retransmit=false;
+  			sendReceiveSocket.receive(receivePacket);
+  			retransmitDATA=false;
   		} catch(SocketTimeoutException e){
   			//Retransmit every timeout
-  			//Quite after 5 timeouts
+  			//Quit after 5 timeouts
   			timeoutFlag=true;
   			if(System.currentTimeMillis() -startTime > TIMEOUT)
   			{
@@ -235,6 +228,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				}
   				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
   				retransmitDATA = true;
+  				startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data after retransmit (this is used for retransmits).
   				return true;
   			}
   			return false;
@@ -244,43 +238,43 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			e.printStackTrace();
   			return false;
   		} 
-  		//analyze ACK for format
+  		
   		if (verbose)
   		{
   			console.print("Client: Checking ACK...");
-  			printReceivedPacket(requestPacket, verbose);
+  			printReceivedPacket(receivePacket, verbose);
   		}
-  		byte[] data = requestPacket.getData();
-  		if(connectionEstablished){
-  			if(clientInet.equals(requestPacket.getAddress())){
-		  		if(requestPacket.getPort() != clientTID){
-		  			buildError(5,requestPacket,verbose,"Unexpected TID");
-		  			console.print("Unexpected TID");
-		  			errorFlag=true;
-					return false;
-		  		}
-  			}
-  			else {
-	  			buildError(5,requestPacket,verbose,"Invalid InetAddress");
-	  			console.print("Invalid InetAddress");
-	  			errorFlag=true;
-				return false;
-  			} 
+  		byte[] data = receivePacket.getData();
+  		/* Check ACK address. */
+  		if(!clientInet.equals(receivePacket.getAddress())){
+  			buildError(5,receivePacket,verbose,"Invalid InetAddress");
+  			console.print("Invalid InetAddress");
+  			errorFlag=true;
+			return false;
   		}
-  		//check ACK for validity
+  		/* Check ACK port. */
+  		if(receivePacket.getPort() != clientTID){
+  			buildError(5,requestPacket,verbose,"Unexpected TID");
+  			console.print("Unexpected TID");
+  			errorFlag=true;
+			return false;
+  		}
+  		/* Check ACK length. */
 		if(data.length > 4){
-			buildError(4,requestPacket, verbose,"Length of the ACK is over 4.");
+			buildError(4,receivePacket, verbose,"Length of the ACK is over 4.");
 			errorFlag=true;
 			return false;
 		}
+		/* Check ACK OpCode. */
   		if(data[0] == 0 && data[1] == 4){
 
-  			//Check if the blockNumber corresponds to the expected blockNumber
+  			/* Check BlockNumber. */
   			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
   				blockNum++;
   				timeouts=0;
   				retransmitDATA=false;
   			}
+  			/* Received Duplicate. */
   			else{
   				if (verbose)
   		  		{
@@ -296,40 +290,49 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   					}
   					retransmitDATA=true;
   					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
+  					startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data after retransmit (this is used for retransmits).
   					return true;
   				}
   				return false;
   			}
   		}
+  		/* Received Error, print & quit. */
   		else if(data[0] == 0 && data[1] == 5){
-  			printError(requestPacket, verbose);
+  			printError(receivePacket, verbose);
   			errorFlag=true;
 			return false;
   		}
+  		/* Received invalid opcode, send back error. */
   		else{
-  			buildError(5,requestPacket,verbose,"OpCode is invalid");
+  			buildError(5,receivePacket,verbose,"OpCode is invalid");
   			errorFlag=true;
 			return false;
   		}
   		return true;
   	}
 
-  //receive ACK
+    /**
+     *  This method is used for receiving data datagram's.
+     *  It will also verify that the packet is in the correct format.
+     *   
+     * @return A boolean that represents the state of the receive. 
+     *			If True - Receive successful
+     * 			If False - Receive unsuccessful possibly try again or flag error.
+     */
   	public boolean receiveDATA()
   	{	
   		timeoutFlag=false;
-  		//Encode the block number into the response block 
+  		/* Encode the block number into the response block. */
   		byte[] blockArray = new byte[2];
   		blockArray[1]=(byte)(blockNum & 0xFF);
   		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
+  		/* Receive Data. */
   		try {
-  			//receiveDATA();
   			sendReceiveSocket.receive(requestPacket);
-  			retransmit=false;
+  			retransmitACK=false;
   		} catch(SocketTimeoutException e){
   			//Retransmit every timeout
   			//Quite after 5 timeouts
-
   			if(System.currentTimeMillis() -startTime > TIMEOUT)
   			{
   				timeouts++;
@@ -342,6 +345,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				}
   				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
   				retransmitACK = true;
+  				startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data after retransmit (this is used for retransmits).
   				return true;
   			}
   			return false;
@@ -350,43 +354,43 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-  		//analyze DATA for format
   		if (verbose)
   		{
   			console.print("Server: Checking DATA...");
   		}
   		byte[] data = requestPacket.getData();
-  		if(connectionEstablished){
-  			if(clientInet.equals(requestPacket.getAddress())){
-		  		if(requestPacket.getPort() != clientTID){
-		  			buildError(5,requestPacket,verbose,"Unexpected TID");
-		  			console.print("Unexpected TID");
-		  			errorFlag=true;
-					return false;
-		  		}
-  			}
-  			else {
-	  			buildError(5,requestPacket,verbose,"Invalid InetAddress");
-	  			console.print("Invalid InetAddress");
-	  			errorFlag=true;
-				return false;
-  			}
+
+		/* Check DATA address. */
+  		if(!clientInet.equals(receivePacket.getAddress())){
+  			buildError(5,receivePacket,verbose,"Invalid InetAddress");
+  			console.print("Invalid InetAddress");
+  			errorFlag=true;
+			return false;
   		}
-		if(requestPacket.getLength() > 516){
-			buildError(4,requestPacket, verbose,"Length of the DATA packet is over 516.");
+  		/* Check DATA port. */
+  		if(receivePacket.getPort() != clientTID){
+  			buildError(5,requestPacket,verbose,"Unexpected TID");
+  			console.print("Unexpected TID");
+  			errorFlag=true;
+			return false;
+  		}
+  		/* Check DATA length. */
+		if(data.length > 516){
+			buildError(4,receivePacket, verbose,"Length of the ACK is over 4.");
 			errorFlag=true;
 			return false;
 		}
 
-  		//check if data
+  		/* Check DATA OpCode. */
   		if(data[0] == 0 && data[1] == 3){
 
-  			//Check if the blockNumber corresponds to the expected blockNumber
+  			/* Check BlockNumber. */
   			if(blockArray[1] == data[3] && blockArray[0] == data[2]){
   				blockNum++;
   				timeouts=0;
   				retransmitACK=false;
   			}
+  			/* Received Duplicate. */
   			else{
   				if (verbose)
   		  		{
@@ -403,23 +407,29 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   					}
   					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
   					retransmitACK=true;
+  					startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data after retransmit (this is used for retransmits).
   					return true;
   				}
   				return false;
   			}
   		}
+  		
+  		/* Received Error, print & quit. */
   		else if(data[0] == 0 && data[1] == 5){
-  			printError(requestPacket, verbose);
+  			printError(receivePacket, verbose);
   			errorFlag=true;
 			return false;
   		}
+  		/* Received invalid opcode, send back error. */
   		else{
-  			buildError(5,requestPacket,verbose,"OpCode is invalid");
+  			buildError(5,receivePacket,verbose,"OpCode is invalid");
   			errorFlag=true;
 			return false;
   		}
   		return true;
   	}
+  	
+  	/* Used to exit threads main loops. */
   	protected void requestStop()
   	{
   		stopRequested=true;
