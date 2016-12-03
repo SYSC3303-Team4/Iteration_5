@@ -1,3 +1,5 @@
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -27,6 +29,9 @@ public abstract class ServerThread extends Thread{
 	protected long startTime;
 	protected boolean verbose;
 	protected boolean connectionEstablished;
+	ByteArrayOutputStream fileName;
+	ByteArrayOutputStream mode;
+	File serverDump;
 
 	protected boolean errorFlag=false;
 	protected int clientTID;

@@ -54,16 +54,14 @@ class TFTPWriteThread extends ServerThread
      * The text area where this thread's output will be displayed.
      */
     private String threadNumber;
-    File file;
-
-
+    
     public final byte[] response = {0, 4, 0, 0};
     
     //declaring local class constants
     private static final int ABSOLUTE_PACKET_BUFFER_SIZE = 1000;
     private static final int DATA_PACKET_MAX_SIZE = 516;
     
-    public TFTPWriteThread(ThreadGroup group, DatagramPacket requestPacketInfo,String thread, Boolean verboseMode,File file) {
+    public TFTPWriteThread(ThreadGroup group, DatagramPacket requestPacketInfo,String thread, Boolean verboseMode,File serverDump,ByteArrayOutputStream fileName, ByteArrayOutputStream mode) {
     	super(group,thread,new ConsoleUI("Write Thread "+thread));
     	console.run();
     	requestPacket = requestPacketInfo;  
@@ -71,7 +69,7 @@ class TFTPWriteThread extends ServerThread
         verbose = verboseMode;
         clientTID = requestPacketInfo.getPort();
 		clientInet = requestPacketInfo.getAddress();
-        this.file = file; 
+        this.serverDump = serverDump; 
         try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) { 
@@ -88,55 +86,8 @@ class TFTPWriteThread extends ServerThread
         
     }
 
-    public TFTPWriteThread(ThreadGroup group,ConsoleUI transcript, DatagramPacket requestPacketInfo,String thread, Boolean verboseMode,File file) {
-    	super(group,thread,transcript);
-    	requestPacket = requestPacketInfo;  
-        threadNumber = thread;
-        verbose = verboseMode;
-        clientTID = requestPacketInfo.getPort();
-        clientInet = requestPacketInfo.getAddress();
-        this.file = file; 
-        try {
-			sendReceiveSocket = new DatagramSocket();
-		} catch (SocketException e) {
-			// TODO Auto-generated catch block    
-			e.printStackTrace();
-			console.print(e.getMessage());
-		}
-		try {
-			sendReceiveSocket.setSoTimeout(TIMEOUT*1000);
-		} catch (SocketException e) {
-			//Handle Timeout Exception
-			e.printStackTrace();
-		} 
-        
-    }
-
     public void run() {
-    	
-    	
-		   
     		connectionEstablished = true;
-		   //Parsing Data for filename and mode 
-		   ByteArrayOutputStream filename = new ByteArrayOutputStream();
-		   ByteArrayOutputStream mode = new ByteArrayOutputStream();
-		   boolean change = false; 
-		   for(int i = 2; i<requestPacket.getData().length;i++){
-			   if(requestPacket.getData()[i]>=32){
-				   if(change == false){
-					   filename.write(requestPacket.getData()[i]);
-				   }
-				   else{
-					   mode.write(requestPacket.getData()[i]);
-				   }
-			   }
-			   if(requestPacket.getData()[i]!=0){
-				   if(requestPacket.getData()[i+1] == 0){
-					   change = true;
-					   i++;
-				   }
-				}
-		   }
 		   String modeString = new String(mode.toByteArray(), 
 				   	0,mode.toByteArray().length);
 		   
@@ -148,21 +99,20 @@ class TFTPWriteThread extends ServerThread
 		   }
 		   
 		   
-		   
 		   printReceivedPacket(requestPacket, verbose);
 		    /* Exit Gracefully if the stop is requested. */
 	       if(stopRequested){exitGraceFully();return;}  
 	       if(verbose){
 	    	   console.print("Request parsed for:");
-	    	   console.print("	Filename: " + new String(filename.toByteArray(),
-				   0,filename.toByteArray().length));
+	    	   console.print("	Filename: " + new String(fileName.toByteArray(),
+				   0,fileName.toByteArray().length));
 	    	   console.print("	Mode: " + new String(mode.toByteArray(),
 				   0,mode.toByteArray().length) + "\n");
 			}
 	       
 	       //Write file to directory
-	       File fileName = new File(file.getAbsolutePath()+"/"+filename.toString());
-		   if(fileName.exists()) { 
+	       File file = new File(serverDump.getAbsolutePath()+"/"+fileName.toString());
+		   if(file.exists()) { 
 		    	   buildError(6,requestPacket,verbose,"");
 		    	   return;
 			}
@@ -236,7 +186,7 @@ class TFTPWriteThread extends ServerThread
 			       */
 					
 			       try {
-						writer.write(data,file.getAbsolutePath()+"/"+filename.toString());
+						writer.write(data,file.getAbsolutePath()+"/"+fileName.toString());
 					} catch (SecurityException e1) {
 						buildError(2,requestPacket,verbose,"");
 						e1.printStackTrace();

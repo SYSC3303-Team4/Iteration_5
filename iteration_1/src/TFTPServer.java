@@ -100,7 +100,7 @@ public class TFTPServer implements ActionListener
 		
 		//TODO DELETE THIS
 		//==================================================
-		this.verbose = true;
+		TFTPServer.verbose = true;
 		console.print("Verbose mode set " + verbose);
 		//==================================================
 		
@@ -149,13 +149,15 @@ public class TFTPServer implements ActionListener
 			// If it's a read, send back DATA (03) block 1
 			// If it's a write, send back ACK (04) block 0
 			// Otherwise, ignore it
-			
+			ByteArrayOutputStream fileName = new ByteArrayOutputStream();
+			ByteArrayOutputStream mode = new ByteArrayOutputStream();
 			if (data[0]==0 && data[1]==1) req = Request.READ; // could be read
 			else if (data[0]==0 && data[1]==2) req = Request.WRITE; // could be write
 			else req = Request.ERROR; // bad
 
 			if (req!=Request.ERROR) { // check for filename
 				// search for next all 0 byte
+				fileName.write(data[j]);
 				for(j=2;j<len;j++) {
 					if (data[j] == 0) break;
 				}
@@ -165,6 +167,7 @@ public class TFTPServer implements ActionListener
 
 			if(req!=Request.ERROR) { // check for mode
 				// search for next all 0 byte
+				mode.write(data[k]);
 				for(k=j+1;k<len;k++) { 
 					if (data[k] == 0) break;
 				}
@@ -178,12 +181,12 @@ public class TFTPServer implements ActionListener
 			if (req==Request.READ) { // for Read it's 0301
 				console.print("Server: Generating Read Thread");
 				threadNum++;
-				Thread readRequest =  new TFTPReadThread(initializedThreads, receivePacket, "Thread "+threadNum, verbose,file);
+				Thread readRequest =  new TFTPReadThread(initializedThreads, receivePacket, "Thread "+threadNum, verbose,file, mode,fileName);
 				readRequest.start();
 			} else if (req==Request.WRITE) { // for Write it's 0400
 				console.print("Server: Generating Write Thread");
 				threadNum++;
-				Thread writeRequest =  new TFTPWriteThread(initializedThreads, receivePacket,"Thread "+threadNum, verbose,file);
+				Thread writeRequest =  new TFTPWriteThread(initializedThreads, receivePacket,"Thread "+threadNum, verbose,file, mode,fileName);
 				writeRequest.start();
 			} else { // it was invalid, send 
 				console.print("Server: Illegal Request");
@@ -302,12 +305,12 @@ public class TFTPServer implements ActionListener
 					{
 						if(input[1].equals("true"))
 						{
-							this.verbose = true;
+							TFTPServer.verbose = true;
 							console.print("Verbose mode set " + verbose);
 						}
 						else if (input[1].equals("false"))
 						{
-							this.verbose = false;
+							TFTPServer.verbose = false;
 							console.print("Verbose mode set " + verbose);
 						}
 						else
