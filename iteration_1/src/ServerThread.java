@@ -40,11 +40,6 @@ public abstract class ServerThread extends Thread{
 		super(group,name);
 		this.console=console;
 	}
-	
-    public void RequestStop()
-    {
-    	stopRequested = true;
-    }
     
     /* Closes sockets and before exit. */
 	public void exitGraceFully() {
@@ -256,7 +251,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		}
   		/* Check ACK port. */
   		if(receivePacket.getPort() != clientTID){
-  			buildError(5,requestPacket,"Unexpected TID");
+  			buildError(5,receivePacket,"Unexpected TID");
   			console.print("Unexpected TID");
   			errorFlag=true;
 			return false;
@@ -265,8 +260,8 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		/* Check ACK OpCode. */
   		if(data[0] == 0 && data[1] == 4){
   	  		/* Check ACK length. */
-  			if(requestPacket.getLength() > 4){
-  				buildError(4,requestPacket,"Length of the ACK is over 4.");
+  			if(receivePacket.getLength() > 4){
+  				buildError(4,receivePacket,"Length of the ACK is over 4.");
   				errorFlag=true;
   				return false;
   			}
@@ -301,13 +296,13 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		}
   		/* Received Error, print & quit. */
   		else if(data[0] == 0 && data[1] == 5){
-  			printError(requestPacket);
+  			printError(receivePacket);
   			errorFlag=true;
 			return false;
   		}
   		/* Received invalid opcode, send back error. */
   		else{
-  			buildError(5,requestPacket,"OpCode is invalid");
+  			buildError(5,receivePacket,"OpCode is invalid");
   			errorFlag=true;
 			return false;
   		}
@@ -331,7 +326,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		blockArray[0]=(byte)((blockNum >> 8)& 0xFF);
   		/* Receive Data. */
   		try {
-  			sendReceiveSocket.receive(requestPacket);
+  			sendReceiveSocket.receive(receivePacket);
   			retransmitACK=false;
   		} catch(SocketTimeoutException e){
   			//Retransmit every timeout
@@ -361,7 +356,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		{
   			console.print("Server: Checking DATA...");
   		}
-  		byte[] data = requestPacket.getData();
+  		byte[] data = receivePacket.getData();
 
 		/* Check DATA address. */
   		if(!clientInet.equals(receivePacket.getAddress())){
@@ -372,7 +367,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		}
   		/* Check DATA port. */
   		if(receivePacket.getPort() != clientTID){
-  			buildError(5,requestPacket,"Unexpected TID");
+  			buildError(5,receivePacket,"Unexpected TID");
   			console.print("Unexpected TID");
   			errorFlag=true;
 			return false;
@@ -381,7 +376,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		/* Check DATA OpCode. */
   		if(data[0] == 0 && data[1] == 3){
 			/* Check DATA length. */
-			if(data.length > 516){
+			if(receivePacket.getLength() > 516){
 				buildError(4,receivePacket,"Length of the DATA is over 516.");
 				errorFlag=true;
 				return false;
@@ -398,7 +393,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   				if (verbose)
   		  		{
   		  			console.print("Received Duplicate Packet: ");
-  		  			printReceivedPacket(requestPacket);
+  		  			printReceivedPacket(receivePacket);
   		  		}
   				if(System.currentTimeMillis() -startTime > TIMEOUT)
   				{

@@ -94,7 +94,7 @@ class TFTPReadThread  extends ServerThread
 		}
 
 		/* Check for Valid MODE. */
-		if(!mode.equalsIgnoreCase("netascii") && !mode.equalsIgnoreCase("octet")) {
+		if(!(mode.equalsIgnoreCase("netascii") || !mode.equalsIgnoreCase("octet"))) {
 			buildError(4,requestPacket,"Invalid Mode");
 			exitGraceFully();
 			return; 
@@ -139,7 +139,7 @@ class TFTPReadThread  extends ServerThread
 		receivePacket = new DatagramPacket(rawData, rawData.length);
 		receivePacket.setPort(clientTID);
 		receivePacket.setAddress(clientInet);
-		while(!stopRequested()){
+		while(!stopRequested){
 
 			if(!retransmitDATA){
 				/* Encode the block number into the response block. */
@@ -206,12 +206,6 @@ class TFTPReadThread  extends ServerThread
 
 		}
 		exitGraceFully();
-	}
-
-
-	private boolean stopRequested() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 }

@@ -59,7 +59,7 @@ class TFTPWriteThread extends ServerThread
 		this.serverDump = serverDump; 
 		this.fileName=fileName;
 		this.mode=mode;
-		
+		System.out.println(this.mode +" "+mode);
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) { 
@@ -79,9 +79,12 @@ class TFTPWriteThread extends ServerThread
 	}
 
 	public void run() {
-		TFTPWriter writer = new TFTPWriter();		   
+		TFTPWriter writer = new TFTPWriter();		
+		System.out.println(mode);
+		System.out.println((mode.equalsIgnoreCase("netascii")));
+		System.out.println(!(mode.equalsIgnoreCase("netascii") || mode.equalsIgnoreCase("octet")));
 		/* Check for Valid MODE. */
-		if(!mode.equalsIgnoreCase("netascii") && !mode.equalsIgnoreCase("octet")) {
+		if(!(mode.equalsIgnoreCase("netascii") || mode.equalsIgnoreCase("octet"))) {
 			buildError(4,requestPacket,"Invalid Mode");
 			exitGraceFully();
 			return; 
@@ -95,18 +98,11 @@ class TFTPWriteThread extends ServerThread
 		}
 
 		/* Write file to directory. */
-		File file = new File(serverDump.getAbsolutePath()+"/"+fileName.toString());
+		File file = new File(serverDump.getAbsolutePath()+"/"+fileName);
 		
 		/* File already exists error. */
 		if(file.exists()) { 
 			buildError(6,requestPacket,"");
-			return;
-		}
-		
-		/* File permission error. */
-		if(!file.canWrite())
-		{
-			buildError(2,requestPacket,"");
 			return;
 		}
 
@@ -164,24 +160,13 @@ class TFTPWriteThread extends ServerThread
 				
 				/* Write the file. */
 				try {
-					writer.write(data,file.getAbsolutePath()+"/"+fileName.toString());
+					writer.write(data,file.getAbsolutePath());
 				} catch (SecurityException e1) {
 					buildError(2,receivePacket,"");
 					e1.printStackTrace();
 					exitGraceFully();
 					return;
 				} 
-				catch(FileNotFoundException e2)
-				{
-					if(file.exists())
-					{
-						buildError(2,receivePacket,"");
-						return;
-					}
-					buildError(1,receivePacket,"");
-					exitGraceFully();
-					return;
-				}
 				catch(IOException e2){
 					buildError(3,receivePacket,"");
 					exitGraceFully();

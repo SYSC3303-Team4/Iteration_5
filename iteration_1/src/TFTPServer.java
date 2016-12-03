@@ -170,21 +170,21 @@ public class TFTPServer implements ActionListener
 				}
 				if (k==len) req=Request.ERROR; // didn't find a 0 byte
 				if (k==j+1) req=Request.ERROR; // mode is 0 bytes long
-				mode = new String(data,j,k-j-1);
+				mode = new String(data,j+1,k-j-1);
 			}
-
+			System.out.println(mode);
 			if(k!=len-1) req=Request.ERROR; // other stuff at end of packet        
 
 			/* Create a response. */
 			if (req==Request.READ) { 
 				console.print("Server: Generating Read Thread");
 				threadNum++;
-				Thread readRequest =  new TFTPReadThread(initializedThreads, receivePacket, "Thread "+threadNum, verbose,file, mode,fileName);
+				Thread readRequest =  new TFTPReadThread(initializedThreads, receivePacket, "Thread "+threadNum, verbose,file, fileName,mode);
 				readRequest.start();
 			} else if (req==Request.WRITE) { 
 				console.print("Server: Generating Write Thread");
 				threadNum++;
-				Thread writeRequest =  new TFTPWriteThread(initializedThreads, receivePacket,"Thread "+threadNum, verbose,file, mode,fileName);
+				Thread writeRequest =  new TFTPWriteThread(initializedThreads, receivePacket,"Thread "+threadNum, verbose,file, fileName,mode);
 				writeRequest.start();
 			} else { // it was invalid, send 
 				console.print("Server: Illegal Request");
