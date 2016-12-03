@@ -70,6 +70,8 @@ class TFTPReadThread  extends ServerThread
 		serverDump = path;
 		clientTID = requestPacketInfo.getPort();
 		clientInet = requestPacketInfo.getAddress();
+		this.fileName=fileName;
+		this.mode=mode;
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) {
@@ -90,37 +92,11 @@ class TFTPReadThread  extends ServerThread
 		connectionEstablished = true;
 		
 		printReceivedPacket(requestPacket, verbose);
-
-		/* Exit Gracefully if the stop is requested. */
-		if(isInterrupted()){exitGraceFully();return;}
-		//Parsing Data for filename
-		ByteArrayOutputStream filename = new ByteArrayOutputStream();
-		ByteArrayOutputStream mode = new ByteArrayOutputStream();
-		boolean change = false; 
-		for(int i = 2; i<requestPacket.getData().length;i++){
-			if(isInterrupted()){exitGraceFully();return;}
-			if(requestPacket.getData()[i]>=32){
-				if(change == false){
-					filename.write(requestPacket.getData()[i]);
-				}
-				else{
-					mode.write(requestPacket.getData()[i]);
-				} 
-			}
-			if(requestPacket.getData()[i]!=0){
-				if(requestPacket.getData()[i+1] == 0){
-					change = true;//switch to parse mode
-					i++;
-				}
-			}
-		}
-
-
 		/* Exit Gracefully if the stop is requested. */
 		if(isInterrupted()){exitGraceFully();return;}
 		if(verbose){
 			console.print("Request parsed for:");
-			console.print("	Filename: " + new String(filename.toByteArray(),0,filename.toByteArray().length));
+			console.print("	Filename: " + new String(fileName.toByteArray(),0,fileName.toByteArray().length));
 			console.print("	Mode: " + new String(mode.toByteArray(),0,mode.toByteArray().length) + "\n");
 		}
 		
@@ -139,7 +115,7 @@ class TFTPReadThread  extends ServerThread
 	   }
 
 		String absolutePath = serverDump.getAbsolutePath();
-		File file = new File(absolutePath + "/" +filename.toString());
+		File file = new File(absolutePath + "/" +fileName.toString());
 		if(!file.exists())
 		{
 			buildError(1,requestPacket,verbose,"");

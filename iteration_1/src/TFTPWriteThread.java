@@ -1,35 +1,35 @@
 /**
-*Class:             TFTPWriterThread.java
-*Project:           TFTP Project - Group 4
-*Author:            Nathaniel Charlebois                                            
-*Date of Update:    29/09/2016                                              
-*Version:           1.0.0                                                      
-*                                                                                    
-*Purpose:           Handles the WRQs by:
-*						-Receiving the WRQ
-*						-Sending the special 0 ACK
-*						-Receiving the next DATA
-*						-Sending an ACK
-*
-*To do:
-*	-Clean up code
-*	-Test functionality with other components
-*	-Use the UI
-* 
-*			 		
-* 
-* 
-*Update Log:    	v1.1.1
-*                       - null
-*                       
-*                 	v1.1.2
-*                 		-Added Error handling
-*                 		-Added Error creating and sending
-*                 	v1.1.3
-*                 		-Corrected Error handling
-*                		-Fixed many a bug
-*                		-Refactored printing code 
-*/
+ *Class:             TFTPWriterThread.java
+ *Project:           TFTP Project - Group 4
+ *Author:            Nathaniel Charlebois                                            
+ *Date of Update:    29/09/2016                                              
+ *Version:           1.0.0                                                      
+ *                                                                                    
+ *Purpose:           Handles the WRQs by:
+ *						-Receiving the WRQ
+ *						-Sending the special 0 ACK
+ *						-Receiving the next DATA
+ *						-Sending an ACK
+ *
+ *To do:
+ *	-Clean up code
+ *	-Test functionality with other components
+ *	-Use the UI
+ * 
+ *			 		
+ * 
+ * 
+ *Update Log:    	v1.1.1
+ *                       - null
+ *                       
+ *                 	v1.1.2
+ *                 		-Added Error handling
+ *                 		-Added Error creating and sending
+ *                 	v1.1.3
+ *                 		-Corrected Error handling
+ *                		-Fixed many a bug
+ *                		-Refactored printing code 
+ */
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -38,39 +38,33 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.util.Arrays;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.FileAlreadyExistsException;
-
-import javax.swing.JFileChooser;
-import javax.swing.JTextArea;
 
 import ui.ConsoleUI;
 
 class TFTPWriteThread extends ServerThread
 {
-    /**
-     * The text area where this thread's output will be displayed.
-     */
-    private String threadNumber;
-    
-    public final byte[] response = {0, 4, 0, 0};
-    
-    //declaring local class constants
-    private static final int ABSOLUTE_PACKET_BUFFER_SIZE = 1000;
-    private static final int DATA_PACKET_MAX_SIZE = 516;
-    
-    public TFTPWriteThread(ThreadGroup group, DatagramPacket requestPacketInfo,String thread, Boolean verboseMode,File serverDump,ByteArrayOutputStream fileName, ByteArrayOutputStream mode) {
-    	super(group,thread,new ConsoleUI("Write Thread "+thread));
-    	console.run();
-    	requestPacket = requestPacketInfo;  
-        threadNumber = thread;
-        verbose = verboseMode;
-        clientTID = requestPacketInfo.getPort();
+	/**
+	 * The text area where this thread's output will be displayed.
+	 */
+	private String threadNumber;
+
+	public final byte[] response = {0, 4, 0, 0};
+
+	//declaring local class constants
+	private static final int ABSOLUTE_PACKET_BUFFER_SIZE = 1000;
+
+	public TFTPWriteThread(ThreadGroup group, DatagramPacket requestPacketInfo,String thread, Boolean verboseMode,File serverDump,ByteArrayOutputStream fileName, ByteArrayOutputStream mode) {
+		super(group,thread,new ConsoleUI("Write Thread "+thread));
+		console.run();
+		requestPacket = requestPacketInfo;  
+		threadNumber = thread;
+		verbose = verboseMode;
+		clientTID = requestPacketInfo.getPort();
 		clientInet = requestPacketInfo.getAddress();
-        this.serverDump = serverDump; 
-        try {
+		this.serverDump = serverDump; 
+		this.fileName=fileName;
+		this.mode=mode;
+		try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) { 
 			e.printStackTrace();
@@ -82,177 +76,164 @@ class TFTPWriteThread extends ServerThread
 			//Handle Timeout Exception
 			e.printStackTrace();
 		}
-		
-        
-    }
 
-    public void run() {
-    		connectionEstablished = true;
-		   String modeString = new String(mode.toByteArray(), 
-				   	0,mode.toByteArray().length);
-		   
-		   //Check for Valid MODE
-		   if(!modeString.equalsIgnoreCase("netascii") && !modeString.equalsIgnoreCase("octet")) {
-			   buildError(4,requestPacket,verbose,"Invalid Mode");
-			   exitGraceFully();
-	    	   return; 
-		   }
-		   
-		   
-		   printReceivedPacket(requestPacket, verbose);
-		    /* Exit Gracefully if the stop is requested. */
-	       if(stopRequested){exitGraceFully();return;}  
-	       if(verbose){
-	    	   console.print("Request parsed for:");
-	    	   console.print("	Filename: " + new String(fileName.toByteArray(),
-				   0,fileName.toByteArray().length));
-	    	   console.print("	Mode: " + new String(mode.toByteArray(),
-				   0,mode.toByteArray().length) + "\n");
-			}
-	       
-	       //Write file to directory
-	       File file = new File(serverDump.getAbsolutePath()+"/"+fileName.toString());
-		   if(file.exists()) { 
-		    	   buildError(6,requestPacket,verbose,"");
-		    	   return;
-			}
-	
-	       
-		   //Build and send the first ACK reply in format:
-		   /*
+
+	}
+
+	public void run() {
+		TFTPWriter writer = new TFTPWriter();
+		connectionEstablished = true;
+		String modeString = mode.toString();		   
+		//Check for Valid MODE
+		if(!modeString.equalsIgnoreCase("netascii") && !modeString.equalsIgnoreCase("octet")) {
+			buildError(4,requestPacket,verbose,"Invalid Mode");
+			exitGraceFully();
+			return; 
+		}
+
+
+		printReceivedPacket(requestPacket, verbose);
+		if(verbose){
+			console.print("Request parsed for:");
+			console.print("	Filename: " + fileName.toString());
+			console.print("	Mode: " + new String(mode.toByteArray(),
+					0,mode.toByteArray().length) + "\n");
+		}
+
+		//Write file to directory
+		File file = new File(serverDump.getAbsolutePath()+"/"+fileName.toString());
+		if(file.exists()) { 
+			buildError(6,requestPacket,verbose,"");
+			return;
+		}
+
+
+		//Build and send the first ACK reply in format:
+		/*
 		  2 bytes    2 bytes
 		  -------------------
 	   ACK   | 04    |   Block #  |
 		  --------------------
-		    */
-	       //NEVER RESENDS ACK 0
-		   sendPacket = new DatagramPacket(response, response.length,
-				   requestPacket.getAddress(), requestPacket.getPort());
-		   
+		 */
+		//NEVER RESENDS ACK 0
+		sendPacket = new DatagramPacket(response, response.length,
+				clientInet, clientTID);
 
-		   printSendPacket(sendPacket,verbose);
-		   
-	       try {
-	    	   sendReceiveSocket.send(sendPacket);
-	       } catch (IOException e) {
-	    	   e.printStackTrace();
-	    	   System.exit(1);
-	       }
-	       startTime = System.currentTimeMillis();
-	       /* Exit Gracefully if the stop is requested. */
-	       if(stopRequested){exitGraceFully();return;}
-	       if(verbose){
-	    	   console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
-	       }
 
-	       while(!stopRequested){
-	    	   //Wait for next DATA datagram in format:
-		       /*
+		printSendPacket(sendPacket,verbose);
+
+		try {
+			sendReceiveSocket.send(sendPacket);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+		if(verbose){
+			console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
+		}
+
+		while(!stopRequested){
+			//Wait for next DATA datagram in format:
+			startTime = System.currentTimeMillis();
+			/*
 			  2 bytes    2 bytes       n bytes
 			  ---------------------------------
 		   DATA  | 03    |   Block #  |    Data    |
 			  ---------------------------------
-			*/
-	    	   //set up empty packet to receive into
-			   byte[] rawData = new byte[ABSOLUTE_PACKET_BUFFER_SIZE];
-			   requestPacket = new DatagramPacket(rawData, rawData.length);
-			   
-			    /* Exit Gracefully if the stop is requested. */
-			   if(stopRequested){continue;}
-			   
-		       console.print("Server: Waiting for packet.");
-		       // Block until a datagram packet is received from receiveSocket.
-		       while(!receiveDATA()){if(errorFlag){exitGraceFully();return;}}
+			 */
+			//set up empty packet to receive into
+			byte[] rawData = new byte[ABSOLUTE_PACKET_BUFFER_SIZE];
+			receivePacket = new DatagramPacket(rawData, rawData.length);
 
-		       if(!retransmitACK){
-		       
-		    	   printReceivedPacket(requestPacket,verbose);
-			       byte[] data = new byte[requestPacket.getLength()-4];
-	
-			       //Parse data from DATA packet
-			       for(int i = 4; i < requestPacket.getLength();i++){
-			    	   data[i-4] = requestPacket.getData()[i];
-			       }
-			       
-			       
-			       TFTPWriter writer = new TFTPWriter();
+			console.print("Server: Waiting for packet.");
+			// Block until a datagram packet is received from receiveSocket.
+			while(!receiveDATA()){if(errorFlag){exitGraceFully();return;}}
 
-			       /*
+			if(!retransmitACK){
+
+				printReceivedPacket(receivePacket,verbose);
+				byte[] data = new byte[receivePacket.getLength()-4];
+
+				//Parse data from DATA packet
+				for(int i = 4; i < receivePacket.getLength();i++){
+					data[i-4] = receivePacket.getData()[i];
+				}
+
+
+				/*
 			       if(!fileName.canWrite())
 			       {
 			    	   buildError(2,requestPacket,verbose);
 			    	   return;
 			       }
-			       */
-					
-			       try {
-						writer.write(data,file.getAbsolutePath()+"/"+fileName.toString());
-					} catch (SecurityException e1) {
-						buildError(2,requestPacket,verbose,"");
-						e1.printStackTrace();
-						exitGraceFully();
-						return;
-					} 
-			       catch(FileNotFoundException e2)
-			       {
-			    	   if(file.exists())
-			    	   {
-			    		   buildError(2,requestPacket,verbose,"");
-				    	   return;
-			    	   }
-			    	   buildError(1,requestPacket,verbose,"");
-			    	   exitGraceFully();
-			    	   return;
-			       }
-			       catch(IOException e2){
-						buildError(3,requestPacket,verbose,"");
-						exitGraceFully();
+				 */
+
+				try {
+					writer.write(data,file.getAbsolutePath()+"/"+fileName.toString());
+				} catch (SecurityException e1) {
+					buildError(2,receivePacket,verbose,"");
+					e1.printStackTrace();
+					exitGraceFully();
+					return;
+				} 
+				catch(FileNotFoundException e2)
+				{
+					if(file.exists())
+					{
+						buildError(2,receivePacket,verbose,"");
 						return;
 					}
-	
-			       if(data.length<512){
-			    	   if(verbose){
-			    	   console.print("Server: Final Data Block Received.");
-			    	   console.print("Server: Sending last ACK");
-			    	   }
-			    	    requestStop();
-			       }
-	
-			       //Sending the ACK for previous DATA packet in format:
-			       /*
+					buildError(1,receivePacket,verbose,"");
+					exitGraceFully();
+					return;
+				}
+				catch(IOException e2){
+					buildError(3,receivePacket,verbose,"");
+					exitGraceFully();
+					return;
+				}
+
+				if(data.length<512){
+					if(verbose){
+						console.print("Server: Final Data Block Received.");
+						console.print("Server: Sending last ACK");
+					}
+					requestStop();
+				}
+
+				//Sending the ACK for previous DATA packet in format:
+				/*
 				  2 bytes    2 bytes
 				  -------------------
 			   ACK   | 04    |   Block #  |
 				  --------------------
-				*/
-	
-				   response[2]=requestPacket.getData()[2];
-				   response[3]=requestPacket.getData()[3];
-	
-		       }
-				   
-		       sendPacket.setData(response);
-		       sendPacket.setLength(response.length);
-		       
-		       /* Exit Gracefully if the stop is requested. */
-		       printSendPacket(sendPacket,verbose);
+				 */
 
-		       try {
-		    	   sendReceiveSocket.send(sendPacket);
-		       } catch (IOException e) {
-		    	   e.printStackTrace();
-		    	   System.exit(1);
-		       }
-		       /* Exit Gracefully if the stop is requested. */
-		       if(stopRequested){continue;}
-		       if(verbose){
-		    	   console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
-		       }
+				response[2]=receivePacket.getData()[2];
+				response[3]=receivePacket.getData()[3];
 
-	    }
-	    console.print("Server: thread closing.");
-	    exitGraceFully();
-    }
-    
+			}
+
+			sendPacket.setData(response);
+			sendPacket.setLength(response.length);
+
+			/* Exit Gracefully if the stop is requested. */
+			printSendPacket(sendPacket,verbose);
+
+			try {
+				sendReceiveSocket.send(sendPacket);
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+			if(verbose){
+				console.print("Server: packet sent using port " + sendReceiveSocket.getLocalPort()+"\n");
+			}
+
+		}
+		console.print("Server: thread closing.");
+		exitGraceFully();
+	}
+
 
 }

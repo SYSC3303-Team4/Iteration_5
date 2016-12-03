@@ -24,6 +24,7 @@ public abstract class ServerThread extends Thread{
 	protected boolean timeoutFlag = false;
 	protected DatagramPacket sendPacket;
 	protected DatagramPacket requestPacket;
+	protected DatagramPacket receivePacket;
 	protected boolean retransmitDATA;
 	protected boolean retransmitACK;
 	protected long startTime;
@@ -113,7 +114,7 @@ DATA  | 03    |   Block #  |    Data    |
 		data[2]=(byte)((blockNumber >> 8)& 0xFF);
     	
     	DatagramPacket sendPacket = new DatagramPacket(data, data.length,
-			     requestPacket.getAddress(), requestPacket.getPort());
+			     clientInet, clientTID);
 	/* Exit Gracefully if the stop is requested. */
 	   if(stopRequested){exitGraceFully();}
        console.print("Server: Sending packet:");
@@ -125,7 +126,7 @@ DATA  | 03    |   Block #  |    Data    |
       		e.printStackTrace();
       		System.exit(1);
       	}
-      	long startTime = System.currentTimeMillis();
+      	startTime = System.currentTimeMillis();
       	/* Exit Gracefully if the stop is requested. */
       	if(stopRequested){exitGraceFully();}
       	if(verbose){
@@ -223,7 +224,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		//receive ACK
   		try {
   			//receiveDATA();
-  			sendReceiveSocket.receive(requestPacket);
+  			sendReceiveSocket.receive(receivePacket);
   			retransmit=false;
   		} catch(SocketTimeoutException e){
   			//Retransmit every timeout
@@ -253,12 +254,12 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		if (verbose)
   		{
   			console.print("Client: Checking ACK...");
-  			printReceivedPacket(requestPacket, verbose);
+  			printReceivedPacket(receivePacket, verbose);
   		}
-  		byte[] data = requestPacket.getData();
+  		byte[] data = receivePacket.getData();
   		if(connectionEstablished){
-  			if(clientInet.equals(requestPacket.getAddress())){
-		  		if(requestPacket.getPort() != clientTID){
+  			if(clientInet.equals(receivePacket.getAddress())){
+		  		if(receivePacket.getPort() != clientTID){
 		  			buildError(5,requestPacket,verbose,"Unexpected TID");
 		  			console.print("Unexpected TID");
 		  			errorFlag=true;
@@ -266,7 +267,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		  		}
   			}
   			else {
-	  			buildError(5,requestPacket,verbose,"Invalid InetAddress");
+	  			buildError(5,receivePacket,verbose,"Invalid InetAddress");
 	  			console.print("Invalid InetAddress");
 	  			errorFlag=true;
 				return false;
@@ -274,7 +275,7 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   		}
   		//check ACK for validity
 		if(data.length > 4){
-			buildError(4,requestPacket, verbose,"Length of the ACK is over 4.");
+			buildError(4,receivePacket, verbose,"Length of the ACK is over 4.");
 			errorFlag=true;
 			return false;
 		}
@@ -307,12 +308,12 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
   			}
   		}
   		else if(data[0] == 0 && data[1] == 5){
-  			printError(requestPacket, verbose);
+  			printError(receivePacket, verbose);
   			errorFlag=true;
 			return false;
   		}
   		else{
-  			buildError(5,requestPacket,verbose,"OpCode is invalid");
+  			buildError(5,receivePacket,verbose,"OpCode is invalid");
   			errorFlag=true;
 			return false;
   		}
