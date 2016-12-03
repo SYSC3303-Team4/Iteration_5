@@ -47,7 +47,7 @@ public abstract class ServerThread extends Thread{
 		{
 			sendReceiveSocket.close();
 		}
-		console.print("Server: thread"+threadNumber+" closing.");
+		console.print("Server: "+threadNumber+" closing.");
 	} 
 	
 	protected void printReceivedPacket(DatagramPacket packet){

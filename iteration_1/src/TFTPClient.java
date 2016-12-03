@@ -516,6 +516,7 @@ public class TFTPClient extends JFrame
 				}
 				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
 				retransmitACK=true;
+				startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data after retransmit (this is used for retransmits).
 				return true;
 			}
 			return false;
@@ -568,6 +569,7 @@ public class TFTPClient extends JFrame
 						return false;
 					}
 					retransmitACK=true;
+					startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data after retransmit (this is used for retransmits).
 					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
 				}
 			}
@@ -609,6 +611,7 @@ public class TFTPClient extends JFrame
 					return false;
 				}
 				retransmitDATA=true;
+				startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data after retransmit (this is used for retransmits).
 				console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
 				return true;
 			}
@@ -657,6 +660,7 @@ public class TFTPClient extends JFrame
 						return false;
 					}
 					retransmitDATA=true;
+					startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data after retransmit (this is used for retransmits).
 					console.print("TIMEOUT EXCEEDED: SETTING RETRANSMIT TRUE");
 				}
 			}
