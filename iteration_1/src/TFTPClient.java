@@ -1149,8 +1149,9 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 						fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 						int result = fileChooser.showOpenDialog(fileChooser);
 						if (result == JFileChooser.APPROVE_OPTION) {//file is found
-							File file = new File(fileChooser.getSelectedFile().getAbsolutePath() + "/Received"+input[1]);
+							File file = new File(fileChooser.getSelectedFile().getAbsolutePath()+"/"+input[1]);
 							clientDump = file;
+							console.print(clientDump.toString());
 							if(file.exists())
 							{
 								console.print("File already exist.");
