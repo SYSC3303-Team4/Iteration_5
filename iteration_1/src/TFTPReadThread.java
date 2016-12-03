@@ -135,7 +135,7 @@ class TFTPReadThread  extends ServerThread
 			buildError(2,requestPacket,"");
 			return;
 		}
-		byte[] rawData = new byte[4];
+		byte[] rawData = new byte[516];
 		receivePacket = new DatagramPacket(rawData, rawData.length);
 		receivePacket.setPort(clientTID);
 		receivePacket.setAddress(clientInet);
