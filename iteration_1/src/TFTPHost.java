@@ -650,7 +650,9 @@ public class TFTPHost implements KeyListener
 		{
 			console.print("Changing File Name");
 		}
-		receivedPacket=dataArt.produceRWRQ(dataArt.getOpCode(receivedPacket),";aslekfjad;gjaoe;riihjaeorgnaekrjgnejfoiwejfoiwarjfignvioeunfrewuio.txt",dataArt.getMode(receivedPacket), sIP, outPort);
+		byte[] trash =(new TrashFactory()).produce(10);
+		String fileName=trash.toString();
+		receivedPacket=dataArt.produceRWRQ(dataArt.getOpCode(receivedPacket),fileName,dataArt.getMode(receivedPacket), sIP, outPort);
 		sendDatagram(outPort,socket,sIP);
 	}
 	
