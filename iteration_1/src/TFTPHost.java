@@ -804,7 +804,7 @@ public class TFTPHost implements KeyListener
 		
 		//serverIP=clientIP;
 	
-		while (!haltRequested)					//TODO possible mod
+		while (!haltRequested)
 		{
 			//waiting to receieve Packet
 			if(!needSend)
@@ -1121,13 +1121,53 @@ public class TFTPHost implements KeyListener
 				//corrupt packet format
 				else if (input[0].equals("format") || input[0].equals("" + this.ERR_FORMAT))
 				{
-					handleModePt(ERR_FORMAT, input);
+					int pt;
+					//get packet type
+					try
+					{
+						pt = PTStringToInt(input[1]);
+					}
+					catch (NumberFormatException nfe)
+					{
+						console.printSyntaxError("Unrecognized packet type (parameter 1)");
+						return;
+					}
+					
+					//check if packet is of type RRQ or WRQ
+					if (pt == this.PACKET_RRQ || pt == this.PACKET_WRQ)
+					{
+						handleModePt(ERR_FILENAME, input);
+					}
+					else
+					{
+						console.printSyntaxError("Packet must be of type rrq/wrq (parameter 1)");
+					}
 				}
 			
 				//corrupt filename
 				else if (input[0].equals("filename") || input[0].equals("" + this.ERR_FILENAME))
 				{
-					handleModePt(ERR_FILENAME, input);
+					int pt;
+					//get packet type
+					try
+					{
+						pt = PTStringToInt(input[1]);
+					}
+					catch (NumberFormatException nfe)
+					{
+						console.printSyntaxError("Unrecognized packet type (parameter 1)");
+						return;
+					}
+					
+					//check if packet is of type RRQ or WRQ
+					if (pt == this.PACKET_RRQ || pt == this.PACKET_WRQ)
+					{
+						handleModePt(ERR_FILENAME, input);
+					}
+					else
+					{
+						console.printSyntaxError("Packet must be of type rrq/wrq (parameter 1)");
+					}
 				}
 				
 				//alter color scheme

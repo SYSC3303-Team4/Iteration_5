@@ -38,7 +38,7 @@ public class DatagramArtisan
 	//produce an ACK
 	public DatagramPacket produceACK(byte[] opCode, int blockNum, InetAddress address, int outPort)
 	{
-		//ack skellington + local variables
+		//ACK skeleton + local variables
 		byte[] ack = new byte[4];
 		byte[] blockNumArr = new byte[2];
 		
@@ -58,12 +58,12 @@ public class DatagramArtisan
 	//produce a DATA
 	public DatagramPacket produceDATA(byte[] opCode, int blockNum, byte[] data, InetAddress address,int outPort)
 	{
-		//prep for block num
+		//convert blockNum from an int into a 2byte array
 		byte[] blockNumArr = new byte[2];
 		blockNumArr[1]=(byte)(blockNum & 0xFF);
 		blockNumArr[0]=(byte)((blockNum >> 8)& 0xFF);
 
-		//construct array to hold data
+		//construct skeleton array to hold data
 		byte[] toSend = new byte[data.length + 4];
 		
 		//add opcode
@@ -117,7 +117,7 @@ public class DatagramArtisan
 		{
 			data[i] = modeBA[c];
 		}
-		//add end metadata
+		//add end pesky 0x00
 		data[i] = 0x00;
 			
 		//generate and save datagram packet
@@ -125,7 +125,7 @@ public class DatagramArtisan
 	}
 	
 	
-	//dissect and return packet type from any packet
+	//deconstruct and return packet type from any packet
 	public byte getPacketType(DatagramPacket datagram)
 	{
 		return datagram.getData()[1];
@@ -149,15 +149,15 @@ public class DatagramArtisan
 		String fileName = "";
 		
 		//valid RRQ/WRQ, extract mode
+		/*
+		 * step backwards through RRQ/WRQ until you hit null
+		 *     2B       Str     1B   Str   1B
+		 *  ----------------------------------
+		 * | OPCODE | FILENAME | 0 | MODE | 0 |
+		 *  ----------------------------------
+		 */
 		if(datagram.getData()[1] == 1 || datagram.getData()[1] == 2)
 		{
-			/*
-			 * step backwards through RRQ/WRQ until you hit null
-			 *     2B       Str     1B   Str   1B
-			 *  ----------------------------------
-			 * | OPCODE | FILENAME | 0 | MODE | 0 |
-			 *  ----------------------------------
-			 */
 			for(int i=2; rawData[i] != 0x00; i++)
 			{
 				fileName = fileName + (char)rawData[i];
@@ -180,15 +180,15 @@ public class DatagramArtisan
 		String mode = "";
 		
 		//valid RRQ/WRQ, extract mode
+		/*
+		 * step backwards through RRQ/WRQ until you hit null
+		 *     2B       Str     1B   Str   1B
+		 *  ----------------------------------
+		 * | OPCODE | FILENAME | 0 | MODE | 0 |
+		 *  ----------------------------------
+		 */
 		if(datagram.getData()[1] == 1 || datagram.getData()[1] == 2)
 		{
-			/*
-			 * step backwards through RRQ/WRQ until you hit null
-			 *     2B       Str     1B   Str   1B
-			 *  ----------------------------------
-			 * | OPCODE | FILENAME | 0 | MODE | 0 |
-			 *  ----------------------------------
-			 */
 			for(int i=datagram.getLength()-2; rawData[i] != 0x00; i--)
 			{
 				mode = (char)rawData[i] + mode;
@@ -216,9 +216,11 @@ public class DatagramArtisan
 	//return the data in a DATA packet
 	public byte[] getData(DatagramPacket datagram)
 	{
+		//extract datagram contents, create skeleton array for data-opcode
 		byte[] rawData = datagram.getData();
 		byte[] data = new byte[datagram.getLength()-4];
 		
+		//extract all data (except first two bytes)
 		for(int i=4; i<datagram.getLength(); i++)
 		{
 			data[i-4] = rawData[i];
@@ -231,16 +233,21 @@ public class DatagramArtisan
 	//return the error message in a ERR packet
 	public String getErrorMsg(DatagramPacket datagram)
 	{
+		//empty sting to append to
 		String msg = "";
+		
+		//get message byes, convert to chars
 		byte[] data = getData(datagram);
 		for(int i=0; i<data.length-1; i++)
 		{
 			msg = msg + (char)(data[i]);
 		}
+		
 		return msg;
 	}
 	
 	
+	/*
 	//used for testing please do not delete
 	public static void main (String[] args)
 	{
@@ -315,4 +322,5 @@ public class DatagramArtisan
 		System.out.println("Address read: " + packet.getAddress());
 		System.out.println("Outport read: " + packet.getPort());
 	}
+	*/
 }

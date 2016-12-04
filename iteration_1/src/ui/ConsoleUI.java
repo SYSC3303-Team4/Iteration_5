@@ -104,7 +104,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	
 	
 	//generic constructor (used for client)
-	//TODO ### NOTE THIS SHOULD IMPLIMENT ConsoleUI(String, ActionListener) EVENTUALLY ###
+	//TODO ALL CONSTUCTORS SHOULD USER A SINGLE MASTER CONSTRUCTOR
 	public ConsoleUI(String name)
 	{
 		//set up layout, save ID, initialize
@@ -139,6 +139,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	
 	
 	//constructor for ISR based input (used for server)
+	//TODO ALL CONSTUCTORS SHOULD USER A SINGLE MASTER CONSTRUCTOR
 	public ConsoleUI(String name, ActionListener listener)
 	{
 		//set up layout, save ID, initialize
@@ -173,6 +174,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	
 	
 	//constructor for externally handled key-press triggered ISRs added (used for host)
+	//TODO ALL CONSTUCTORS SHOULD USER A SINGLE MASTER CONSTRUCTOR
 	public ConsoleUI(String name, KeyListener listener)
 	{
 		//set up layout, save ID, initialize
@@ -419,6 +421,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	
 	
 	@Override
+	//master print method for console, appends text to a new line in outputArea
 	public synchronized void print(String printable) 
 	{
         outputArea.append("    ".concat(printable + "\n"));
@@ -429,10 +432,9 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	
 	
 	@Override
+	//generate a popup for a generic error
 	public void printError(String errorType, String errorMsg)
 	{
-		//print("ERROR: " + errorMsg);
-		//JOptionPane.showMessageDialog(this, errorMsg);
 		printPopUp(
 					errorMsg,
 					errorType + " Error",
@@ -442,16 +444,16 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	}
 	
 	
+	//print a syntax error to the outputArea
 	public void printSyntaxError(String errorMsg)
 	{
 		print("SYNTAX ERROR - " + errorMsg);
 	}
 	
 	
+	//generate a popup for a TFTP error
 	public void printTFTPError(int errorCode, String errorMsg)
 	{
-		//print("TFTP ERROR Type: " + errorCode + " - " + errorMsg);
-		//JOptionPane.showMessageDialog(this, "TFTP Error Type: " + errorCode + "\n" + errorMsg);
 		printPopUp(
 					"TFTP Error Type: " + errorCode + "\n" + errorMsg, 
 					"TFTP Error", 
@@ -462,6 +464,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	}
 	
 	
+	//master method for printing a popup message, prints the same message to console outputArea as well
 	private synchronized void printPopUp(String message, String title, int messageType, String consolePrint)
 	{
 		if (consolePrint != null)
@@ -472,6 +475,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	}
 	
 	
+	//prints a messages that file transfer is complete, generates a popup
 	public void printCompletion(String transferType)
 	{
 		printPopUp("File Transfer Complete!", "", JOptionPane.INFORMATION_MESSAGE, 
@@ -480,6 +484,7 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	
 	
 	@Override
+	//print indented text to outputArea
 	public void printIndent(String printable)
 	{
 		print("           ".concat(printable));
@@ -487,21 +492,24 @@ public class ConsoleUI extends JPanel implements UIFramework, ActionListener, Ke
 	
 	
 	@Override
+	//clear the outputArea
 	public synchronized void clear()
 	{
 		outputArea.setText(null);
 	}
 	
 	
+	//print an empty line to the outputArea
 	public synchronized void println()
 	{
 		outputArea.append("".concat("\n"));
         
-        //magic code to make sure stuff appears
+        //set caret to the end of text
         outputArea.setCaretPosition(outputArea.getDocument().getLength());
 	}
 	
 	
+	//make our life easier by having a single method to print a byte array to the screen in hex format
 	public synchronized void printByteArray(byte[] b, int size)
 	{
 		String printable = "Cntn:    ";

@@ -57,6 +57,7 @@ public class InputStack
 	}
 	
 	
+	//return size of stack
 	public int size()
 	{
 		return pseudoStack.size();
@@ -206,7 +207,7 @@ public class InputStack
 	//peek top entry from stack
 	public Input peek()
 	{
-		if (length != 0)
+		if (pseudoStack.size() != 0)
 		{
 			return pseudoStack.getFirst();
 		}
@@ -256,7 +257,7 @@ public class InputStack
 	}
 	
 	
-	//print as HUMAN READABLE string
+	//print as HUMAN READABLE FANCY string
 	public String toFancyString()
 	{
 		//return string

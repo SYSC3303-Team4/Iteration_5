@@ -3,12 +3,15 @@
 *Project:           TFTP Project - Group 4
 *Author:            Jason Van Kerkhoven                                             
 *Date of Update:    02/12/2016                                              
-*Version:           1.1.1                                                      
+*Version:           1.1.2                                                      
 *                                                                                   
 *Purpose:           Store values associated with error-related inputs
 * 
 * 
-*Update Log:		v1.1.1
+*Update Log:		c1.1.2
+*						- updated toString method
+*						- updated toFancyString method
+*					v1.1.1
 *						- added new error mode (ERR_FILENAME)
 *					v1.1.0
 *						- added error modes (ERR_FILENAME)
@@ -38,7 +41,7 @@ public class Input
 	public static final int ERR_BLOCKNUM	= 7;	//incorrectly change block number
 	public static final int ERR_FORMAT		= 8;	//format incorrect
 	public static final int ERR_FILENAME	= 9;	//mess up file name
-	//packet type
+	//packet types
 	public static final int PACKET_RRQ		= 1;	//RRQ Packet
 	public static final int PACKET_WRQ		= 2;	//WRQ Packet
 	public static final int PACKET_DATA		= 3;	//DATA Packet
@@ -51,8 +54,6 @@ public class Input
 	private int extraInt;
 	private int packetType;
 	private String extraStr;
-	
-	
 	
 	
 	//generic constructor
@@ -110,7 +111,6 @@ public class Input
 	
 	@Override
 	//print as string
-	//TODO update this for additonal errors
 	public String toString()
 	{
 		String printable = "";
@@ -140,6 +140,10 @@ public class Input
 			case(ERR_BLOCKNUM):
 				printable = ("BlockNum: " + blockNum + " || PacketType: " + packetType + " || Mode: " + mode + " || Alter BlockNum: " + extraInt);
 				break;
+			case(ERR_FORMAT):
+				printable = ("BlockNum: " + blockNum + " || PacketType: " + packetType + " || Mode: " + mode);
+			case(ERR_FILENAME):
+				printable = ("BlockNum: " + blockNum + " || PacketType: " + packetType + " || Mode: " + mode);
 			default:
 				printable = ("Unknow Input Type");
 				break;

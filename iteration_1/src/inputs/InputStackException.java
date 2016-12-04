@@ -15,6 +15,7 @@ package inputs;
 
 public class InputStackException extends Exception
 {
+	//generic constructor
 	InputStackException(String msg)
 	{
 		super(msg);

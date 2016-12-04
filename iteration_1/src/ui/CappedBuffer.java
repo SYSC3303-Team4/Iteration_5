@@ -113,7 +113,7 @@ public class CappedBuffer
 	public String toString()
 	{
 		String printable = "";
-		if(data.size() > 0)
+		if(data.size() > 0) 
 		{
 			for(int i=0; i<data.size(); i++)
 			{

@@ -7,8 +7,6 @@
 *                                                                                    
 *Purpose:           Read a file, parse into 512 byte sections
 *					and return a list of byte arrays
-*					(Note currently file must be in the directory
-*					1 above src)
 * 
 * 
 *Update Log:    	v1.0.0
