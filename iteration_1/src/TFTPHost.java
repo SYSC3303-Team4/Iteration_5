@@ -541,6 +541,22 @@ public class TFTPHost implements KeyListener
 			}
 			changeBlock(clientPort,genSocket,sIP);
 		}
+		else if (mode==8)
+		{
+			if(verbose)
+			{
+				console.print("Changing Format");
+			}
+			changeFormat(clientPort,genSocket,sIP);
+		}
+		else if (mode==9)
+		{
+			if(verbose)
+			{
+				console.print("Changing Filename");
+			}
+			changeFileName(clientPort,genSocket,sIP);
+		}
 		
 		
 		else
@@ -628,6 +644,33 @@ public class TFTPHost implements KeyListener
 		return;
 	}
 	
+	public void changeFileName(int outPort, DatagramSocket socket,InetAddress sIP)
+	{
+		if (verbose)
+		{
+			console.print("Changing File Name");
+		}
+		receivedPacket=dataArt.produceRWRQ(dataArt.getOpCode(receivedPacket),";aslekfjad;gjaoe;riihjaeorgnaekrjgnejfoiwejfoiwarjfignvioeunfrewuio.txt",dataArt.getMode(receivedPacket), sIP, outPort);
+		sendDatagram(outPort,socket,sIP);
+	}
+	
+	public void changeFormat(int outPort, DatagramSocket socket,InetAddress sIP)
+	{
+		if (verbose)
+		{
+			console.print("Changing Format");
+		}
+		
+		//byte[] fileName = dataArt.getFileName(receivedPacket).getBytes();
+		//fileName.replace(42,0);
+		
+		String fileName=dataArt.getFileName(receivedPacket);
+		fileName=fileName.replace(".", "\0");
+		
+		
+		receivedPacket=dataArt.produceRWRQ(dataArt.getOpCode(receivedPacket),fileName,dataArt.getMode(receivedPacket), sIP, outPort);
+		sendDatagram(outPort,socket,sIP);
+	}
 	
 	public void duplicatePack( int cPort,DatagramSocket  genSocket, InetAddress sIP)
 	{
