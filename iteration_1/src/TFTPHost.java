@@ -661,8 +661,12 @@ public class TFTPHost implements KeyListener
 			console.print("Changing Format");
 		}
 		
+		//byte[] fileName = dataArt.getFileName(receivedPacket).getBytes();
+		//fileName.replace(42,0);
+		
 		String fileName=dataArt.getFileName(receivedPacket);
-		fileName.replace(".", "0");
+		fileName=fileName.replace(".", "\0");
+		
 		
 		receivedPacket=dataArt.produceRWRQ(dataArt.getOpCode(receivedPacket),fileName,dataArt.getMode(receivedPacket), sIP, outPort);
 		sendDatagram(outPort,socket,sIP);
