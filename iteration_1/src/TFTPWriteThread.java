@@ -59,7 +59,6 @@ class TFTPWriteThread extends ServerThread
 		this.serverDump = serverDump; 
 		this.fileName=fileName;
 		this.mode=mode;
-		System.out.println(this.mode +" "+mode);
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException e) { 
@@ -80,9 +79,6 @@ class TFTPWriteThread extends ServerThread
 
 	public void run() {
 		TFTPWriter writer = new TFTPWriter();		
-		System.out.println(mode);
-		System.out.println((mode.equalsIgnoreCase("netascii")));
-		System.out.println(!(mode.equalsIgnoreCase("netascii") || mode.equalsIgnoreCase("octet")));
 		/* Check for Valid MODE. */
 		if(!(mode.equalsIgnoreCase("netascii") || mode.equalsIgnoreCase("octet"))) {
 			buildError(4,requestPacket,"Invalid Mode");
