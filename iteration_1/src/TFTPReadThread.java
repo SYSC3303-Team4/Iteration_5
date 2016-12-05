@@ -167,6 +167,7 @@ class TFTPReadThread  extends ServerThread
 						printReceivedPacket(finalACKPacket);
 					}
 					console.print("Read Request has completed.");
+					
 					requestStop();
 					continue;
 				}
