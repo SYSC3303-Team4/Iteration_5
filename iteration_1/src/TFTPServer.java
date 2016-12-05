@@ -172,7 +172,6 @@ public class TFTPServer implements ActionListener
 				if (k==j+1) req=Request.ERROR; // mode is 0 bytes long
 				mode = new String(data,j+1,k-j-1);
 			}
-			System.out.println(mode);
 			if(k!=len-1) req=Request.ERROR; // other stuff at end of packet        
 
 			/* Create a response. */

@@ -876,7 +876,6 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		   printDatagram(sentPacket);
 	    }
 
-	    System.out.println("Length of Error is " + sentPacket.getLength());
 	    sendPacket();
     }
 	
@@ -896,9 +895,12 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 		console.print("'clear'                                  - clear screen");
 		console.print("'close'                                 - exit client, close ports, be graceful");
 		console.print("'verbose BOOL'                - toggle verbose mode as true or false");
+		console.print("'verbose'                            - echo the state of the verbose flag");
 		console.print("'testmode BOOL'             - if set true, sends to Host. If set false, sends to Server directly");
-		console.print("'test'                                    - runs a test for the console");
-		console.print("'ip NEWipOut'                          - change the outgoing packet ipOutAddress to NEWipOut");
+		console.print("'testmode'                          - echo the outgoing port (ie if testMode is true or false)");
+		console.print("'ip'                                        - display the IP address host will send to");
+		console.print("'ip NAME/xxx.xxx.xxx.xxx'    - change the outgoing IP address to NAME/xxx.xxx.xxx.xxx");
+		console.print("'ip local'                              - change the outgoing IP address to the local machine");
 		console.print("'mode NEWMODE'           - set the default mode to NEWMODE");
 		console.println();
 		console.print("'push MODE'                    - push a file to the server in mode MODE (ex, ASCII)");
@@ -932,14 +934,19 @@ ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
 					//print commands
 					if (input[0].equals("help"))
 					{
+						console.print("TFTPClient running");
+						console.print("type 'help' for command list");
 						console.print("~~~~~~~~~~~ COMMAND LIST ~~~~~~~~~~~");
 						console.print("'help'                                   - print all commands and how to use them");
 						console.print("'clear'                                  - clear screen");
 						console.print("'close'                                 - exit client, close ports, be graceful");
 						console.print("'verbose BOOL'                - toggle verbose mode as true or false");
+						console.print("'verbose'                            - echo the state of the verbose flag");
 						console.print("'testmode BOOL'             - if set true, sends to Host. If set false, sends to Server directly");
-						console.print("'test'                                    - runs a test for the console");
-						console.print("'ip NEWipOut'                          - change the outgoing packet ipOutAddress to NEWipOut");
+						console.print("'testmode'                          - echo the outgoing port (ie if testMode is true or false)");
+						console.print("'ip'                                        - display the IP address host will send to");
+						console.print("'ip NAME/xxx.xxx.xxx.xxx'    - change the outgoing IP address to NAME/xxx.xxx.xxx.xxx");
+						console.print("'ip local'                              - change the outgoing IP address to the local machine");
 						console.print("'mode NEWMODE'           - set the default mode to NEWMODE");
 						console.println();
 						console.print("'push MODE'                    - push a file to the server in mode MODE (ex, ASCII)");

@@ -942,10 +942,14 @@ public class TFTPHost implements KeyListener
 		console.print("'clear'                                  - clear screen");
 		console.print("'close'                                 - exit client, close ports, be graceful");
 		console.print("'verbose BOOL'                - toggle verbose mode as true or false");
+		console.print("'verbose'                            - echo if verbose if true or false");
 		console.print("'test'                                    - runs a test for the console");
 		console.print("'errors'                               - display a summary of all errors to be simulated");
 		console.print("'reset'                                 - reset the errors to be simulated");
 		console.print("'run'                                   - finalize the number of errors to simulate & start host");
+		console.print("'ip'                                    - display the IP address host will send to");
+		console.print("'ip NAME/xxx.xxx.xxx.xxx'  - change the outgoing IP address to NAME/xxx.xxx.xxx.xxx");
+		console.print("'ip local'                        - change the outgoing IP address to the local machine");
 		console.println();
 		console.print("'delay PT DL'                   - set a delay for packet type PT, block number BN for DL sec");
 		console.print("'dup PT'                            - duplicate packety type PT, block number BN");
@@ -955,19 +959,11 @@ public class TFTPHost implements KeyListener
 		console.print("'opcode PT OP'              - change packet type PT, number BN's opcode to OP");				
 		console.print("'tid PT TID'                      - change packet PT block number BN's destination port to TID");
 		console.print("'blocknum PT B2'         - change packet PT, block number BN's block number to B2");
-		console.print("'format PT'                      - corrupt the format on packet PT");	
+		console.print("'format PT'                      - corrupt the format on RRQ/WRQ packet PT");
 		console.print("'filename PT'                  - corrupt the filename on RRQ/WRQ packet PT");
-		/*
 		console.println();
-		console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
-		console.print("'1 PT BN '                         - duplicate packety type PT, block number BN");
-		console.print("'2 PT BN'                          - lose packet type PT, block number BN");
-		console.print("'3 PT STRING'                  - set the mode on either a RRQ or WRQ to STRING");	
-		console.print("'4 BN BY'                 - add BY bytes of garbage data to data packet BN");			
-		console.print("'5 PT BN OP'            - change packet type PT, number BN's opcode to OP");		
-		console.print("'6 PT BN TID'               - change packet PT block number BN's destination port to TID");
-		console.print("'7 PT BN B2'			- change packet PT, block number BN's block number to B2");
-		*/
+		console.print("*enter PT.BN for any data/ack packets, BN is the block num (ie data.2 for data 2)");
+		console.print("**press the ESC key to reset the host to start a new transfer");
 		console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		console.print("You MUST enter run once all desired errors are entered in order to start the Simulator."); 
 		console.print("Error Simulator is not ready for data if run is not entered");
@@ -1006,10 +1002,14 @@ public class TFTPHost implements KeyListener
 					console.print("'clear'                                  - clear screen");
 					console.print("'close'                                 - exit client, close ports, be graceful");
 					console.print("'verbose BOOL'                - toggle verbose mode as true or false");
+					console.print("'verbose'                            - echo if verbose if true or false");
 					console.print("'test'                                    - runs a test for the console");
 					console.print("'errors'                               - display a summary of all errors to be simulated");
 					console.print("'reset'                                 - reset the errors to be simulated");
 					console.print("'run'                                   - finalize the number of errors to simulate & start host");
+					console.print("'ip'                                    - display the IP address host will send to");
+					console.print("'ip NAME/xxx.xxx.xxx.xxx'  - change the outgoing IP address to NAME/xxx.xxx.xxx.xxx");
+					console.print("'ip local'                        - change the outgoing IP address to the local machine");
 					console.println();
 					console.print("'delay PT DL'                   - set a delay for packet type PT, block number BN for DL sec");
 					console.print("'dup PT'                            - duplicate packety type PT, block number BN");
@@ -1019,19 +1019,11 @@ public class TFTPHost implements KeyListener
 					console.print("'opcode PT OP'              - change packet type PT, number BN's opcode to OP");				
 					console.print("'tid PT TID'                      - change packet PT block number BN's destination port to TID");
 					console.print("'blocknum PT B2'         - change packet PT, block number BN's block number to B2");
-					console.print("'format PT'                      - corrupt the format on packet PT");
+					console.print("'format PT'                      - corrupt the format on RRQ/WRQ packet PT");
 					console.print("'filename PT'                  - corrupt the filename on RRQ/WRQ packet PT");
-					/*
 					console.println();
-					console.print("'0 PT BN DL'                    - set a delay for packet type PT, block number BN for DL blocks");
-					console.print("'1 PT BN '                         - duplicate packety type PT, block number BN");
-					console.print("'2 PT BN'                          - lose packet type PT, block number BN");
-					console.print("'3 PT STRING'                  - set the mode on either a RRQ or WRQ to STRING");		
-					console.print("'4 BN BY'                 - add BY bytes of garbage data to data packet BN");			
-					console.print("'5 PT BN OP'            - change packet type PT, number BN's opcode to OP");	
-					console.print("'6 PT BN TID'               - change packet PT block number BN's destination port to TID");	
-					console.print("'7 PT BN B2'			- change packet PT, block number BN's block number to B2");			
-					 */						
+					console.print("*enter PT.BN for any data/ack packets, BN is the block num (ie data.2 for data 2)");
+					console.print("**press the ESC key to reset the host to start a new transfer");
 					console.print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 					console.println();
 				}
