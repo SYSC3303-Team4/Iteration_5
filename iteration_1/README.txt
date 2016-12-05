@@ -10,7 +10,7 @@
 		== best viewed in notepad++ ==                       
  
 
-TFTP Project - Iteration 4
+TFTP Project - Iteration 5
 SYSC 3303
 Group 4
 
@@ -27,35 +27,41 @@ Sarah Garlough          [100965386]
 TEAM LOGISTICS
 
 	Adam Staples
-		- Timing Diagram
-		- Testing new iteration 4 features
-		- Improvements to server output text
+			- Timing diagrams
+			- Consolidating UCMs and UML diagrams
+			- Testing
 		
 	Dan Hogan
-		- Bug Fixes
-		- Testing new iteration 4 features
-		- Testing old iteration 3 features 
-		- Code clean-up in server
+			- Clean up/commenting for TFTPServer.java
+			- Clean up/commenting for ServerThead.java
+			- Clean up/commenting for TFTPWriteThread.java & TFTPReadThread.java
+			- Testing features
+			- General bug fixes
 	
 	Jason Van Kerkhoven
-		- UI updates for new errors
-		- Created DataArtisan.java and TrashFactory.java class
-		- Client error packet handling debugging + re-factoring
-		- Add data error in host implementation
-		- README
+			- Clean up/commenting inputs package
+			- Clean up/commenting errorhelpers package
+			- Clean up/commenting ui
+			- README and User Manual writing (general technical writing)
+			- Host error input + Client/Host IP input
+			- General testing and debugging
 
 	Nathaniel Charlebois
-		- Implemented unknown TID on server/client
-		- Implemented unknown opcode on server/client
-		- Implemented malformed payload detection on server/client
-		- Bug fixes on client and server
-		- Testing new iteration 4 features
-	
+			- Client transfer over different IPs functionality
+			- Server transfer over different IPs functionality
+			- Testing features
+			- General client-server debugging
+			- Testing all features
+			- Clean up/commenting TFTPServer.java and TFTPClient.java
+			
 	Sarah Garlough
-		- Implemented opcode error in host
-		- Implemented TID error in host
-		- Implemented blocknum error in host
-		- Implemented mode error in host
+			- Host transfer over different IPs functionality
+			- Addition of format errors in Host
+			- Addition of filename errors in Host
+			- Testing features
+			- Host debugging
+			- Clean up/commenting TFTPHost.java
+
 
 
 -----------------------------------------------------------
@@ -75,12 +81,14 @@ CONTENTS:
 		TestBench.java
 		
 	Package: ui
+		CappedBuffer.java
 		UIFramework.java
 		ConsoleUI.java
 		
 	Package: inputs
 		Input.java
 		InputStack.java
+		InputStackException.java
 	
 	Package: helpers
 		DatagramArtisan.java
@@ -104,11 +112,7 @@ CONTENTS:
 	DIAGRAMS & FIGURES
 	==============================
 	Timing Diagrams:
-		ALTERED_BLOCK_NUMBER.jpg
-		ALTERED_PACKET_PORT.jpg
-		INCORRECT_MODE_AT_REQUEST.jpg
-		INCORRECT_OPCODE.jpg
-		MALFORMED_PAYLOAD
+		
 	
 
 
@@ -206,7 +210,26 @@ OPERATING INSTRUCTIONS
 	specifying RRQ or WRQ. The use of push, pull, rrq, and wrq commands are given in greater detail below. The 
 	'push' command opens a file explorer, which in turn allows for the selection of the file you wish to push 
 	(write) to the server. The 'pull' command allows the client to read a file (RRQ) from the server, 
-	and save it to the main directory (ie above src).
+	and save it to a user specified directory
+	
+	The UI also supports a limited last-25 command memory, which can be navigated through by using the UP or DOWN arrow keys.
+	The color scheme of the UI can be altered by the 'color SCHEME' command.
+	
+	
+	
+	RUNNING AND RESETING HOST
+	==============================
+	After all desired errors have been entered, ensure that the outgoing IP of host is set to the servers.
+	To view the IP, enter the command 'ip'. To set IP to the local address, enter the command 'ip local'. To
+	set the IP to a non-local address, enter the command 'ip hostname/xxx.xxx.xxx.xxx', where hostname is a string
+	of the hostname you are trying to send to, followed by the IP address of the server.
+	It should be noted that the IP by default is set to the IP of the local machine.
+	
+	To run the host, enter the command 'run'. The host will then run, simulating any errors you have specified.
+	
+	When you wish to reset the host, press the 'ESC' key on the keyboard. The host will then reset to its starting state, allowing
+	you to perform additional transfers.
+	Please note that this IS NOT the same as the typed 'reset' command, which will reset the list of errors to be simulated.
 	
 	
 	
@@ -214,107 +237,155 @@ OPERATING INSTRUCTIONS
 	==============================
 	Errors are set using the input line in the host UI.  There are eight (8) errors that can be simulated in 
 	the host. These errors can affect either a ACK-type (04) packet, a DATA-type (03) packet, a WRQ-type (02) packet, 
-	or a RRQ-type (03) packet. Currently, the host cannot simulate errors on a ERR-type (05) packet.
+	a RRQ-type (03) packet, or a ERROR-type packet (05).
 	
 	Errors are given a numerical code for representation. The numerical representation of each error type
 	can be seen in the chart below:
 	
-		|-------------------|---------------|
-		|	ERROR TYPE		|	ERROR CODE	|
-		|-------------------|---------------|
-		| Delay				|	0			|
-		| Duplicate			|	1			|
-		| Lose				|	2			|
-		| Alter Mode		|	3			|
-		| Add Garbage Data	|	4			|
-		| Alter OpCode		|	5			|
-		| Alter TID			|	6			|
-		| Alter BlockNumber	|	7			|
-		|-------------------|---------------|
+		|-------------------------------|---------------|
+		|	ERROR TYPE					|	ERROR CODE	|
+		|-------------------------------|---------------|
+		| Delay any packet				|	0			|
+		| Duplicate any packet			|	1			|
+		| Lose any packet				|	2			|
+		| Alter Mode of a RRQ/WRQ		|	3			|
+		| Add Garbage Data to a DATA	|	4			|
+		| Alter OpCode of any packet	|	5			|
+		| Alter TID	 of any packet		|	6			|
+		| Alter BlockNumber	of DATA/ACK	|	7			|
+		| Corrupt Format of RRQ/WRQ		|	8			|
+		| Corrupt Filename of RRQ/WRQ	|	9			|
+		|-------------------------------|---------------|
 	
-	The command for delay of a packet is given as 'delay PT BN DL', where PT is the packet type, BN is
-	the block number, and DL is the amount of SECONDS the delay the packet by. The packet type can either 
-	be given as a string (ie 'data', 'ack', 'rrq', 'wrq') or as the integer representation for each packet type 
-	(1 for RRQ, 2 for WRQ, 3 for DATA, 4 for ACK). BN represents the block number of the packet, which is entered as a 
-	standard integer. DL represents the delay applied to the packet in seconds, which is entered as a standard integer.
-	For delay of either a RRQ or WRQ, enter 0 for the block number. 
-	Alternatively, the numerical representation of delay can be used, given as '0 PT BN DL'.
+	It should be noted that packet type PT is given as just rrq for a RRQ, wrq for a WRQ, and error for a ERROR.
+	However, for any type DATA or ACK, as there are multiple DATA/ACK packets per data transfer, the block number must be denoted
+	as well. This is done by using a '.' to separate the packet type and the block number (ie data.blockNum or ack.blockNum).
+	As an example, to refer to DATA 2, PT would be entered as 'data.2'. To refer to ACK 4, PT would be entered as 'ack.4'.
 	
-	The command for duplication of a packet is given as 'dup PT BN', where PT is the packet type, and BN is
-	the block number. The packet type can either be given as a string (ie 'data', 'ack', 'rrq', 'wrq') or as
-	the integer representation for each packet type (1 for RRQ, 2 for WRQ, 3 for DATA, 4 for ACK).
-	BN represents the block number of the packet, which is entered as a standard integer. For duplication of either
-	a RRQ or WRQ, enter 0 for the block number.
-	Alternatively, the numerical representation of duplication can be used, given as '1 PT BN'.
-	
-	The command for the lose of a packet is given as 'lose PT BN', where PT is the packet type, and BN is
-	the block number. The packet type can either be given as a string (ie 'data', 'ack', 'rrq', 'wrq') or as
-	the integer representation for each packet type (1 for RRQ, 2 for WRQ, 3 for DATA, 4 for ACK).
-	BN represents the block number of the packet, which is entered as a standard integer. For the lose of either
-	a RRQ or WRQ, enter 0 for the block number.
-	Alternatively, the numerical representation of duplication can be used, given as '2 PT BN'.
-	
-	The command for altering the mode of a RRQ or WRQ is given as 'mode PT STR', where PT is the packet type, and STR is
-	the new mode. The packet type can either be given as a string (ie 'rrq', 'wrq') or as the integer representation for 
-	each packet type (1 for RRQ, 2 for WRQ). STR represents the new mode and is entered a standard string WITHOUT any spaces.
-	Alternatively, the numerical representation of mode can be used, given as '3 PT STR'.
-	
-	The command for adding extra data onto a DATA packet is given as 'delay PT BN NUM', where PT is the packet type, BN is
-	the block number, and NUM is the amount of bytes to add. The packet type can either be given as a string (ie 'data'), 
-	or as the integer representation for each packet type (3 for DATA). BN represents the block number of the packet, 
-	which is entered as a standard integer. NUM represents the amount of bytes appended to the packet in seconds, 
-	which is entered as a standard integer.
-	Alternatively, the numerical representation of delay can be used, given as '4 PT BN NUM'.
-	
-	The command for changing the opcode of a packet is given as 'opcode PT BN OP', where PT is the packet type, BN is
-	the block number, and OP is the new opcode. The packet type can either be given as a string (ie 'data', 'ack', 'rrq', 
-	'wrq') or as the integer representation for each packet type  (1 for RRQ, 2 for WRQ, 3 for DATA, 4 for ACK). 
-	BN represents the block number of the packet, which is entered as a standard integer. OP represents what to change the opcode
-	to, and is entered as a standard 2bit integer. For opcode alterations of either a RRQ or WRQ, enter 0 for the block number. 
-	Alternatively, the numerical representation of delay can be used, given as '5 PT BN OP'.
-	
-	The command for changing the TID of a packet is given as 'tid PT BN TID', where PT is the packet type, BN is
-	the block number, and TID is the new TID address. The packet type can either be given as a string (ie 'data', 'ack', 'rrq', 'wrq') 
-	or as the integer representation for each packet type (1 for RRQ, 2 for WRQ, 3 for DATA, 4 for ACK). BN represents the block 
-	number of the packet, which is entered as a standard integer. TID represents the new TID of the packet, which is entered as a 
-	standard integer. For changing the TID of either a RRQ or WRQ, enter 0 for the block number. 
-	Alternatively, the numerical representation of delay can be used, given as '6 PT BN TID'.
-	
-	The command for changing the block number of a packet is given as 'blocknum PT BN NUM', where PT is the packet type, BN is
-	the block number, and NUM is the new block number. The packet type can either be given as a string (ie 'data', 'ack') or as the 
-	integer representation for each packet type (3 for DATA, 4 for ACK). BN represents the block number of the packet, which is entered 
-	as a standard integer. NUM represents the new block number of the packet, which is entered as a standard integer.
-	Alternatively, the numerical representation of delay can be used, given as '7 PT BN NUM'.
+		ERROR TYPE: DELAY
+		-------------------------------
+		The command for delay of a packet is given as 'delay PT DL', where PT is the packet type, and DL is the amount of SECONDS 
+		the delay the packet by. The packet type can either be given as a string (ie 'data', 'ack', 'rrq', 'wrq') or as the integer 
+		representation for each packet type (1 for RRQ, 2 for WRQ, 3 for DATA, 4 for ACK). DL represents the delay applied to the packet 
+		in seconds, which is entered as a standard integer. 
+		Alternatively, the numerical representation of delay can be used, given as '0 PT DL'.
+		
+		ERROR TYPE: DUPLICATION
+		-------------------------------
+		The command for duplication of a packet is given as 'dup PT', where PT is the packet type. 
+		The packet type can either be given as a string (ie 'data', 'ack', 'rrq', 'wrq') or as
+		the integer representation for each packet type (1 for RRQ, 2 for WRQ, 3 for DATA, 4 for ACK).
+		Alternatively, the numerical representation of duplication can be used, given as '1 PT'.
+		
+		ERROR TYPE: LOSE
+		-------------------------------
+		The command for the lose of a packet is given as 'lose PT', where PT is the packet type. 
+		The packet type can either be given as a string (ie 'data', 'ack', 'rrq', 'wrq') or as
+		the integer representation for each packet type (1 for RRQ, 2 for WRQ, 3 for DATA, 4 for ACK).
+		Alternatively, the numerical representation of duplication can be used, given as '2 PT'.
+		
+		ERROR TYPE: MODE
+		-------------------------------
+		The command for altering the mode of a RRQ or WRQ is given as 'mode PT STR', where PT is the packet type, and STR is
+		the new mode. The packet type can either be given as a string (ie 'rrq', 'wrq') or as the integer representation for 
+		each packet type (1 for RRQ, 2 for WRQ). STR represents the new mode and is entered a standard string WITHOUT any spaces.
+		Alternatively, the numerical representation of mode can be used, given as '3 PT STR'.
+		
+		ERROR TYPE: DATA
+		-------------------------------
+		The command for adding extra data onto a DATA packet is given as 'delay PT NUM', where PT is the packet type
+		and NUM is the amount of bytes to add. The packet type can either be given as a string (ie 'data'), 
+		or as the integer representation for each packet type (3 for DATA). NUM represents the amount of bytes appended 
+		to the packet, which is entered as a standard integer.
+		Alternatively, the numerical representation of delay can be used, given as '4 PT NUM'.
+		It should be noted that since this command is for a DATA type packet, the block number must be specified through the use of
+		a '.' to separate the packet type and block number. For instance, to add 150 bytes to DATA packet 2, enter 'add data.2 150'.
+		
+		ERROR TYPE: OPCODE
+		-------------------------------
+		The command for changing the opcode of a packet is given as 'opcode PT OP', where PT is the packet type, and OP is the new opcode. 
+		The packet type can either be given as a string (ie 'data', 'ack', 'rrq', 'wrq') or as the integer representation for each 
+		packet type  (1 for RRQ, 2 for WRQ, 3 for DATA, 4 for ACK). OP represents what to change the opcode to, and is entered as a standard 
+		2bit integer.
+		Alternatively, the numerical representation of delay can be used, given as '5 PT OP'.
+		
+		ERROR TYPE: TID
+		-------------------------------
+		The command for changing the TID of a packet is given as 'tid PT TID', where PT is the packet type,and TID is the new TID address. 
+		The packet type can either be given as a string (ie 'data', 'ack', 'rrq', 'wrq') or as the integer representation for each packet type 
+		(1 for RRQ, 2 for WRQ, 3 for DATA, 4 for ACK).TID represents the new TID of the packet, which is entered as a standard integer. 
+		Alternatively, the numerical representation of delay can be used, given as '6 PT TID'.
+		
+		ERROR TYPE: BLOCKNUM
+		-------------------------------
+		The command for changing the block number of a packet is given as 'blocknum PT NUM', where PT is the packet type, and NUM is 
+		the new block number. The packet type can either be given as a string (ie 'data', 'ack') or as the integer representation for each 
+		packet type (3 for DATA, 4 for ACK). NUM represents the new block number of the packet, which is entered as a standard integer.
+		Alternatively, the numerical representation of delay can be used, given as '7 PT NUM'.
+		
+		ERROR TYPE: FORMAT
+		-------------------------------
+		The command for corrupting the format for a RRQ/WRQ packet is given as 'format PT', where PT is the packet type. The packet type
+		must be either a RRQ or WRQ, given as a standard string (rrq, wrq) or as their numerical equivalents (1 for RRQ, 2 for WRQ). 
+		Alternatively, the error can be simulated by using the numerical representation, given as '8 PT'.
+		
+		ERROR TYPE: FILENAME
+		-------------------------------
+		The command for corrupting the filename for a RRQ/WRQ packet is given as 'filename PT', where PT is the packet type. The packet type
+		must be either a RRQ or WRQ, given as a standard string (rrq, wrq) or as their numerical equivalents (1 for RRQ, 2 for WRQ).
+		This command will change the filename to a random string, thereby corrupting it. Alternatively, the error can be simulated by 
+		using the numerical representation, given as '9 PT'.s
 	
 	Examples of setting up errors are given below:
 	
 		|-------------------------------------------|-----------------------|-------------------|
 		|	WRITTEN DESCIPTION OF ERROR        		|   STRING BASED INPUT	|	INT BASED INPUT	|
 		|-------------------------------------------|-----------------------|-------------------|
-		|	delay DATA packet 3 for 5 sec       	|   delay data 3 5      |	0 3 3 5			|
-		|	delay ACK packet 2 for 10 sec       	|   delay ack 2 10      |	0 4 2 10		|
+		|	delay DATA packet 3 for 5 sec       	|   delay data.3 5      |	0 3.3 5			|
+		|	delay ACK packet 2 for 10 sec       	|   delay ack.2 10      |	0 4.2 10		|
+		|	delay RRQ packet for 20 sec				|	delay rrq 20		|	0 1 20			|
+		|	delay WRQ packet for 30 sec				|	delay wrq 30		|	0 2 30			|
+		|	delay ERROR packet for 40 sec			|	delay error 40		|	0 5 40			|
 		|											|						|					|
-		|	duplicate ACK packet 1              	|	dup ack 1           |	1 4 1			|
-		|	duplicate DATA packet 3					|	dup data 3			|	1 3 3			|
+		|	duplicate ACK packet 1              	|	dup ack.1           |	1 4.1			|
+		|	duplicate DATA packet 3					|	dup data.3			|	1 3.3			|
+		|	duplicate ERROR packet					|	dup error			|	1 5				|
+		|	duplicate WRQ packet					|	dup wrq				|	1 2				|
+		|	duplicate RRQ packet					|	dup rrq				|	1 1				|
 		|											|						|					|
-		|	lose DATA packet 2                  	|   lose data 2         |	2 3 2			|
-		|	lose ACK packet 5						|	lose ack 5			|	2 4 5			|
+		|	lose DATA packet 2                  	|   lose data.2         |	2 3.2			|
+		|	lose ACK packet 5						|	lose ack.5			|	2 4.5			|
+		|	lose ERROR packet						|	lose error			|	2 5				|
+		|	lose RRQ packet							|	lose rrq			|	2 1				|
+		|	lose WRQ packet							| 	lose wrq			|	2 2				|
 		|											|						|					|
 		|	set mode on RRQ packet to ASCII			|	mode rrq ASCII		|	3 1 ASCII		|
 		|	set mode on WRQ packet to sysc3303		|	mode wrq sysc3303	|	3 2 sysc3303	|
 		|											|						|					|
-		|	add 10 extra random bytes to DATA 3		|	add data 3 10		|	4 3 3 10		|
-		|	add 50 extra random bytes to DATA 8		|	add data 8 50		|	4 3 8 50		|
+		|	add 10 extra random bytes to DATA 3		|	add data.3 10		|	4 3.3 10		|
+		|	add 50 extra random bytes to DATA 8		|	add data.8 50		|	4 3.8 50		|
 		|											|						|					|
-		|	change the opcode in DATA 3 to 01		|	opcode data 3 1		|	5 3 3 1			|
-		|	change the opcode in ACK 1 to 10		|	opcode ack 1 10		|	5 4 1 10		|
+		|	change the opcode in DATA 3 to 01		|	opcode data.3 1		|	5 3.3 1			|
+		|	change the opcode in ACK 1 to 10		|	opcode ack.1 10		|	5 4.1 10		|
+		|	change the opcode in RRQ to 8			|	opcode rrq 8		|	5 1 8			|
+		|	change the opcode in WRQ to 20			|	opcode wrq 20		|	5 2 20			|
+		|	change the opcode in ERROR to 2			|	opcode error 2		|	5 5 2			|
 		|											|						|					|
-		|	change the TID address of DATA 1 to 101	|	tid data 1 101		|	6 3 1 101		|
-		|	change the TID address of ACK 4 to 24	|	tid ack 4 24		|	6 4 4 24		|
+		|	change the TID address of DATA 1 to 101	|	tid data.1 101		|	6 3.1 101		|
+		|	change the TID address of ACK 4 to 24	|	tid ack.4 24		|	6 4.4 24		|
+		|	change the TID address of RRQ to 1234	|	tid rrq 1234		|	6 1 1234		|
+		|	change the TID address of WRQ to 1111	|	tid wrq 1111		|	6 2 1111		|
+		|	change the TID address of ERROR to 55	|	tid error 55		|	6 5 55			|
 		|											|						|					|
-		|	change the blocknum of DATA 5 to 6		|	blocknum data 5 6	|	7 3 5 6			|
-		|	change the blocknum of ACK 1 to 22		|	blocknum ack 1 22	|	7 4 1 22		|
-		|	change the blocknum of DATA 8 to 2		|	blocknum data 8 2	|	7 3 8 2			|
+		|	change the blocknum of DATA 5 to 6		|	blocknum data.5 6	|	7 3.5 6			|
+		|	change the blocknum of ACK 1 to 22		|	blocknum ack.1 22	|	7 4.1 22		|
+		|	change the blocknum of DATA 8 to 2		|	blocknum data.8 2	|	7 3.8 2			|
+		|											|						|					|
+		|	corrupt the format of RRQ				|	format rrq			|	8 1				|
+		|	corrupt the format of WRQ				|	format wrq			|	8 2				|
+		|											|						|					|
+		|	corrupt the filename of RRQ				|	filename rrq		|	9 1				|
+		|	corrupt the filename of WRQ				|	filename wrq		|	9 2				|
 		|-------------------------------------------|-----------------------|-------------------|
 	
 	To view all of the errors to be simulated in the host, use the command 'errors', which will print the list 
@@ -325,13 +396,13 @@ OPERATING INSTRUCTIONS
 	WILL NOT pass through any data to server or client.
 	
 	
+	
 	SENDING RRQ AND WRQ TO SERVER
 	==============================
 	Sending RRQ and WRQ can be done trivially via several given commands. The rrq command is synonymous with the 
 	pull command, similarly, the wrq command is synonymous with the push command. Files are written and read from 
 	the directory specified upon server execution or through use of the 'cd' server command. On the client side, 
-	files are read from anywhere on the computer. However, the files are always saved to the directory directly 
-	above src. This is planned to be patched in a future version.
+	files are read from anywhere on the computer. Similarly, the files can be saved to any directory.
 	
 	If not specified, the assumed mode for all file transfers is assumed to be in standard 8-bit NETASCII 
 	format. You can change this default mode through use of the 'mode NEWMODE' command in the client, where NEWMODE is
@@ -342,6 +413,14 @@ OPERATING INSTRUCTIONS
 	It should also be noted that for a RRQ, you must specify the file you wish to pull from the server via the 
 	filename, given in text along with the command. However, for a WRQ, the file you wish to push to server is 
 	selected via a file chooser.
+	
+	Before any file transfer is performed, it is advised the operator ensures that the outgoing IP of the client 
+	is set to the servers address (or the host if there are errors to be simulated).
+	To view the IP, enter the command 'ip'. To set IP to the local address, enter the command 'ip local'. To
+	set the IP to a non-local address, enter the command 'ip hostname/xxx.xxx.xxx.xxx', where hostname is a string
+	of the hostname you are trying to send to, followed by the IP address of the server.
+	It should be noted that the IP by default is set to the IP of the local machine.
+
 
 	
 	TFTPClient INSTRUCTIONS
@@ -363,12 +442,28 @@ OPERATING INSTRUCTIONS
 			For example, for verbose to be set true type 'verbose true'. For verbose
 			false, type 'verbose false'.
 			
+		'verbose'
+			Echo back the current setting of verbose mode.
+			
 		'testmode B'
 			Switch the client to regular mode and test mode. When in test mode, client
 			passes all communications through the host (error simulator). When NOT in
 			test mode, client passes all communications directly to the server.
 			To toggle test mode on, type 'testmode true'. To toggle test mode off (ie
 			run in regular mode) type 'testmode false'.
+			
+		'testmode'
+			Echo back the currently set outPort, as well as if the client is set to transmit to host (testMode true)
+			or server (testMode false).
+			
+		'ip'
+			Echo the outgoing IP to the console.
+			
+		'ip local'
+			Set the outgoing IP to the local address.
+			
+		'ip NAME/xxx.xxx.xxx.xxx'
+			Set the outgoing IP to go to address xxx.xxx.xxx.xxx, host name NAME.
 		
 		'mode NEWMODE'
 			Set the default mode of the client to NEWMODE, where NEWMODE is entered as a string
@@ -431,74 +526,93 @@ OPERATING INSTRUCTIONS
 		'errors'
 			Print the sorted stack of all inputed errors you want the host to simulate.
 			
-		'delay PT BN DL'
-			Add a delay type error to packet type PT, block number BN, delaying for DL.
-			For instance, to delay ACK packet #2 by 1000ms, type 'delay ack 2 1000'. 
+		'ip'
+			Echo the outgoing IP to the console.
+			
+		'ip local'
+			Set the outgoing IP to the local address.
+			
+		'ip NAME/xxx.xxx.xxx.xxx'
+			Set the outgoing IP to go to address xxx.xxx.xxx.xxx, host name NAME.
+			
+		'delay PT DL'
+			Add a delay type error to packet type PT, delaying for DL.
+			For instance, to delay ack packet #2 by 1000ms, type 'delay ack 2 1000'. 
 			Alternatively, type '0 4 2 1000'. PT can be either the integer
 			code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
 			written code as a string (ack, data, wrq, rrq).
 			
-		'dup PT BN'
-			Add a duplicate type error to packet type PT, block number BN
-			For instance, to duplicate ACK packet #2 by 1000ms, type 'dup ack 2'. 
-			Alternatively, type 'dup 4 2'. PT can be either the integer
-			code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
-			written code as a string (ack, data, wrq, rrq).
+		'dup PT'
+			Add a duplicate type error to packet type PT.
+			For instance, to duplicate ACK packet #2 by 1000ms, type 'dup ack.2'. 
+			To duplicate ERROR packet, type 'dup error'.
 			
-		'lose PT BN'
-			Add a lose type error to packet type PT, block number BN.
-			For instance, to lose ACK packet #2, type 'lose ack 2'. 
-			Alternatively, type '2 4 2'. PT can be either the integer
-			code for packet type (ie 4 for ACK, 3 for DATA, 2 for WRQ, 1 for RRQ), or the
-			written code as a string (ack, data, wrq, rrq).	
+		'lose PT'
+			Add a lose type error to packet type PT.
+			For instance, to lose ACK packet #2, type 'lose ack.2'. 
+			To lose ERROR packet, type 'lose error'.
 			
 		'mode PT STRING'
 			Change the mode of either a RRQ or WRQ packet. PT can either be 'rrq' or 'wrq'.
 			The new mode of the request is set to STRING. For example, changing the mode of
 			a RRQ to "ascii" would be written as: mode rrq ascii.
 			
-		'add PT BN NUM'
-			Add NUM bytes of data to packet type PT, block number BN. The packet type (PT) must be
+		'add PT NUM'
+			Add NUM bytes of data to a DATA packet. The packet type (PT) must be
 			of type DATA (denoted as 'data' in the console). For example, to add 12 bytes of garbage data
-			to DATA packet 3: add data 3 12.
+			to DATA packet 3: 'add data.3 12'.
 			
-		'opcode PT BN OP'
-			Change the opcode of packet type PT, block number BN to OP. OP must be a valid 2 byte integer.
-			If for a RRQ or WRQ, BN should be entered as 0. For example, to set the opcode of a RRQ to 12:
-			opcode rrq 0 12.
+		'opcode PT OP'
+			Change the opcode of packet type PT, to OP. OP must be a valid 2 byte integer.
+			PT must be either 'rrq' or 'wrq'
+			For example, to set the opcode of a RRQ to 12: 'opcode rrq 12'.
 			
-		'tid PT BN TID'
-			Change the tid of packet type PT, block number BN to TID. TID must be entered as a valid TID address.
-			If for a RRQ or WRQ, BN should be entered as 0. For example, to set the TID of DATA 3 to 1234:
-			tid data 3 1234.
+		'tid PT TID'
+			Change the tid of packet type PT, to TID. TID must be entered as a valid TID address.
+			For example, to set the TID of data 3 to 1234: 'tid data.3 1234'.
+			To set the TID of a rrq to 1010: 'tid rrq 1010'.
 		
-		'blocknum PT BN NUM'
-			Change the block number of either a data packet or ack packet to NUM, with PT being either 'data' or 'ack' and
-			BN being the original block number. For example, the change the block number of ACK 5 to 10: blocknum ack 5 10.
+		'blocknum PT NUM'
+			Change the block number of either a data packet or ack packet to NUM, with PT being either 'data' or 'ack'
+			For example, the change the block number of ACK 5 to 10: 'blocknum ack.5 10'.
+			To change the block number of data 1 to 9: 'blocknum data.1 9'.
 			
-		'0 PT BN DL'
-			Functions exactly the same as 'delay PT BN DL'.
+		'format PT'
+			Corrupt the format of a rrq or wrq packet type.
 			
-		'1 PT BN'
-			Functions exactly the same as 'dup PT BN'.
+		'filename PT'
+			Corrupt the filename of a rrq or wrq by altering it to a non-existing file.
 			
-		'2 PT BN'
-			Functions exactly the same as 'lose PT BN'.
+		'0 PT DL'
+			Functions exactly the same as 'delay PT DL'.
+			
+		'1 PT'
+			Functions exactly the same as 'dup PT'.
+			
+		'2 PT'
+			Functions exactly the same as 'lose PT'.
 		
 		'3 PT STRING'
 			Functions exactly the same as 'mode PT STRING'.
 		
-		'4 PT BN NUM'
-			Functions exactly the same as 'add PT BN NUM'.
+		'4 PT NUM'
+			Functions exactly the same as 'add PT NUM'.
 			
-		'5 PT BN OP'
-			Functions exactly the same as 'opcode PT BN OP'
+		'5 PT OP'
+			Functions exactly the same as 'opcode PT OP'
 			
-		'6 PT BN TID'
-			Functions exactly the same as 'tid PT BN TID'.
+		'6 PT TID'
+			Functions exactly the same as 'tid PT TID'.
 			
-		'7 PT BN NUM'
-			Functions exactly the same as 'blocknum PT BN NUM'.
+		'7 PT NUM'
+			Functions exactly the same as 'blocknum PT NUM'.
+		
+		'8 PT'
+			Functions exactly the same as 'format PT'.
+		
+		'9 PT'
+			Functions exactly the same as 'filename PT'.
+		
 		
 		
 	TFTPServer INSTRUCTIONS
@@ -614,6 +728,11 @@ FILE INFORMATION:
 		the future.
 		
 		
+	CappedBuffer.java
+	==============================
+		Holds n amount of Strings. Navigation through this buffer is built in internally. Holds the last 25 user inputs.
+		
+		
 	TestBench.java
 	==============================
 		Launches an instance of the server, client and host for quick testing.
@@ -628,6 +747,11 @@ FILE INFORMATION:
 	==============================
 		A sorted stack of all errors to simulate. Sorted in terms of ascending block number, and packet-type 
 		in the case of a tie.
+		
+		
+	InputStackException.java
+	==============================
+		Denotes an illegal push to the stack. Contains a message as to why.
 		
 		
 	DatagramArtisan.java
