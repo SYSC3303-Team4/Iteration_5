@@ -94,7 +94,7 @@ class TFTPReadThread  extends ServerThread
 		}
 
 		/* Check for Valid MODE. */
-		if(!(mode.equalsIgnoreCase("netascii") || !mode.equalsIgnoreCase("octet"))) {
+		if(!(mode.equalsIgnoreCase("netascii") || mode.equalsIgnoreCase("octet"))) {
 			buildError(4,requestPacket,"Invalid Mode");
 			exitGraceFully();
 			return; 
@@ -201,7 +201,7 @@ class TFTPReadThread  extends ServerThread
 
 			startTime = System.currentTimeMillis();//Set the start time that we attempt to receive data (this is used for retransmits).
 			while(!receiveACK()){if(errorFlag){exitGraceFully();return;}}//When this method returns it will either signal we have data, should retransmit or should exit with an error
-			printReceivedPacket(requestPacket);
+			
 
 
 		}
