@@ -94,7 +94,7 @@ class TFTPReadThread  extends ServerThread
 		}
 
 		/* Check for Valid MODE. */
-		if(!(mode.equalsIgnoreCase("netascii") || !mode.equalsIgnoreCase("octet"))) {
+		if(!(mode.equalsIgnoreCase("netascii") || mode.equalsIgnoreCase("octet"))) {
 			buildError(4,requestPacket,"Invalid Mode");
 			exitGraceFully();
 			return; 
